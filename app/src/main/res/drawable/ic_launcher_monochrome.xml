@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ماه‌آوا launcher: crescent moon inside a cycle ring with a small droplet. All shapes within the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="4.5" android:strokeLineCap="round" android:pathData="M76.66,43.43 A25.0,25.0 0 1,1 64.57,31.34"/>
+    <path android:fillColor="#FF000000" android:pathData="M49.05,39.68 A16.5,16.5 0 1,0 67.35,60.59 A14.0,14.0 0 0,1 49.05,39.68 Z"/>
+    <path android:fillColor="#FF000000" android:pathData="M71.68,29.32 C72.88,31.92 76.28,35.32 76.28,37.92 A4.6,4.6 0 0,1 67.08,37.92 C67.08,35.32 70.48,31.92 71.68,29.32 Z"/>
+</vector>

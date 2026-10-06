@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mahava_bg">#FCFAFF</color>
+    <color name="mahava_primary">#7962CA</color>
+    <color name="mahava_text">#30233E</color>
+    <color name="ic_launcher_background">#F1ECFC</color>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ماه‌آوا</string>
+    <string name="nav_today">امروز</string>
+    <string name="nav_calendar">تقویم</string>
+    <string name="nav_log">ثبت</string>
+    <string name="nav_reports">گزارش‌ها</string>
+    <string name="nav_body">شناخت بدن</string>
+    <string name="notification_channel_reminders">یادآوری‌ها</string>
+    <string name="notification_private_text">یک یادآوری از ماه‌آوا داری</string>
+    <string name="notification_daily_text">امروز حالت چطور است؟ چند ثانیه وقت بگذار و ثبتش کن.</string>
+    <string name="notification_period_text">پریود بعدی‌ات ممکن است در چند روز آینده شروع شود.</string>
+    <string name="lock_title">باز کردن ماه‌آوا</string>
+    <string name="lock_subtitle">با اثر انگشت یا رمز گوشی قفل را باز کن</string>
+</resources>

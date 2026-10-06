@@ -1,0 +1,85 @@
+{
+  "type": "object",
+  "required": [
+    "contentVersion",
+    "items",
+    "medicalReviewStatus"
+  ],
+  "itemRequired": [
+    "id",
+    "category",
+    "titleFa",
+    "summaryFa",
+    "bodyFa",
+    "applicableContexts",
+    "excludedContexts",
+    "evidenceType",
+    "sources",
+    "sourceCheckedDate",
+    "contentVersion",
+    "medicalReviewStatus",
+    "displayRules"
+  ],
+  "optionalItemFields": [
+    "whatYouCanDoFa",
+    "whenToSeekFa",
+    "sourceIds",
+    "careTags",
+    "phase"
+  ],
+  "displayRulesFields": [
+    "showWhenPhase",
+    "showWhenSubWindow",
+    "hideWhenPregnancyMode",
+    "requiresFertilityEnabled",
+    "minCycleDay",
+    "maxCycleDay"
+  ],
+  "sourceRequired": [
+    "title",
+    "org",
+    "url"
+  ],
+  "forbiddenMedicalReviewPhrases": [
+    "بازبینی پزشکی انجام شده",
+    "تأیید شده توسط پزشک",
+    "approved by physician"
+  ],
+  "sourceOptional": [
+    "id",
+    "accessed",
+    "note"
+  ],
+  "phaseFields": [
+    "subWindow",
+    "cardTitleFa",
+    "todayFa",
+    "timingFa",
+    "hormoneNoteFa",
+    "hormones",
+    "ovaryFa",
+    "uterusFa",
+    "mucusFa",
+    "temperatureFa",
+    "experiencesFa",
+    "lifeLinks",
+    "careFa",
+    "seekCareFa",
+    "claims"
+  ],
+  "hormoneTrendValues": [
+    "low",
+    "rising",
+    "high",
+    "peak",
+    "falling",
+    "unknown",
+    "cycle"
+  ],
+  "lifeLinkEvidenceValues": [
+    "good",
+    "moderate",
+    "limited",
+    "mixed"
+  ]
+}

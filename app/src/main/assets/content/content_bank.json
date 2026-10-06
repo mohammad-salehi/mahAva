@@ -1,0 +1,4876 @@
+{
+ "contentVersion": "2.0.0",
+ "sourceCheckedDate": "2026-10-06",
+ "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده",
+ "notesFa": "نسخه ۲: توضیح ساده و گرم برای هر بخش از چرخه، روندهای آموزشی هورمون‌ها و منبع هر جمله. همهٔ منابع در تاریخ ۲۰۲۶-۱۰-۰۶ خوانده شده‌اند.",
+ "items": [
+  {
+   "id": "sw_menstruation_early",
+   "category": "cycle_hormones",
+   "titleFa": "روزهای اول پریود",
+   "summaryFa": "پوشش داخلی رحم در حال ریزش است. در این روزها خون‌ریزی و درد برای خیلی‌ها بیشتر است.",
+   "bodyFa": "روز اول پریود، روز اول چرخهٔ جدید است. الان پوشش داخلی رحم (آندومتر) جدا می‌شود و همراه خون بیرون می‌آید. برای بیشتر افراد خون‌ریزی در ۲ روز اول بیشتر است.\n\nاین بخش از چرخه از روی شروع پریودی که خودت ثبت کرده‌ای حساب می‌شود (روز ۱ و ۲ خون‌ریزی)، نه از روی تخمین.\n\nتخمدان: در هر تخمدان گروهی از فولیکول‌ها (کیسه‌های کوچک پر از مایع که تخمک در آن‌ها رشد می‌کند) شروع به رشد می‌کنند. در یک چرخهٔ ۲۸ روزه، این کار حدود روزهای ۱ تا ۴ انجام می‌شود.\n\nپوشش رحم: چون پروژسترون و استروژن پایین آمده‌اند، پوشش رحم دیگر نگه داشته نمی‌شود و می‌ریزد. ماده‌ای به نام پروستاگلاندین (ماده‌ای در پوشش رحم که باعث انقباض عضلهٔ رحم می‌شود) روز اول بیشتر است؛ برای همین گرفتگی و درد معمولاً در روزهای اول بیشتر است و بعد کم می‌شود.\n\nترشحات: خون، ترشحات را می‌پوشاند و معمولاً نمی‌شود حالت ترشحات را تشخیص داد.\n\nدمای بدن: دمای پایهٔ بدن (دمای بدن صبح، بعد از خواب و قبل از بلند شدن) در نیمهٔ اول چرخه معمولاً در سطح پایین‌تر است.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_PERIODS",
+    "NHS_FERT",
+    "OWH",
+    "ENDOTEXT",
+    "STATPEARLS",
+    "ACOG_PAIN",
+    "NHS_PAIN",
+    "NHS_HEAVY",
+    "ACOG_HEAVY",
+    "SLEEP2023",
+    "GI2014"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PERIODS",
+     "title": "Periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 05 Jan 2023"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "ACOG_PAIN",
+     "title": "Dysmenorrhea: Painful Periods – FAQ046",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Jan 2022"
+    },
+    {
+     "id": "NHS_PAIN",
+     "title": "Period pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/period-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Mar 2026"
+    },
+    {
+     "id": "NHS_HEAVY",
+     "title": "Heavy periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/heavy-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 19 Sep 2024"
+    },
+    {
+     "id": "ACOG_HEAVY",
+     "title": "Heavy Menstrual Bleeding – FAQ193",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/heavy-menstrual-bleeding",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed May 2026"
+    },
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    },
+    {
+     "id": "GI2014",
+     "title": "Gastrointestinal symptoms before and during menses in healthy women (Bernstein MT et al., 2014)",
+     "org": "BMC Women's Health",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3901893/",
+     "accessed": "2026-10-06",
+     "note": "BMC Womens Health 2014;14:14 – survey of 156 women"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "menstruation_early"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• کیسهٔ آب گرم (پیچیده در حوله) روی شکم، یا دوش و حمام گرم.\n• ماساژ آرام شکم و کمر، و ورزش سبک مثل پیاده‌روی، یوگا یا شنا.\n• در صورت نیاز، مسکن‌هایی مثل ایبوپروفن یا استامینوفن طبق دستور روی بسته (اگر منعی برایت ندارد).\n• خواب کافی قبل و در روزهای پریود کمک می‌کند با ناراحتی بهتر کنار بیایی.\n• پد یا تامپون را طبق دستور محصول عوض کن؛ تامپون را بیشتر از ۸ ساعت نگه ندار.\n• میزان خون‌ریزی و درد را ثبت کن تا الگوی خودت را بشناسی.",
+   "whenToSeekFa": "• اگر هر ۱ تا ۲ ساعت پد یا تامپون پر می‌شود، لختهٔ بزرگ‌تر از حدود ۲٫۵ سانتی‌متر دفع می‌کنی، یا خون‌ریزی بیشتر از ۷ روز طول می‌کشد، با پزشک صحبت کن.\n• اگر درد شدید است یا از همیشه بدتر شده و مسکن کمکی نکرده، زودتر (همان روز) کمک پزشکی بگیر.\n• اگر زیاد احساس خستگی یا تنگی نفس داری، به پزشک بگو؛ خون‌ریزی زیاد می‌تواند به کم‌خونی (کمبود آهن خون) برسد.\n• خون‌ریزی بین دو پریود یا بعد از رابطه را هم با پزشک در میان بگذار.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "menstruation_early",
+    "cardTitleFa": "روزهای اول پریود",
+    "todayFa": "روز اول پریود، روز اول چرخهٔ جدید است. الان پوشش داخلی رحم (آندومتر) جدا می‌شود و همراه خون بیرون می‌آید. برای بیشتر افراد خون‌ریزی در ۲ روز اول بیشتر است.",
+    "timingFa": "این بخش از چرخه از روی شروع پریودی که خودت ثبت کرده‌ای حساب می‌شود (روز ۱ و ۲ خون‌ریزی)، نه از روی تخمین.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "estrogen",
+      "trend": "low",
+      "noteFa": "استروژن (هورمون اصلی نیمهٔ اول چرخه) پایین است."
+     },
+     {
+      "hormone": "progesterone",
+      "trend": "low",
+      "noteFa": "پروژسترون (هورمون نیمهٔ دوم چرخه) پایین آمده؛ همین افت باعث شروع پریود شده است."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "rising",
+      "noteFa": "FSH (هورمون محرک فولیکول، از غدهٔ هیپوفیز در مغز) از چند روز آخر چرخهٔ قبل کمی بالا رفته تا گروهی از فولیکول‌ها شروع به رشد کنند."
+     },
+     {
+      "hormone": "lh",
+      "trend": "low",
+      "noteFa": "LH (هورمونی از هیپوفیز که بعداً دستور آزاد شدن تخمک را می‌دهد) پایین است."
+     }
+    ],
+    "ovaryFa": "در هر تخمدان گروهی از فولیکول‌ها (کیسه‌های کوچک پر از مایع که تخمک در آن‌ها رشد می‌کند) شروع به رشد می‌کنند. در یک چرخهٔ ۲۸ روزه، این کار حدود روزهای ۱ تا ۴ انجام می‌شود.",
+    "uterusFa": "چون پروژسترون و استروژن پایین آمده‌اند، پوشش رحم دیگر نگه داشته نمی‌شود و می‌ریزد. ماده‌ای به نام پروستاگلاندین (ماده‌ای در پوشش رحم که باعث انقباض عضلهٔ رحم می‌شود) روز اول بیشتر است؛ برای همین گرفتگی و درد معمولاً در روزهای اول بیشتر است و بعد کم می‌شود.",
+    "mucusFa": "خون، ترشحات را می‌پوشاند و معمولاً نمی‌شود حالت ترشحات را تشخیص داد.",
+    "temperatureFa": "دمای پایهٔ بدن (دمای بدن صبح، بعد از خواب و قبل از بلند شدن) در نیمهٔ اول چرخه معمولاً در سطح پایین‌تر است.",
+    "experiencesFa": [
+     "بعضی‌ها گرفتگی یا درد زیر شکم دارند که ممکن است به کمر و ران‌ها برسد. این درد معمولاً تا حدود ۳ روز طول می‌کشد.",
+     "بعضی‌ها احساس خستگی می‌کنند.",
+     "بعضی‌ها در روزهای پریود دل‌درد یا اسهال را گزارش کرده‌اند.",
+     "خواب بعضی‌ها، به‌خصوص اگر درد دارند، در این روزها بدتر می‌شود.",
+     "همهٔ این‌ها «ممکن» است؛ خیلی‌ها هیچ‌کدام را ندارند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "sleep",
+      "textFa": "در پژوهش‌ها، بدخوابی بیشتر در چند روز آخر قبل از پریود و چند روز اول خون‌ریزی گزارش شده، به‌خصوص در کسانی که درد پریود یا علائم پیش از پریود دارند. همه این را تجربه نمی‌کنند.",
+      "evidence": "moderate",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     },
+     {
+      "topic": "digestion",
+      "textFa": "در یک نظرسنجی از ۱۵۶ زن سالم، بیشتر از نیمی در روزهای پریود دل‌درد و حدود یک‌چهارم اسهال را گزارش کردند. این یک مطالعهٔ کوچک است.",
+      "evidence": "limited",
+      "sourceIds": [
+       "GI2014"
+      ]
+     },
+     {
+      "topic": "energy",
+      "textFa": "خستگی در روزهای پریود در همان نظرسنجی زیاد گزارش شد، اما از روی روز چرخه نمی‌شود گفت انرژی تو امروز چطور است. بهتر است انرژی خودت را ثبت کنی.",
+      "evidence": "limited",
+      "sourceIds": [
+       "GI2014"
+      ]
+     }
+    ],
+    "careFa": [
+     "کیسهٔ آب گرم (پیچیده در حوله) روی شکم، یا دوش و حمام گرم.",
+     "ماساژ آرام شکم و کمر، و ورزش سبک مثل پیاده‌روی، یوگا یا شنا.",
+     "در صورت نیاز، مسکن‌هایی مثل ایبوپروفن یا استامینوفن طبق دستور روی بسته (اگر منعی برایت ندارد).",
+     "خواب کافی قبل و در روزهای پریود کمک می‌کند با ناراحتی بهتر کنار بیایی.",
+     "پد یا تامپون را طبق دستور محصول عوض کن؛ تامپون را بیشتر از ۸ ساعت نگه ندار.",
+     "میزان خون‌ریزی و درد را ثبت کن تا الگوی خودت را بشناسی."
+    ],
+    "seekCareFa": [
+     "اگر هر ۱ تا ۲ ساعت پد یا تامپون پر می‌شود، لختهٔ بزرگ‌تر از حدود ۲٫۵ سانتی‌متر دفع می‌کنی، یا خون‌ریزی بیشتر از ۷ روز طول می‌کشد، با پزشک صحبت کن.",
+     "اگر درد شدید است یا از همیشه بدتر شده و مسکن کمکی نکرده، زودتر (همان روز) کمک پزشکی بگیر.",
+     "اگر زیاد احساس خستگی یا تنگی نفس داری، به پزشک بگو؛ خون‌ریزی زیاد می‌تواند به کم‌خونی (کمبود آهن خون) برسد.",
+     "خون‌ریزی بین دو پریود یا بعد از رابطه را هم با پزشک در میان بگذار."
+    ],
+    "claims": [
+     {
+      "textFa": "روز اول خون‌ریزی، روز اول چرخه است.",
+      "sourceIds": [
+       "NHS_FERT",
+       "OWH"
+      ]
+     },
+     {
+      "textFa": "خون‌ریزی معمولاً در ۲ روز اول بیشتر است.",
+      "sourceIds": [
+       "NHS_PERIODS"
+      ]
+     },
+     {
+      "textFa": "افت استروژن و پروژسترون باعث ریزش پوشش رحم می‌شود.",
+      "sourceIds": [
+       "OWH",
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "FSH در روزهای آخر چرخهٔ قبل بالا می‌رود و گروهی از فولیکول‌ها را به رشد وامی‌دارد (روزهای ۱ تا ۴).",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "پروستاگلاندین روز اول بیشتر است و درد بعد از چند روز اول کم می‌شود.",
+      "sourceIds": [
+       "ACOG_PAIN"
+      ]
+     },
+     {
+      "textFa": "درد پریود ممکن است به کمر و ران برسد و معمولاً تا ۳ روز طول می‌کشد.",
+      "sourceIds": [
+       "NHS_PAIN"
+      ]
+     },
+     {
+      "textFa": "دمای پایه در نیمهٔ اول چرخه پایین‌تر است.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "گرما، ماساژ، ورزش سبک و مسکن‌های رایج به درد پریود کمک می‌کنند.",
+      "sourceIds": [
+       "NHS_PAIN",
+       "ACOG_PAIN"
+      ]
+     },
+     {
+      "textFa": "تامپون بیشتر از ۸ ساعت نماند.",
+      "sourceIds": [
+       "OWH"
+      ]
+     },
+     {
+      "textFa": "علائم خون‌ریزی زیاد و زمان مراجعه.",
+      "sourceIds": [
+       "NHS_HEAVY",
+       "ACOG_HEAVY"
+      ]
+     },
+     {
+      "textFa": "بدخوابی بیشتر در روزهای آخر قبل از پریود و روزهای اول خون‌ریزی گزارش شده است.",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     },
+     {
+      "textFa": "دل‌درد و اسهال در روزهای پریود در نظرسنجی گزارش شده است.",
+      "sourceIds": [
+       "GI2014"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_menstruation_late",
+   "category": "cycle_hormones",
+   "titleFa": "روزهای آخر پریود",
+   "summaryFa": "خون‌ریزی معمولاً کمتر می‌شود و بدن ترمیم پوشش رحم را شروع کرده است.",
+   "bodyFa": "پریود هنوز ادامه دارد، اما برای بیشتر افراد خون‌ریزی کمتر شده است. در روزهای کم‌خون، رنگ خون ممکن است صورتی یا قهوه‌ای باشد. مدت پریود بین ۲ تا ۷ روز است و بیشتر وقت‌ها حدود ۵ روز.\n\nاین بخش از چرخه از روز سوم خون‌ریزیِ ثبت‌شده شروع می‌شود و تا وقتی پایان پریود را ثبت کنی ادامه دارد.\n\nتخمدان: حدود روزهای ۵ تا ۷ (در چرخهٔ ۲۸ روزه) از بین فولیکول‌های در حال رشد، معمولاً یکی انتخاب می‌شود و بقیه کم‌کم از رشد بازمی‌مانند.\n\nپوشش رحم: حدود ۲ روز بعد از شروع پریود، در حالی که هنوز ریزش ادامه دارد، استروژن ترمیم سطح پوشش رحم را شروع می‌کند.\n\nترشحات: تا وقتی خون‌ریزی هست، ترشحات قابل تشخیص نیست.\n\nدمای بدن: دمای پایه هنوز در سطح پایین‌ترِ نیمهٔ اول چرخه است.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_PERIODS",
+    "ENDOTEXT",
+    "ACOG_PAIN",
+    "MEDLINE_PMS",
+    "MAYO_PMS",
+    "NHS_HEAVY",
+    "SLEEP2023"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PERIODS",
+     "title": "Periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 05 Jan 2023"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "ACOG_PAIN",
+     "title": "Dysmenorrhea: Painful Periods – FAQ046",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Jan 2022"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "MAYO_PMS",
+     "title": "Premenstrual syndrome (PMS) – Symptoms & causes",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/diseases-conditions/premenstrual-syndrome/symptoms-causes/syc-20376780",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_HEAVY",
+     "title": "Heavy periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/heavy-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 19 Sep 2024"
+    },
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "menstruation_late"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• روز پایان خون‌ریزی را ثبت کن تا مدت پریودت دقیق محاسبه شود.\n• اگر هنوز درد داری، همان مراقبت‌های گرما، حرکت سبک و مسکن طبق دستور کمک می‌کنند.\n• اگر خون‌ریزی بیشتر از ۷ روز طول کشید، آن را ثبت کن و با پزشک صحبت کن.",
+   "whenToSeekFa": "• اگر هر ۱ تا ۲ ساعت پد یا تامپون پر می‌شود، لختهٔ بزرگ‌تر از حدود ۲٫۵ سانتی‌متر دفع می‌کنی، یا خون‌ریزی بیشتر از ۷ روز طول می‌کشد، با پزشک صحبت کن.\n• اگر درد شدید است یا از همیشه بدتر شده و مسکن کمکی نکرده، زودتر (همان روز) کمک پزشکی بگیر.\n• اگر زیاد احساس خستگی یا تنگی نفس داری، به پزشک بگو؛ خون‌ریزی زیاد می‌تواند به کم‌خونی (کمبود آهن خون) برسد.\n• خون‌ریزی بین دو پریود یا بعد از رابطه را هم با پزشک در میان بگذار.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "menstruation_late",
+    "cardTitleFa": "روزهای آخر پریود",
+    "todayFa": "پریود هنوز ادامه دارد، اما برای بیشتر افراد خون‌ریزی کمتر شده است. در روزهای کم‌خون، رنگ خون ممکن است صورتی یا قهوه‌ای باشد. مدت پریود بین ۲ تا ۷ روز است و بیشتر وقت‌ها حدود ۵ روز.",
+    "timingFa": "این بخش از چرخه از روز سوم خون‌ریزیِ ثبت‌شده شروع می‌شود و تا وقتی پایان پریود را ثبت کنی ادامه دارد.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "estrogen",
+      "trend": "rising",
+      "noteFa": "استروژنِ فولیکول‌های در حال رشد کم‌کم بالا می‌رود."
+     },
+     {
+      "hormone": "progesterone",
+      "trend": "low",
+      "noteFa": "پروژسترون پایین می‌ماند."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "falling",
+      "noteFa": "FSH بعد از شروع پریود کم‌کم پایین می‌آید."
+     },
+     {
+      "hormone": "lh",
+      "trend": "low",
+      "noteFa": "LH پایین و نسبتاً ثابت است."
+     }
+    ],
+    "ovaryFa": "حدود روزهای ۵ تا ۷ (در چرخهٔ ۲۸ روزه) از بین فولیکول‌های در حال رشد، معمولاً یکی انتخاب می‌شود و بقیه کم‌کم از رشد بازمی‌مانند.",
+    "uterusFa": "حدود ۲ روز بعد از شروع پریود، در حالی که هنوز ریزش ادامه دارد، استروژن ترمیم سطح پوشش رحم را شروع می‌کند.",
+    "mucusFa": "تا وقتی خون‌ریزی هست، ترشحات قابل تشخیص نیست.",
+    "temperatureFa": "دمای پایه هنوز در سطح پایین‌ترِ نیمهٔ اول چرخه است.",
+    "experiencesFa": [
+     "درد پریود معمولاً بعد از چند روز اول کمتر می‌شود.",
+     "علائم پیش از پریود (PMS) معمولاً چند روز بعد از شروع پریود برطرف می‌شوند.",
+     "بعضی‌ها هنوز کمی گرفتگی یا خستگی دارند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "sleep",
+      "textFa": "بدخوابیِ مربوط به پریود بیشتر در روزهای اول خون‌ریزی گزارش شده تا روزهای آخر.",
+      "evidence": "moderate",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     }
+    ],
+    "careFa": [
+     "روز پایان خون‌ریزی را ثبت کن تا مدت پریودت دقیق محاسبه شود.",
+     "اگر هنوز درد داری، همان مراقبت‌های گرما، حرکت سبک و مسکن طبق دستور کمک می‌کنند.",
+     "اگر خون‌ریزی بیشتر از ۷ روز طول کشید، آن را ثبت کن و با پزشک صحبت کن."
+    ],
+    "seekCareFa": [
+     "اگر هر ۱ تا ۲ ساعت پد یا تامپون پر می‌شود، لختهٔ بزرگ‌تر از حدود ۲٫۵ سانتی‌متر دفع می‌کنی، یا خون‌ریزی بیشتر از ۷ روز طول می‌کشد، با پزشک صحبت کن.",
+     "اگر درد شدید است یا از همیشه بدتر شده و مسکن کمکی نکرده، زودتر (همان روز) کمک پزشکی بگیر.",
+     "اگر زیاد احساس خستگی یا تنگی نفس داری، به پزشک بگو؛ خون‌ریزی زیاد می‌تواند به کم‌خونی (کمبود آهن خون) برسد.",
+     "خون‌ریزی بین دو پریود یا بعد از رابطه را هم با پزشک در میان بگذار."
+    ],
+    "claims": [
+     {
+      "textFa": "پریود ۲ تا ۷ روز طول می‌کشد و معمولاً حدود ۵ روز؛ در روزهای کم‌خون رنگ ممکن است صورتی یا قهوه‌ای باشد.",
+      "sourceIds": [
+       "NHS_PERIODS"
+      ]
+     },
+     {
+      "textFa": "FSH بعد از شروع پریود پایین می‌آید؛ بین روزهای ۵ تا ۷ یک فولیکول انتخاب می‌شود.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "حدود ۲ روز بعد از شروع پریود، استروژن ترمیم سطح پوشش رحم را شروع می‌کند.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "درد بعد از چند روز اول کم می‌شود.",
+      "sourceIds": [
+       "ACOG_PAIN"
+      ]
+     },
+     {
+      "textFa": "علائم PMS معمولاً ۱ تا ۲ روز (و برای بیشتر افراد تا ۴ روز) بعد از شروع پریود برطرف می‌شود.",
+      "sourceIds": [
+       "MEDLINE_PMS",
+       "MAYO_PMS"
+      ]
+     },
+     {
+      "textFa": "خون‌ریزی بیشتر از ۷ روز از نشانه‌های خون‌ریزی زیاد است.",
+      "sourceIds": [
+       "NHS_HEAVY"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_follicular_early",
+   "category": "cycle_hormones",
+   "titleFa": "اوایل نیمهٔ اول چرخه",
+   "summaryFa": "پریود تمام شده یا رو به پایان است. یک فولیکول در تخمدان در حال رشد است و پوشش رحم دوباره ضخیم می‌شود.",
+   "bodyFa": "احتمالاً در «فاز فولیکولی» هستی (نیمهٔ اول چرخه، از روز اول پریود تا تخمک‌گذاری). در این روزها بدن برای آزاد کردن تخمک بعدی آماده می‌شود.\n\nطول این نیمه از چرخه بین افراد خیلی فرق دارد و بیشترِ تفاوت طول چرخه‌ها از همین نیمه می‌آید. برای همین ما آن را از روی طول چرخهٔ خودت تقسیم می‌کنیم، نه با یک روز ثابت.\n\nتخمدان: معمولاً تا حدود روز ۸ (در چرخهٔ ۲۸ روزه) یک فولیکول «غالب» می‌شود؛ یعنی رشد خودش را ادامه می‌دهد و رشد بقیه را متوقف می‌کند. بیشتر استروژن این روزها را همین فولیکول می‌سازد.\n\nپوشش رحم: استروژن باعث می‌شود پوشش رحم دوباره رشد کند و ضخیم شود.\n\nترشحات: بلافاصله بعد از پریود، ترشحات دهانهٔ رحم معمولاً کم و غلیظ یا چسبناک است و بعد کم‌کم کرمی می‌شود.\n\nدمای بدن: دمای پایه در سطح پایین‌ترِ نیمهٔ اول چرخه است.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "STATPEARLS",
+    "CC_FOLL",
+    "ENDOTEXT",
+    "BULL2019",
+    "CC_MUCUS",
+    "NHS_DISCHARGE"
+   ],
+   "sources": [
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "CC_FOLL",
+     "title": "Follicular Phase",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/23953-follicular-phase",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "BULL2019",
+     "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles (Bull JR et al., 2019)",
+     "org": "npj Digital Medicine",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6710244/",
+     "accessed": "2026-10-06",
+     "note": "npj Digit Med 2019;2:83"
+    },
+    {
+     "id": "CC_MUCUS",
+     "title": "Cervical Mucus",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21957-cervical-mucus",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_DISCHARGE",
+     "title": "Vaginal discharge",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/vaginal-discharge/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 15 Feb 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "follicular_early"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر روز پایان پریود را ثبت نکرده‌ای، الان ثبت کن.\n• اگر برای شناخت بدن یا بارداری ترشحات را دنبال می‌کنی، حالت آن را در ثبت روزانه بنویس.\n• این تقویم روش جلوگیری از بارداری نیست.",
+   "whenToSeekFa": "• خون‌ریزی بین دو پریود یا بعد از رابطه را با پزشک در میان بگذار.\n• اگر رنگ، بو یا حالت ترشحات عوض شد، خارش یا سوزش داری، یا هنگام ادرار درد داری، بررسی لازم است.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "follicular_early",
+    "cardTitleFa": "بعد از پریود؛ رشد فولیکول",
+    "todayFa": "احتمالاً در «فاز فولیکولی» هستی (نیمهٔ اول چرخه، از روز اول پریود تا تخمک‌گذاری). در این روزها بدن برای آزاد کردن تخمک بعدی آماده می‌شود.",
+    "timingFa": "طول این نیمه از چرخه بین افراد خیلی فرق دارد و بیشترِ تفاوت طول چرخه‌ها از همین نیمه می‌آید. برای همین ما آن را از روی طول چرخهٔ خودت تقسیم می‌کنیم، نه با یک روز ثابت.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "estrogen",
+      "trend": "rising",
+      "noteFa": "استروژن همراه با بزرگ شدن فولیکول اصلی بالا می‌رود."
+     },
+     {
+      "hormone": "progesterone",
+      "trend": "low",
+      "noteFa": "پروژسترون پایین است."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "falling",
+      "noteFa": "FSH کم‌کم پایین می‌آید."
+     },
+     {
+      "hormone": "lh",
+      "trend": "low",
+      "noteFa": "LH پایین است و از میانهٔ این نیمه کمی بالا می‌رود."
+     }
+    ],
+    "ovaryFa": "معمولاً تا حدود روز ۸ (در چرخهٔ ۲۸ روزه) یک فولیکول «غالب» می‌شود؛ یعنی رشد خودش را ادامه می‌دهد و رشد بقیه را متوقف می‌کند. بیشتر استروژن این روزها را همین فولیکول می‌سازد.",
+    "uterusFa": "استروژن باعث می‌شود پوشش رحم دوباره رشد کند و ضخیم شود.",
+    "mucusFa": "بلافاصله بعد از پریود، ترشحات دهانهٔ رحم معمولاً کم و غلیظ یا چسبناک است و بعد کم‌کم کرمی می‌شود.",
+    "temperatureFa": "دمای پایه در سطح پایین‌ترِ نیمهٔ اول چرخه است.",
+    "experiencesFa": [
+     "علائم پریود برای خیلی‌ها تمام شده است.",
+     "بعضی‌ها تغییر خاصی حس نمی‌کنند.",
+     "ترشحات ممکن است کم یا چسبناک باشد."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "energy",
+      "textFa": "شواهد محکمی نیست که این روزها برای همه «انرژی بیشتر» بیاورد. اگر می‌خواهی بدانی برای خودت چطور است، انرژی‌ات را چند چرخه ثبت کن.",
+      "evidence": "limited",
+      "sourceIds": [
+       "BULL2019"
+      ]
+     }
+    ],
+    "careFa": [
+     "اگر روز پایان پریود را ثبت نکرده‌ای، الان ثبت کن.",
+     "اگر برای شناخت بدن یا بارداری ترشحات را دنبال می‌کنی، حالت آن را در ثبت روزانه بنویس.",
+     "این تقویم روش جلوگیری از بارداری نیست."
+    ],
+    "seekCareFa": [
+     "خون‌ریزی بین دو پریود یا بعد از رابطه را با پزشک در میان بگذار.",
+     "اگر رنگ، بو یا حالت ترشحات عوض شد، خارش یا سوزش داری، یا هنگام ادرار درد داری، بررسی لازم است."
+    ],
+    "claims": [
+     {
+      "textFa": "فاز فولیکولی از روز اول پریود تا تخمک‌گذاری است.",
+      "sourceIds": [
+       "STATPEARLS",
+       "CC_FOLL"
+      ]
+     },
+     {
+      "textFa": "بیشتر تفاوت طول چرخه از تفاوت طول فاز فولیکولی است (میانگین ۱۶٫۹ روز، با دامنهٔ ۱۰ تا ۳۰).",
+      "sourceIds": [
+       "BULL2019",
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "تا روز ۸ یک فولیکول غالب می‌شود و بیشتر استروژن را می‌سازد.",
+      "sourceIds": [
+       "ENDOTEXT",
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "استروژن پوشش رحم را ضخیم می‌کند.",
+      "sourceIds": [
+       "CC_FOLL",
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "LH از میانهٔ فاز فولیکولی کم‌کم بالا می‌رود و FSH پایین می‌آید.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "بلافاصله بعد از پریود ترشحات کم و غلیظ است.",
+      "sourceIds": [
+       "ENDOTEXT",
+       "CC_MUCUS"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_follicular_late",
+   "category": "cycle_hormones",
+   "titleFa": "اواخر نیمهٔ اول چرخه",
+   "summaryFa": "استروژن بالا می‌رود و ترشحات معمولاً بیشتر و مرطوب‌تر می‌شود. تخمک‌گذاری ممکن است در روزهای آینده باشد.",
+   "bodyFa": "احتمالاً در اواخر فاز فولیکولی هستی. فولیکول اصلی بزرگ‌تر شده و استروژن بیشتری می‌سازد. اگر تخمک‌گذاری انجام شود، احتمالاً در روزهای آینده است، اما زمان دقیقش از روی تقویم معلوم نیست.\n\nما تخمک‌گذاری را از روی تاریخ تخمینی پریود بعدی‌ات به عقب حساب می‌کنیم (NHS: معمولاً ۱۰ تا ۱۶ روز قبل از پریود بعدی)، نه با روز ثابت ۱۴.\n\nتخمدان: فولیکول اصلی روزی حدود ۲ میلی‌متر بزرگ می‌شود تا به حدود ۱۸ تا ۲۹ میلی‌متر برسد. بقیهٔ فولیکول‌ها از رشد بازمانده‌اند.\n\nپوشش رحم: پوشش رحم در پایان این نیمه به بیشترین ضخامت خود (معمولاً حدود ۸ تا ۱۲ میلی‌متر) نزدیک می‌شود.\n\nترشحات: با بالا رفتن استروژن، ترشحات دهانهٔ رحم بیشتر، شفاف‌تر و کش‌دارتر می‌شود. چند روز قبل از تخمک‌گذاری، ترشحات لغزنده‌تر و شفاف‌تر می‌شود.\n\nدمای بدن: دمای پایه هنوز پایین است؛ بالا رفتن دما فقط بعد از تخمک‌گذاری دیده می‌شود.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_FERT",
+    "STATPEARLS",
+    "ENDOTEXT",
+    "OWH",
+    "CC_MUCUS",
+    "NHS_IRREG",
+    "BULL2019",
+    "NHS_DISCHARGE"
+   ],
+   "sources": [
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "CC_MUCUS",
+     "title": "Cervical Mucus",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21957-cervical-mucus",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_IRREG",
+     "title": "Irregular periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/irregular-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 26 Jun 2026"
+    },
+    {
+     "id": "BULL2019",
+     "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles (Bull JR et al., 2019)",
+     "org": "npj Digital Medicine",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6710244/",
+     "accessed": "2026-10-06",
+     "note": "npj Digit Med 2019;2:83"
+    },
+    {
+     "id": "NHS_DISCHARGE",
+     "title": "Vaginal discharge",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/vaginal-discharge/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 15 Feb 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "follicular_late"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر قصد بارداری داری: NHS می‌گوید در چرخه‌های نامنظم، رابطه هر ۲ تا ۳ روز در طول چرخه کمک می‌کند؛ چون زمان تخمک‌گذاری قابل پیش‌بینی دقیق نیست.\n• اگر نمی‌خواهی باردار شوی: این تخمین روش جلوگیری نیست؛ از یک روش مطمئن استفاده کن.\n• ثبت حالت ترشحات در چند چرخه کمک می‌کند الگوی خودت را بشناسی.",
+   "whenToSeekFa": "• اگر رنگ، بو یا حالت ترشحات عوض شد، خارش یا سوزش داری، یا هنگام ادرار درد داری، بررسی لازم است.\n• خون‌ریزی بین دو پریود را با پزشک در میان بگذار.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "follicular_late",
+    "cardTitleFa": "نزدیک شدن به تخمک‌گذاری",
+    "todayFa": "احتمالاً در اواخر فاز فولیکولی هستی. فولیکول اصلی بزرگ‌تر شده و استروژن بیشتری می‌سازد. اگر تخمک‌گذاری انجام شود، احتمالاً در روزهای آینده است، اما زمان دقیقش از روی تقویم معلوم نیست.",
+    "timingFa": "ما تخمک‌گذاری را از روی تاریخ تخمینی پریود بعدی‌ات به عقب حساب می‌کنیم (NHS: معمولاً ۱۰ تا ۱۶ روز قبل از پریود بعدی)، نه با روز ثابت ۱۴.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "estrogen",
+      "trend": "rising",
+      "noteFa": "استروژن سریع بالا می‌رود و به بیشترین مقدارش نزدیک می‌شود."
+     },
+     {
+      "hormone": "progesterone",
+      "trend": "low",
+      "noteFa": "پروژسترون هنوز پایین است."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "low",
+      "noteFa": "FSH پایین‌تر از اول چرخه است."
+     },
+     {
+      "hormone": "lh",
+      "trend": "rising",
+      "noteFa": "LH کم‌کم بالا می‌رود؛ جهش اصلی آن هنوز نیامده."
+     }
+    ],
+    "ovaryFa": "فولیکول اصلی روزی حدود ۲ میلی‌متر بزرگ می‌شود تا به حدود ۱۸ تا ۲۹ میلی‌متر برسد. بقیهٔ فولیکول‌ها از رشد بازمانده‌اند.",
+    "uterusFa": "پوشش رحم در پایان این نیمه به بیشترین ضخامت خود (معمولاً حدود ۸ تا ۱۲ میلی‌متر) نزدیک می‌شود.",
+    "mucusFa": "با بالا رفتن استروژن، ترشحات دهانهٔ رحم بیشتر، شفاف‌تر و کش‌دارتر می‌شود. چند روز قبل از تخمک‌گذاری، ترشحات لغزنده‌تر و شفاف‌تر می‌شود.",
+    "temperatureFa": "دمای پایه هنوز پایین است؛ بالا رفتن دما فقط بعد از تخمک‌گذاری دیده می‌شود.",
+    "experiencesFa": [
+     "بعضی‌ها ترشحات مرطوب‌تر یا بیشتری می‌بینند.",
+     "بعضی‌ها هیچ تغییری حس نمی‌کنند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "energy",
+      "textFa": "ادعای رایج «انرژی بیشتر در این روزها» برای همه ثابت نشده است. ثبت خودت بهترین راهنماست.",
+      "evidence": "limited",
+      "sourceIds": [
+       "BULL2019"
+      ]
+     }
+    ],
+    "careFa": [
+     "اگر قصد بارداری داری: NHS می‌گوید در چرخه‌های نامنظم، رابطه هر ۲ تا ۳ روز در طول چرخه کمک می‌کند؛ چون زمان تخمک‌گذاری قابل پیش‌بینی دقیق نیست.",
+     "اگر نمی‌خواهی باردار شوی: این تخمین روش جلوگیری نیست؛ از یک روش مطمئن استفاده کن.",
+     "ثبت حالت ترشحات در چند چرخه کمک می‌کند الگوی خودت را بشناسی."
+    ],
+    "seekCareFa": [
+     "اگر رنگ، بو یا حالت ترشحات عوض شد، خارش یا سوزش داری، یا هنگام ادرار درد داری، بررسی لازم است.",
+     "خون‌ریزی بین دو پریود را با پزشک در میان بگذار."
+    ],
+    "claims": [
+     {
+      "textFa": "تخمک‌گذاری معمولاً ۱۰ تا ۱۶ روز قبل از پریود بعدی است؛ روز ۱۴ فقط برای چرخهٔ ۲۸ روزهٔ منظم صدق می‌کند.",
+      "sourceIds": [
+       "NHS_FERT"
+      ]
+     },
+     {
+      "textFa": "فولیکول غالب روزی حدود ۲ میلی‌متر رشد می‌کند تا ۱۸ تا ۲۹ میلی‌متر.",
+      "sourceIds": [
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "پوشش رحم در پایان این مرحله حدود ۸ تا ۱۲ میلی‌متر است.",
+      "sourceIds": [
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "در اواخر فاز فولیکولی ترشحات شفاف، زیاد و کشسان می‌شود (تا ۳۰ برابر).",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "چند روز قبل از تخمک‌گذاری ترشحات لغزنده‌تر و شفاف‌تر می‌شود.",
+      "sourceIds": [
+       "OWH",
+       "CC_MUCUS"
+      ]
+     },
+     {
+      "textFa": "در چرخهٔ نامنظم، رابطه هر ۲ تا ۳ روز در طول چرخه برای بارداری کمک می‌کند.",
+      "sourceIds": [
+       "NHS_IRREG"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_peri_ovulatory",
+   "category": "cycle_hormones",
+   "titleFa": "حوالی تخمک‌گذاری (تخمینی)",
+   "summaryFa": "شاید تخمک‌گذاری در همین روزها باشد؛ اما از روی تقویم نمی‌شود آن را تأیید کرد.",
+   "bodyFa": "امروز در بازه‌ای است که تخمک‌گذاری (آزاد شدن تخمک از تخمدان) ممکن است در آن رخ دهد. این فقط یک تخمین است؛ تقویم نمی‌تواند تخمک‌گذاری را تأیید کند.\n\nزمان تخمک‌گذاری حتی در چرخه‌های منظم هم از چرخه‌ای به چرخهٔ دیگر جابه‌جا می‌شود. در یک مطالعه، در چرخه‌های ۲۸ روزه فاصلهٔ تخمک‌گذاری تا پریود بعدی بین ۷ تا ۱۹ روز بود.\n\nتخمدان: جهش LH باعث می‌شود فولیکول بالغ پاره شود و تخمک آزاد شود. تخمک بعد از آزاد شدن فقط حدود ۱۲ تا ۲۴ ساعت زنده است. اسپرم ممکن است چند روز (تا ۵ روز و گاهی تا ۷ روز) در بدن زنده بماند.\n\nپوشش رحم: پوشش رحم ضخیم و آماده است.\n\nترشحات: ترشحات ممکن است شفاف، لغزنده و کش‌دار شود؛ شبیه سفیدهٔ تخم‌مرغ خام. این ترشحات به حرکت اسپرم کمک می‌کند.\n\nدمای بدن: دمای پایه بعد از تخمک‌گذاری کمی بالا می‌رود (معمولاً حدود ۰٫۲ تا ۰٫۵ درجهٔ سانتی‌گراد). یعنی دما فقط نشان می‌دهد تخمک‌گذاری «گذشته»، نه این‌که در راه است.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_FERT",
+    "WILCOX2000",
+    "WILCOX1995",
+    "ENDOTEXT",
+    "STATPEARLS",
+    "OWH",
+    "CC_MUCUS",
+    "ACOG_FAB",
+    "CC_OVUL",
+    "NHS_OVPAIN",
+    "MEDLINE_LH",
+    "NHS_NFP",
+    "NHS_ECTOPIC",
+    "CC_LUTEAL"
+   ],
+   "sources": [
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "WILCOX2000",
+     "title": "The timing of the 'fertile window' in the menstrual cycle (Wilcox AJ, Dunson D, Baird DD, 2000)",
+     "org": "BMJ",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC27529/",
+     "accessed": "2026-10-06",
+     "note": "BMJ 2000;321:1259"
+    },
+    {
+     "id": "WILCOX1995",
+     "title": "Timing of sexual intercourse in relation to ovulation (Wilcox AJ, Weinberg CR, Baird DD, 1995)",
+     "org": "New England Journal of Medicine",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/7477165/",
+     "accessed": "2026-10-06",
+     "note": "NEJM 1995;333:1517-21 – abstract read"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "CC_MUCUS",
+     "title": "Cervical Mucus",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21957-cervical-mucus",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ACOG_FAB",
+     "title": "Fertility Awareness-Based Methods of Family Planning",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "CC_OVUL",
+     "title": "Ovulation",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/23439-ovulation",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_OVPAIN",
+     "title": "Ovulation pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/ovulation-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 17 Jul 2026"
+    },
+    {
+     "id": "MEDLINE_LH",
+     "title": "Ovulation home test",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/007062.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_NFP",
+     "title": "Natural family planning",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/methods-of-contraception/natural-family-planning/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2024"
+    },
+    {
+     "id": "NHS_ECTOPIC",
+     "title": "Ectopic pregnancy – Symptoms",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/ectopic-pregnancy/symptoms/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 23 Aug 2022"
+    },
+    {
+     "id": "CC_LUTEAL",
+     "title": "Luteal Phase",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/24417-luteal-phase",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "peri_ovulatory"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• برای درد تخمک‌گذاری خفیف، حمام گرم یا مسکن رایج طبق دستور کافی است.\n• اگر قصد بارداری داری، ثبت ترشحات و تست LH می‌تواند کمک کند؛ اما هیچ‌کدام تضمین نمی‌دهند.\n• اگر نمی‌خواهی باردار شوی، این تخمین «روز امن» یا روش جلوگیری نیست. روش‌های طبیعی هم فقط با آموزش تخصصی و ثبت دقیق روزانه مؤثرترند.\n• کاندوم تنها راه محافظت در برابر عفونت‌های آمیزشی است.",
+   "whenToSeekFa": "• اگر درد شکم شدید است و مسکن کمکی نکرده، یا درد مدام برمی‌گردد، زودتر کمک پزشکی بگیر.\n• اگر ممکن است باردار باشی و درد یک‌طرفهٔ شکم داری، زودتر بررسی شو.\n• درد ناگهانی و شدید شکم همراه با سرگیجه یا غش، اورژانسی است.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "peri_ovulatory",
+    "cardTitleFa": "حوالی تخمک‌گذاری (تخمینی)",
+    "todayFa": "امروز در بازه‌ای است که تخمک‌گذاری (آزاد شدن تخمک از تخمدان) ممکن است در آن رخ دهد. این فقط یک تخمین است؛ تقویم نمی‌تواند تخمک‌گذاری را تأیید کند.",
+    "timingFa": "زمان تخمک‌گذاری حتی در چرخه‌های منظم هم از چرخه‌ای به چرخهٔ دیگر جابه‌جا می‌شود. در یک مطالعه، در چرخه‌های ۲۸ روزه فاصلهٔ تخمک‌گذاری تا پریود بعدی بین ۷ تا ۱۹ روز بود.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "estrogen",
+      "trend": "peak",
+      "noteFa": "استروژن به بیشترین مقدار می‌رسد و درست قبل از اوج LH پایین می‌آید."
+     },
+     {
+      "hormone": "lh",
+      "trend": "peak",
+      "noteFa": "جهش LH: مقدار آن چند برابر می‌شود. شروع این جهش حدود ۳۴ تا ۳۶ ساعت قبل از تخمک‌گذاری است."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "rising",
+      "noteFa": "FSH هم همراه LH کمی بالا می‌رود."
+     },
+     {
+      "hormone": "progesterone",
+      "trend": "rising",
+      "noteFa": "پروژسترون کم‌کم شروع به بالا رفتن می‌کند."
+     }
+    ],
+    "ovaryFa": "جهش LH باعث می‌شود فولیکول بالغ پاره شود و تخمک آزاد شود. تخمک بعد از آزاد شدن فقط حدود ۱۲ تا ۲۴ ساعت زنده است. اسپرم ممکن است چند روز (تا ۵ روز و گاهی تا ۷ روز) در بدن زنده بماند.",
+    "uterusFa": "پوشش رحم ضخیم و آماده است.",
+    "mucusFa": "ترشحات ممکن است شفاف، لغزنده و کش‌دار شود؛ شبیه سفیدهٔ تخم‌مرغ خام. این ترشحات به حرکت اسپرم کمک می‌کند.",
+    "temperatureFa": "دمای پایه بعد از تخمک‌گذاری کمی بالا می‌رود (معمولاً حدود ۰٫۲ تا ۰٫۵ درجهٔ سانتی‌گراد). یعنی دما فقط نشان می‌دهد تخمک‌گذاری «گذشته»، نه این‌که در راه است.",
+    "experiencesFa": [
+     "بعضی‌ها درد خفیف یا تیر کشیدن یک‌طرفه در پایین شکم دارند (درد تخمک‌گذاری). این درد از چند دقیقه تا ۱ یا ۲ روز طول می‌کشد.",
+     "بعضی‌ها کمی لکه‌بینی یا ترشح بیشتر می‌بینند.",
+     "بعضی‌ها حساسیت سینه یا نفخ حس می‌کنند.",
+     "خیلی‌ها هیچ نشانه‌ای ندارند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "fertility",
+      "textFa": "احتمال بارداری در روزهای نزدیک تخمک‌گذاری بیشتر است: در یک مطالعهٔ مهم، تقریباً همهٔ بارداری‌ها به رابطه در یک دورهٔ ۶ روزه که به روز تخمک‌گذاری ختم می‌شد مربوط بود. اما روز دقیق آن را تقویم نمی‌داند.",
+      "evidence": "good",
+      "sourceIds": [
+       "WILCOX1995",
+       "WILCOX2000"
+      ]
+     },
+     {
+      "topic": "tests",
+      "textFa": "تست تخمک‌گذاری خانگی (تست LH ادراری) اگر مثبت شود یعنی تخمک‌گذاری «احتمالاً» در ۲۴ تا ۳۶ ساعت آینده است؛ مثبت شدن آن تخمک‌گذاری را قطعی نمی‌کند.",
+      "evidence": "good",
+      "sourceIds": [
+       "MEDLINE_LH"
+      ]
+     }
+    ],
+    "careFa": [
+     "برای درد تخمک‌گذاری خفیف، حمام گرم یا مسکن رایج طبق دستور کافی است.",
+     "اگر قصد بارداری داری، ثبت ترشحات و تست LH می‌تواند کمک کند؛ اما هیچ‌کدام تضمین نمی‌دهند.",
+     "اگر نمی‌خواهی باردار شوی، این تخمین «روز امن» یا روش جلوگیری نیست. روش‌های طبیعی هم فقط با آموزش تخصصی و ثبت دقیق روزانه مؤثرترند.",
+     "کاندوم تنها راه محافظت در برابر عفونت‌های آمیزشی است."
+    ],
+    "seekCareFa": [
+     "اگر درد شکم شدید است و مسکن کمکی نکرده، یا درد مدام برمی‌گردد، زودتر کمک پزشکی بگیر.",
+     "اگر ممکن است باردار باشی و درد یک‌طرفهٔ شکم داری، زودتر بررسی شو.",
+     "درد ناگهانی و شدید شکم همراه با سرگیجه یا غش، اورژانسی است."
+    ],
+    "claims": [
+     {
+      "textFa": "تخمک‌گذاری معمولاً ۱۰ تا ۱۶ روز قبل از پریود بعدی است.",
+      "sourceIds": [
+       "NHS_FERT"
+      ]
+     },
+     {
+      "textFa": "در چرخه‌های ۲۸ روزه، فاصلهٔ تخمک‌گذاری تا پریود بعدی ۷ تا ۱۹ روز دیده شد؛ زمان پنجرهٔ باروری غیرقابل پیش‌بینی است.",
+      "sourceIds": [
+       "WILCOX2000"
+      ]
+     },
+     {
+      "textFa": "شروع جهش LH حدود ۳۴ تا ۳۶ ساعت قبل از تخمک‌گذاری و اوج آن ۱۰ تا ۱۲ ساعت قبل است؛ استروژن درست قبل از اوج LH افت می‌کند.",
+      "sourceIds": [
+       "ENDOTEXT",
+       "OWH"
+      ]
+     },
+     {
+      "textFa": "LH در جهش حدود ۱۰ برابر می‌شود.",
+      "sourceIds": [
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "تخمک ۱۲ تا ۲۴ ساعت زنده است؛ اسپرم ۳ تا ۵ روز (NHS: تا ۷ روز).",
+      "sourceIds": [
+       "OWH",
+       "NHS_FERT"
+      ]
+     },
+     {
+      "textFa": "بارداری تقریباً فقط با رابطه در دورهٔ ۶ روزهٔ منتهی به تخمک‌گذاری رخ داد.",
+      "sourceIds": [
+       "WILCOX1995"
+      ]
+     },
+     {
+      "textFa": "ترشحات حوالی تخمک‌گذاری نازک و کش‌دار شبیه سفیدهٔ تخم‌مرغ است.",
+      "sourceIds": [
+       "NHS_FERT",
+       "CC_MUCUS"
+      ]
+     },
+     {
+      "textFa": "دمای پایه بعد از تخمک‌گذاری ۰٫۵ تا ۱ درجهٔ فارنهایت بالا می‌رود و فقط تخمک‌گذاریِ گذشته را نشان می‌دهد.",
+      "sourceIds": [
+       "ACOG_FAB",
+       "CC_LUTEAL"
+      ]
+     },
+     {
+      "textFa": "درد تخمک‌گذاری یک‌طرفه است و از چند دقیقه تا ۱–۲ روز طول می‌کشد؛ ممکن است کمی خون‌ریزی یا ترشح باشد.",
+      "sourceIds": [
+       "NHS_OVPAIN"
+      ]
+     },
+     {
+      "textFa": "حساسیت سینه و نفخ از نشانه‌های احتمالی تخمک‌گذاری‌اند و همه آن را ندارند.",
+      "sourceIds": [
+       "CC_OVUL"
+      ]
+     },
+     {
+      "textFa": "تست LH مثبت یعنی تخمک‌گذاری احتمالاً در ۲۴ تا ۳۶ ساعت آینده؛ برای همه صدق نمی‌کند.",
+      "sourceIds": [
+       "MEDLINE_LH"
+      ]
+     },
+     {
+      "textFa": "روش‌های آگاهی از باروری بدون آموزش و پیروی دقیق اثربخشی کمتری دارند؛ کاندوم برای عفونت‌های آمیزشی لازم است.",
+      "sourceIds": [
+       "NHS_NFP"
+      ]
+     },
+     {
+      "textFa": "درد شدید شکم با سرگیجه/غش در بارداری احتمالی اورژانسی است.",
+      "sourceIds": [
+       "NHS_ECTOPIC",
+       "NHS_OVPAIN"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_luteal_early",
+   "category": "cycle_hormones",
+   "titleFa": "اوایل نیمهٔ دوم چرخه",
+   "summaryFa": "اگر تخمک‌گذاری انجام شده باشد، پروژسترون در حال بالا رفتن است و ترشحات غلیظ‌تر می‌شود.",
+   "bodyFa": "احتمالاً در اوایل «فاز لوتئال» هستی (نیمهٔ دوم چرخه، بعد از تخمک‌گذاری تا پریود بعدی). بعد از تخمک‌گذاری، بدن رحم را برای بارداری احتمالی آماده می‌کند.\n\nاین نیمه از روی تاریخ تخمینی پریود بعدی‌ات به عقب حساب می‌شود. طول آن بین افراد فرق دارد: در داده‌های واقعی میانگین حدود ۱۲ روز بود (معمولاً بین ۷ تا ۱۷ روز).\n\nتخمدان: فولیکولی که تخمک را آزاد کرده تبدیل به «جسم زرد» می‌شود (ساختاری موقت در تخمدان که پروژسترون و مقداری استروژن می‌سازد).\n\nپوشش رحم: پروژسترون پوشش رحم را از حالت «رشد» به حالت «آماده برای لانه‌گزینی» می‌برد؛ غده‌ها پیچیده‌تر می‌شوند و ذخیرهٔ انرژی (گلیکوژن) بیشتر می‌شود.\n\nترشحات: ترشحات کمتر، غلیظ‌تر و خمیری می‌شود.\n\nدمای بدن: دمای پایه کمی بالاتر می‌رود و معمولاً تا آخر چرخه بالاتر می‌ماند. اگر چند روز پشت سر هم دما بالاتر باشد، می‌توان حدس زد تخمک‌گذاری گذشته است.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "CC_LUTEAL",
+    "ENDOTEXT",
+    "BULL2019",
+    "STATPEARLS",
+    "CC_BBT",
+    "ACOG_FAB",
+    "SLEEP2023",
+    "NHS_DISCHARGE"
+   ],
+   "sources": [
+    {
+     "id": "CC_LUTEAL",
+     "title": "Luteal Phase",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/24417-luteal-phase",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "BULL2019",
+     "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles (Bull JR et al., 2019)",
+     "org": "npj Digital Medicine",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6710244/",
+     "accessed": "2026-10-06",
+     "note": "npj Digit Med 2019;2:83"
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "CC_BBT",
+     "title": "Basal Body Temperature",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21065-basal-body-temperature",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ACOG_FAB",
+     "title": "Fertility Awareness-Based Methods of Family Planning",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    },
+    {
+     "id": "NHS_DISCHARGE",
+     "title": "Vaginal discharge",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/vaginal-discharge/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 15 Feb 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "luteal_early"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر دمای پایه را ثبت می‌کنی: هر روز صبح، همان ساعت، قبل از بلند شدن و با دماسنج مخصوص دمای پایه اندازه بگیر.\n• الکل، تب، کم‌خوابی، استرس، بعضی داروها، سفر و شیردهی می‌توانند دمای پایه را تغییر دهند؛ این‌ها را هم یادداشت کن.\n• ثبت روزانهٔ حالت ترشحات و علائم به شناخت الگوی خودت کمک می‌کند.",
+   "whenToSeekFa": "• اگر رنگ، بو یا حالت ترشحات عوض شد، خارش یا سوزش داری، یا هنگام ادرار درد داری، بررسی لازم است.\n• اگر ممکن است باردار باشی و درد یک‌طرفهٔ شکم یا خون‌ریزی غیرعادی داری، زودتر بررسی شو.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "luteal_early",
+    "cardTitleFa": "بعد از تخمک‌گذاری (تخمینی)",
+    "todayFa": "احتمالاً در اوایل «فاز لوتئال» هستی (نیمهٔ دوم چرخه، بعد از تخمک‌گذاری تا پریود بعدی). بعد از تخمک‌گذاری، بدن رحم را برای بارداری احتمالی آماده می‌کند.",
+    "timingFa": "این نیمه از روی تاریخ تخمینی پریود بعدی‌ات به عقب حساب می‌شود. طول آن بین افراد فرق دارد: در داده‌های واقعی میانگین حدود ۱۲ روز بود (معمولاً بین ۷ تا ۱۷ روز).",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "progesterone",
+      "trend": "rising",
+      "noteFa": "پروژسترون، هورمون اصلی این نیمه، بالا می‌رود."
+     },
+     {
+      "hormone": "estrogen",
+      "trend": "falling",
+      "noteFa": "استروژن بعد از تخمک‌گذاری افت می‌کند و بعد دوباره کمی بالا می‌رود."
+     },
+     {
+      "hormone": "lh",
+      "trend": "falling",
+      "noteFa": "LH بعد از جهش پایین می‌آید."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "low",
+      "noteFa": "FSH پایین است."
+     }
+    ],
+    "ovaryFa": "فولیکولی که تخمک را آزاد کرده تبدیل به «جسم زرد» می‌شود (ساختاری موقت در تخمدان که پروژسترون و مقداری استروژن می‌سازد).",
+    "uterusFa": "پروژسترون پوشش رحم را از حالت «رشد» به حالت «آماده برای لانه‌گزینی» می‌برد؛ غده‌ها پیچیده‌تر می‌شوند و ذخیرهٔ انرژی (گلیکوژن) بیشتر می‌شود.",
+    "mucusFa": "ترشحات کمتر، غلیظ‌تر و خمیری می‌شود.",
+    "temperatureFa": "دمای پایه کمی بالاتر می‌رود و معمولاً تا آخر چرخه بالاتر می‌ماند. اگر چند روز پشت سر هم دما بالاتر باشد، می‌توان حدس زد تخمک‌گذاری گذشته است.",
+    "experiencesFa": [
+     "بیشتر افراد در این روزها نشانهٔ خاصی حس نمی‌کنند.",
+     "بعضی‌ها متوجه غلیظ‌تر شدن ترشحات می‌شوند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "sleep",
+      "textFa": "در مطالعات آزمایشگاهی، در نیمهٔ دوم چرخه خواب REM (مرحلهٔ خواب همراه با رؤیا) کمی کمتر و دمای بدن کمی بالاتر بوده است؛ معلوم نیست برای هر فرد محسوس باشد.",
+      "evidence": "limited",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     }
+    ],
+    "careFa": [
+     "اگر دمای پایه را ثبت می‌کنی: هر روز صبح، همان ساعت، قبل از بلند شدن و با دماسنج مخصوص دمای پایه اندازه بگیر.",
+     "الکل، تب، کم‌خوابی، استرس، بعضی داروها، سفر و شیردهی می‌توانند دمای پایه را تغییر دهند؛ این‌ها را هم یادداشت کن.",
+     "ثبت روزانهٔ حالت ترشحات و علائم به شناخت الگوی خودت کمک می‌کند."
+    ],
+    "seekCareFa": [
+     "اگر رنگ، بو یا حالت ترشحات عوض شد، خارش یا سوزش داری، یا هنگام ادرار درد داری، بررسی لازم است.",
+     "اگر ممکن است باردار باشی و درد یک‌طرفهٔ شکم یا خون‌ریزی غیرعادی داری، زودتر بررسی شو."
+    ],
+    "claims": [
+     {
+      "textFa": "فاز لوتئال از تخمک‌گذاری تا پریود بعدی است و جسم زرد پروژسترون و کمی استروژن می‌سازد.",
+      "sourceIds": [
+       "CC_LUTEAL",
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "میانگین فاز لوتئال در داده‌های واقعی ۱۲٫۴ روز (۷ تا ۱۷) بود.",
+      "sourceIds": [
+       "BULL2019"
+      ]
+     },
+     {
+      "textFa": "فاز لوتئال طبیعی ۱۰ تا ۱۷ روز است.",
+      "sourceIds": [
+       "CC_LUTEAL"
+      ]
+     },
+     {
+      "textFa": "پروژسترون پوشش رحم را برای لانه‌گزینی آماده می‌کند و ترشحات را غلیظ می‌کند.",
+      "sourceIds": [
+       "STATPEARLS",
+       "CC_LUTEAL"
+      ]
+     },
+     {
+      "textFa": "استروژن بعد از تخمک‌گذاری افت می‌کند و در میانهٔ فاز لوتئال دوباره بالا می‌رود.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "دمای بالاتر برای حداقل ۳ روز پشت سر هم یعنی تخمک‌گذاری احتمالاً گذشته؛ دما تا آخر چرخه بالا می‌ماند.",
+      "sourceIds": [
+       "CC_BBT",
+       "ACOG_FAB"
+      ]
+     },
+     {
+      "textFa": "نحوهٔ اندازه‌گیری دمای پایه و عوامل اثرگذار (الکل، تب، کم‌خوابی، استرس، دارو، سفر، شیردهی).",
+      "sourceIds": [
+       "CC_BBT"
+      ]
+     },
+     {
+      "textFa": "خواب REM در فاز لوتئال کمتر بوده است.",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_luteal_mid",
+   "category": "cycle_hormones",
+   "titleFa": "میانهٔ نیمهٔ دوم چرخه",
+   "summaryFa": "پروژسترون معمولاً در این روزها به بیشترین مقدار می‌رسد. بعضی‌ها کم‌کم تغییرات پیش از پریود را حس می‌کنند.",
+   "bodyFa": "احتمالاً در میانهٔ فاز لوتئال هستی. اگر تخمک‌گذاری انجام شده باشد، حدود یک هفته از آن گذشته است.\n\nاین بخش از چرخه حدود ۶ تا ۹ روز قبل از تاریخ تخمینی پریود بعدی‌ات است.\n\nتخمدان: جسم زرد در بیشترین فعالیت خود است. اگر بارداری رخ ندهد، فعالیت آن از حدود ۹ تا ۱۱ روز بعد از تخمک‌گذاری کم می‌شود.\n\nپوشش رحم: پوشش رحم در آماده‌ترین حالت برای لانه‌گزینی است.\n\nترشحات: ترشحات معمولاً کم یا غلیظ است.\n\nدمای بدن: دمای پایه هنوز در سطح بالاتر است.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "ENDOTEXT",
+    "MEDLINE_PMS",
+    "CC_LUTEAL",
+    "NHS_PMS",
+    "ACOG_PMS",
+    "SLEEP2023"
+   ],
+   "sources": [
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "CC_LUTEAL",
+     "title": "Luteal Phase",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/24417-luteal-phase",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "luteal_mid"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• ورزش هوازی منظم (مثلاً پیاده‌روی تند، دوچرخه یا شنا؛ حدود ۳۰ دقیقه بیشتر روزهای هفته) برای خیلی‌ها علائم پیش از پریود را کم می‌کند. بهتر است در تمام ماه باشد، نه فقط روزهای علامت‌دار.\n• خواب منظم (ساعت ثابت خواب و بیداری، حتی آخر هفته) ممکن است بدخلقی و خستگی را کم کند.\n• وعده‌های کوچک‌تر و مکرر، غذاهای کامل مثل نان و غلات سبوس‌دار، و کم کردن نمک، کافئین و الکل ممکن است کمک کنند.\n• اگر علائم داری، شدت آن را روزانه ثبت کن.",
+   "whenToSeekFa": "• اگر علائم پیش از پریود زندگی روزمره‌ات را به هم می‌زند، یا با تغییر سبک زندگی بهتر نشده، با پزشک صحبت کن. درمان وجود دارد.\n• اگر غم یا اضطراب خیلی شدید است یا فکر آسیب زدن به خودت را داری، همین حالا با اورژانس محلی یا یک مرکز کمک فوری تماس بگیر.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "luteal_mid",
+    "cardTitleFa": "میانهٔ نیمهٔ دوم چرخه",
+    "todayFa": "احتمالاً در میانهٔ فاز لوتئال هستی. اگر تخمک‌گذاری انجام شده باشد، حدود یک هفته از آن گذشته است.",
+    "timingFa": "این بخش از چرخه حدود ۶ تا ۹ روز قبل از تاریخ تخمینی پریود بعدی‌ات است.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "progesterone",
+      "trend": "peak",
+      "noteFa": "پروژسترون حدود ۸ تا ۹ روز بعد از تخمک‌گذاری به اوج می‌رسد."
+     },
+     {
+      "hormone": "estrogen",
+      "trend": "high",
+      "noteFa": "استروژن هم دومین افزایش خود را دارد."
+     },
+     {
+      "hormone": "lh",
+      "trend": "low",
+      "noteFa": "LH پایین است."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "low",
+      "noteFa": "FSH پایین است."
+     }
+    ],
+    "ovaryFa": "جسم زرد در بیشترین فعالیت خود است. اگر بارداری رخ ندهد، فعالیت آن از حدود ۹ تا ۱۱ روز بعد از تخمک‌گذاری کم می‌شود.",
+    "uterusFa": "پوشش رحم در آماده‌ترین حالت برای لانه‌گزینی است.",
+    "mucusFa": "ترشحات معمولاً کم یا غلیظ است.",
+    "temperatureFa": "دمای پایه هنوز در سطح بالاتر است.",
+    "experiencesFa": [
+     "علائم پیش از پریود (PMS) از نیمهٔ دوم چرخه ممکن است شروع شوند.",
+     "بعضی‌ها تغییر خلق، حساسیت سینه، نفخ، جوش یا تغییر اشتها را حس می‌کنند.",
+     "خیلی‌ها هنوز چیزی حس نمی‌کنند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "mood",
+      "textFa": "تغییرات خلق از علائم شایع پیش از پریود است و راهنماهای معتبر آن را ذکر کرده‌اند. علت دقیق PMS معلوم نیست؛ تغییر هورمون‌ها احتمالاً نقش دارد.",
+      "evidence": "good",
+      "sourceIds": [
+       "NHS_PMS",
+       "ACOG_PMS"
+      ]
+     },
+     {
+      "topic": "sleep",
+      "textFa": "بعضی مطالعات بیدار شدن بیشتر در شب را در اواخر نیمهٔ دوم چرخه دیده‌اند، اما نتایج یکسان نیست.",
+      "evidence": "mixed",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     }
+    ],
+    "careFa": [
+     "ورزش هوازی منظم (مثلاً پیاده‌روی تند، دوچرخه یا شنا؛ حدود ۳۰ دقیقه بیشتر روزهای هفته) برای خیلی‌ها علائم پیش از پریود را کم می‌کند. بهتر است در تمام ماه باشد، نه فقط روزهای علامت‌دار.",
+     "خواب منظم (ساعت ثابت خواب و بیداری، حتی آخر هفته) ممکن است بدخلقی و خستگی را کم کند.",
+     "وعده‌های کوچک‌تر و مکرر، غذاهای کامل مثل نان و غلات سبوس‌دار، و کم کردن نمک، کافئین و الکل ممکن است کمک کنند.",
+     "اگر علائم داری، شدت آن را روزانه ثبت کن."
+    ],
+    "seekCareFa": [
+     "اگر علائم پیش از پریود زندگی روزمره‌ات را به هم می‌زند، یا با تغییر سبک زندگی بهتر نشده، با پزشک صحبت کن. درمان وجود دارد.",
+     "اگر غم یا اضطراب خیلی شدید است یا فکر آسیب زدن به خودت را داری، همین حالا با اورژانس محلی یا یک مرکز کمک فوری تماس بگیر."
+    ],
+    "claims": [
+     {
+      "textFa": "پروژسترون و استروژن حدود ۸ تا ۹ روز بعد از تخمک‌گذاری به اوج می‌رسند؛ عملکرد جسم زرد ۹ تا ۱۱ روز بعد از تخمک‌گذاری کم می‌شود.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "علائم PMS در نیمهٔ دوم چرخه شروع می‌شوند.",
+      "sourceIds": [
+       "MEDLINE_PMS"
+      ]
+     },
+     {
+      "textFa": "علائم فاز لوتئال: تغییر خلق، حساسیت سینه، نفخ، جوش، تغییر اشتها.",
+      "sourceIds": [
+       "CC_LUTEAL"
+      ]
+     },
+     {
+      "textFa": "علت PMS کاملاً معلوم نیست؛ تغییر هورمون‌ها ممکن است نقش داشته باشد.",
+      "sourceIds": [
+       "NHS_PMS",
+       "MEDLINE_PMS"
+      ]
+     },
+     {
+      "textFa": "ورزش هوازی منظم، حدود ۳۰ دقیقه بیشتر روزها، علائم PMS را کم می‌کند؛ خواب منظم کمک می‌کند؛ کربوهیدرات پیچیده.",
+      "sourceIds": [
+       "ACOG_PMS"
+      ]
+     },
+     {
+      "textFa": "وعده‌های کوچک و مکرر، کم کردن نمک و کافئین و الکل.",
+      "sourceIds": [
+       "NHS_PMS",
+       "MEDLINE_PMS"
+      ]
+     },
+     {
+      "textFa": "بیدار شدن بیشتر در اواخر فاز لوتئال در برخی مطالعات.",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_luteal_late_premenstrual",
+   "category": "cycle_hormones",
+   "titleFa": "چند روز مانده به پریود",
+   "summaryFa": "اگر بارداری رخ نداده باشد، هورمون‌ها در حال افت‌اند و بدن برای پریود بعدی آماده می‌شود. علائم پیش از پریود در این روزها شایع‌تر است.",
+   "bodyFa": "پریود بعدی‌ات طبق تخمین در چند روز آینده است. اگر بارداری رخ نداده باشد، پروژسترون و استروژن پایین می‌آیند و همین افت، پریود را شروع می‌کند.\n\nاین بخش از چرخه ۵ روز آخر قبل از تاریخ تخمینی پریود را در بر می‌گیرد. تاریخ تخمینی ممکن است چند روز زودتر یا دیرتر باشد.\n\nتخمدان: جسم زرد در حال از بین رفتن است و گروه جدیدی از فولیکول‌ها برای چرخهٔ بعد آماده می‌شوند.\n\nپوشش رحم: با افت پروژسترون، رگ‌های کوچک پوشش رحم تنگ می‌شوند و پوشش برای ریزش آماده می‌شود.\n\nترشحات: ترشحات معمولاً کم یا غلیظ است تا پریود شروع شود.\n\nدمای بدن: دمای پایه معمولاً تا آخر چرخه بالاتر می‌ماند.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [
+    "hormonal_contraception",
+    "pregnancy_mode",
+    "postpartum_or_breastfeeding",
+    "perimenopause",
+    "irregular"
+   ],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACOG_PMS",
+    "MAYO_PMS",
+    "MEDLINE_PMS",
+    "OWH",
+    "ENDOTEXT",
+    "STATPEARLS",
+    "SLEEP2023",
+    "ACNE2014",
+    "GI2014",
+    "NHS_PTEST"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "MAYO_PMS",
+     "title": "Premenstrual syndrome (PMS) – Symptoms & causes",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/diseases-conditions/premenstrual-syndrome/symptoms-causes/syc-20376780",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    },
+    {
+     "id": "ACNE2014",
+     "title": "Perimenstrual Flare of Adult Acne (Geller L et al., 2014)",
+     "org": "Journal of Clinical and Aesthetic Dermatology",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4142818/",
+     "accessed": "2026-10-06",
+     "note": "J Clin Aesthet Dermatol 2014;7(8):30-34 – survey study"
+    },
+    {
+     "id": "GI2014",
+     "title": "Gastrointestinal symptoms before and during menses in healthy women (Bernstein MT et al., 2014)",
+     "org": "BMC Women's Health",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3901893/",
+     "accessed": "2026-10-06",
+     "note": "BMC Womens Health 2014;14:14 – survey of 156 women"
+    },
+    {
+     "id": "NHS_PTEST",
+     "title": "Doing a pregnancy test",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/pregnancy/trying-for-a-baby/doing-a-pregnancy-test/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "luteal_late_premenstrual"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• ورزش منظم، خواب کافی و منظم، و کم کردن استرس (مثلاً یوگا یا مدیتیشن).\n• وعده‌های کوچک‌تر هر ۲ تا ۳ ساعت؛ نمک، کافئین و الکل کمتر؛ سیگار نکشیدن.\n• برای سردرد، کمردرد یا درد سینه، مسکن‌های رایج طبق دستور (اگر منعی نداری).\n• علائم را دست‌کم ۲ تا ۳ چرخه روزانه ثبت کن؛ این ثبت برای مراجعه به پزشک خیلی مفید است.\n• اگر ممکن است باردار باشی، بیشتر تست‌ها از روز اول عقب افتادن پریود قابل اعتمادترند.",
+   "whenToSeekFa": "• اگر علائم پیش از پریود زندگی روزمره‌ات را به هم می‌زند، یا با تغییر سبک زندگی بهتر نشده، با پزشک صحبت کن. درمان وجود دارد.\n• اگر غم یا اضطراب خیلی شدید است یا فکر آسیب زدن به خودت را داری، همین حالا با اورژانس محلی یا یک مرکز کمک فوری تماس بگیر.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "luteal_late_premenstrual",
+    "cardTitleFa": "چند روز مانده به پریود",
+    "todayFa": "پریود بعدی‌ات طبق تخمین در چند روز آینده است. اگر بارداری رخ نداده باشد، پروژسترون و استروژن پایین می‌آیند و همین افت، پریود را شروع می‌کند.",
+    "timingFa": "این بخش از چرخه ۵ روز آخر قبل از تاریخ تخمینی پریود را در بر می‌گیرد. تاریخ تخمینی ممکن است چند روز زودتر یا دیرتر باشد.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "progesterone",
+      "trend": "falling",
+      "noteFa": "پروژسترون در حال افت است (اگر بارداری نباشد)."
+     },
+     {
+      "hormone": "estrogen",
+      "trend": "falling",
+      "noteFa": "استروژن هم پایین می‌آید."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "rising",
+      "noteFa": "FSH در روزهای آخر کمی بالا می‌رود تا فولیکول‌های چرخهٔ بعد را به رشد وادارد."
+     },
+     {
+      "hormone": "lh",
+      "trend": "low",
+      "noteFa": "LH پایین است."
+     }
+    ],
+    "ovaryFa": "جسم زرد در حال از بین رفتن است و گروه جدیدی از فولیکول‌ها برای چرخهٔ بعد آماده می‌شوند.",
+    "uterusFa": "با افت پروژسترون، رگ‌های کوچک پوشش رحم تنگ می‌شوند و پوشش برای ریزش آماده می‌شود.",
+    "mucusFa": "ترشحات معمولاً کم یا غلیظ است تا پریود شروع شود.",
+    "temperatureFa": "دمای پایه معمولاً تا آخر چرخه بالاتر می‌ماند.",
+    "experiencesFa": [
+     "علائم شایع پیش از پریود: نوسان خلق، احساس غم یا زودرنجی، اضطراب یا حساس شدن، خستگی یا بدخوابی، نفخ یا گرفتگی، حساسیت سینه، سردرد، جوش، چرب شدن مو، تغییر اشتها یا هوس غذا.",
+     "بعضی‌ها یبوست یا اسهال دارند.",
+     "بیشتر افراد فقط چند مورد از این‌ها را دارند و شدت آن از ماهی به ماه دیگر فرق می‌کند. خیلی‌ها هم هیچ علامتی ندارند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "mood",
+      "textFa": "نوسان خلق، زودرنجی و اضطراب از علائم شایع پیش از پریودند. افسردگی و اضطراب ممکن است قبل یا حین پریود بدتر شوند.",
+      "evidence": "good",
+      "sourceIds": [
+       "NHS_PMS",
+       "ACOG_PMS",
+       "OWH"
+      ]
+     },
+     {
+      "topic": "sleep",
+      "textFa": "بدخوابی بیشتر در چند روز آخر قبل از پریود و روزهای اول خون‌ریزی گزارش شده، به‌خصوص در کسانی که علائم پیش از پریود دارند.",
+      "evidence": "moderate",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     },
+     {
+      "topic": "skin",
+      "textFa": "جوش و چربی مو در فهرست علائم شایع PMS است. در یک نظرسنجی از زنانی که جوش دارند، بیشتر آن‌هایی که بدتر شدن جوش نزدیک پریود را داشتند، آن را در هفتهٔ قبل از پریود گزارش کردند.",
+      "evidence": "limited",
+      "sourceIds": [
+       "NHS_PMS",
+       "ACNE2014"
+      ]
+     },
+     {
+      "topic": "digestion",
+      "textFa": "نفخ از علائم شایع است. در یک نظرسنجی کوچک، بیش از نیمی از زنان سالم در ۵ روز قبل از پریود دل‌درد گزارش کردند. علائم روده‌ی تحریک‌پذیر (IBS) هم ممکن است درست قبل از پریود بدتر شود.",
+      "evidence": "limited",
+      "sourceIds": [
+       "NHS_PMS",
+       "GI2014",
+       "OWH"
+      ]
+     },
+     {
+      "topic": "energy",
+      "textFa": "خستگی از علائم شایع PMS است، اما از روی تاریخ نمی‌شود گفت تو امروز خسته‌ای. اگر خستگی داری ثبتش کن.",
+      "evidence": "good",
+      "sourceIds": [
+       "NHS_PMS",
+       "MAYO_PMS"
+      ]
+     }
+    ],
+    "careFa": [
+     "ورزش منظم، خواب کافی و منظم، و کم کردن استرس (مثلاً یوگا یا مدیتیشن).",
+     "وعده‌های کوچک‌تر هر ۲ تا ۳ ساعت؛ نمک، کافئین و الکل کمتر؛ سیگار نکشیدن.",
+     "برای سردرد، کمردرد یا درد سینه، مسکن‌های رایج طبق دستور (اگر منعی نداری).",
+     "علائم را دست‌کم ۲ تا ۳ چرخه روزانه ثبت کن؛ این ثبت برای مراجعه به پزشک خیلی مفید است.",
+     "اگر ممکن است باردار باشی، بیشتر تست‌ها از روز اول عقب افتادن پریود قابل اعتمادترند."
+    ],
+    "seekCareFa": [
+     "اگر علائم پیش از پریود زندگی روزمره‌ات را به هم می‌زند، یا با تغییر سبک زندگی بهتر نشده، با پزشک صحبت کن. درمان وجود دارد.",
+     "اگر غم یا اضطراب خیلی شدید است یا فکر آسیب زدن به خودت را داری، همین حالا با اورژانس محلی یا یک مرکز کمک فوری تماس بگیر."
+    ],
+    "claims": [
+     {
+      "textFa": "افت استروژن و پروژسترون (بدون بارداری) پریود را شروع می‌کند.",
+      "sourceIds": [
+       "OWH",
+       "STATPEARLS"
+      ]
+     },
+     {
+      "textFa": "FSH در چند روز آخر چرخه بالا می‌رود.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "افت پروژسترون باعث تنگ شدن رگ‌های پوشش رحم و ریزش آن می‌شود.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "فهرست علائم شایع PMS.",
+      "sourceIds": [
+       "NHS_PMS"
+      ]
+     },
+     {
+      "textFa": "یبوست یا اسهال، و بیشتر افراد فقط چند علامت دارند.",
+      "sourceIds": [
+       "MAYO_PMS"
+      ]
+     },
+     {
+      "textFa": "تا ۳ نفر از هر ۴ زن نوعی PMS را تجربه کرده‌اند.",
+      "sourceIds": [
+       "MAYO_PMS"
+      ]
+     },
+     {
+      "textFa": "برای تشخیص PMS علائم باید در ۵ روز قبل از پریود، در ۳ چرخهٔ پشت سر هم باشند؛ ثبت ۲ تا ۳ ماهه.",
+      "sourceIds": [
+       "ACOG_PMS"
+      ]
+     },
+     {
+      "textFa": "افسردگی و اضطراب ممکن است قبل یا حین پریود بدتر شوند؛ IBS قبل از پریود بدتر می‌شود.",
+      "sourceIds": [
+       "OWH"
+      ]
+     },
+     {
+      "textFa": "بدخوابی در روزهای پیش از پریود.",
+      "sourceIds": [
+       "SLEEP2023"
+      ]
+     },
+     {
+      "textFa": "بدتر شدن جوش در هفتهٔ قبل از پریود (نظرسنجی).",
+      "sourceIds": [
+       "ACNE2014"
+      ]
+     },
+     {
+      "textFa": "دل‌درد در ۵ روز قبل از پریود (نظرسنجی).",
+      "sourceIds": [
+       "GI2014"
+      ]
+     },
+     {
+      "textFa": "مراقبت‌های PMS: ورزش، غذا، خواب، استرس، مسکن، دفترچهٔ علائم، سیگار و الکل.",
+      "sourceIds": [
+       "NHS_PMS",
+       "MEDLINE_PMS"
+      ]
+     },
+     {
+      "textFa": "PMDD و کمک فوری در افکار آسیب به خود.",
+      "sourceIds": [
+       "NHS_PMS",
+       "MEDLINE_PMS"
+      ]
+     },
+     {
+      "textFa": "تست بارداری از روز اول عقب افتادن پریود قابل اعتمادتر است.",
+      "sourceIds": [
+       "NHS_PTEST"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_late_period",
+   "category": "cycle_hormones",
+   "titleFa": "پریود هنوز نیامده",
+   "summaryFa": "تاریخ تخمینی پریود گذشته است. چند روز جابه‌جایی رایج است و دلیل‌های زیادی دارد.",
+   "bodyFa": "طبق تخمین، پریود باید شروع می‌شد اما هنوز ثبت نشده است. چند روز دیرتر شدن رایج است. اگر پریود شروع شده و ثبت نکرده‌ای، اول آن را ثبت کن.\n\nتخمین ما از روی چرخه‌های قبلی است. اگر تخمک‌گذاری دیرتر انجام شده باشد، پریود هم دیرتر می‌آید؛ این حتی در کسانی که معمولاً منظم‌اند هم پیش می‌آید.\n\nتخمدان: ممکن است تخمک‌گذاری دیرتر از همیشه انجام شده باشد، یا در این چرخه انجام نشده باشد، یا بارداری رخ داده باشد. تقویم نمی‌تواند بین این‌ها فرق بگذارد.\n\nپوشش رحم: اگر بارداری رخ داده باشد، پوشش رحم حفظ می‌شود. در غیر این صورت، با افت هورمون‌ها پریود شروع خواهد شد.\n\nترشحات: ترشحات در این حالت راهنمای قابل اعتمادی نیست.\n\nدمای بدن: اگر دمای پایه را ثبت می‌کنی، به‌تنهایی نمی‌تواند بارداری را تأیید یا رد کند.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_MISSED",
+    "OWH",
+    "MAYO_CYCLE",
+    "WILCOX2000",
+    "NHS_PTEST",
+    "NHS_EC",
+    "NHS_ECTOPIC"
+   ],
+   "sources": [
+    {
+     "id": "NHS_MISSED",
+     "title": "Missed or late periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/stopped-or-missed-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 12 Jun 2026"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "MAYO_CYCLE",
+     "title": "Menstrual cycle: What's typical, what's not",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186",
+     "accessed": "2026-10-06",
+     "note": "Dated 03 Jun 2026"
+    },
+    {
+     "id": "WILCOX2000",
+     "title": "The timing of the 'fertile window' in the menstrual cycle (Wilcox AJ, Dunson D, Baird DD, 2000)",
+     "org": "BMJ",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC27529/",
+     "accessed": "2026-10-06",
+     "note": "BMJ 2000;321:1259"
+    },
+    {
+     "id": "NHS_PTEST",
+     "title": "Doing a pregnancy test",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/pregnancy/trying-for-a-baby/doing-a-pregnancy-test/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2022"
+    },
+    {
+     "id": "NHS_EC",
+     "title": "Emergency contraception",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/emergency-contraception/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 31 Jan 2024"
+    },
+    {
+     "id": "NHS_ECTOPIC",
+     "title": "Ectopic pregnancy – Symptoms",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/ectopic-pregnancy/symptoms/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 23 Aug 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "late_period"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر پریود شروع شده ولی ثبت نکرده‌ای، الان تاریخ شروع را ثبت کن.\n• اگر ممکن است باردار باشی، تست بارداری بده. اگر منفی بود و هنوز پریود نیامده، چند روز بعد دوباره تست بده.\n• اگر رابطهٔ بدون محافظت در ۳ تا ۵ روز گذشته داشته‌ای، برای جلوگیری اضطراری صبر نکن؛ هرچه زودتر مؤثرتر است. با پزشک یا داروخانه مشورت کن.\n• در صفحهٔ «تأخیر و تست» می‌توانی تاریخ و نتیجهٔ تست را ثبت کنی.",
+   "whenToSeekFa": "• اگر ۳ بار پشت سر هم پریود نیامده، یا بیشتر از ۹۰ روز پریود نشده‌ای و باردار نیستی، با پزشک صحبت کن.\n• اگر تست مثبت است و درد یک‌طرفهٔ شکم، خون‌ریزی غیرعادی یا درد نوک شانه داری، زود بررسی شو.\n• درد ناگهانی و شدید شکم همراه با سرگیجه یا غش، اورژانسی است.\n• اگر تست دوم هم منفی بود و پریود نیامد، با پزشک صحبت کن.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "late_period",
+    "cardTitleFa": "پریود هنوز نیامده",
+    "todayFa": "طبق تخمین، پریود باید شروع می‌شد اما هنوز ثبت نشده است. چند روز دیرتر شدن رایج است. اگر پریود شروع شده و ثبت نکرده‌ای، اول آن را ثبت کن.",
+    "timingFa": "تخمین ما از روی چرخه‌های قبلی است. اگر تخمک‌گذاری دیرتر انجام شده باشد، پریود هم دیرتر می‌آید؛ این حتی در کسانی که معمولاً منظم‌اند هم پیش می‌آید.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "progesterone",
+      "trend": "unknown",
+      "noteFa": "معلوم نیست: اگر بارداری باشد پروژسترون بالا می‌ماند؛ اگر تخمک‌گذاری دیرتر بوده، ممکن است هنوز در مرحلهٔ قبل باشی."
+     },
+     {
+      "hormone": "estrogen",
+      "trend": "unknown",
+      "noteFa": "از روی تاریخ نمی‌شود فهمید."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "unknown",
+      "noteFa": "از روی تاریخ نمی‌شود فهمید."
+     },
+     {
+      "hormone": "lh",
+      "trend": "unknown",
+      "noteFa": "از روی تاریخ نمی‌شود فهمید."
+     }
+    ],
+    "ovaryFa": "ممکن است تخمک‌گذاری دیرتر از همیشه انجام شده باشد، یا در این چرخه انجام نشده باشد، یا بارداری رخ داده باشد. تقویم نمی‌تواند بین این‌ها فرق بگذارد.",
+    "uterusFa": "اگر بارداری رخ داده باشد، پوشش رحم حفظ می‌شود. در غیر این صورت، با افت هورمون‌ها پریود شروع خواهد شد.",
+    "mucusFa": "ترشحات در این حالت راهنمای قابل اعتمادی نیست.",
+    "temperatureFa": "اگر دمای پایه را ثبت می‌کنی، به‌تنهایی نمی‌تواند بارداری را تأیید یا رد کند.",
+    "experiencesFa": [
+     "دلیل‌های رایج دیر شدن پریود: بارداری، استرس، شروع دوران نزدیک یائسگی (معمولاً ۴۵ تا ۵۵ سالگی)، سندرم تخمدان پلی‌کیستیک (که اکنون PMOS هم نامیده می‌شود)، کاهش یا افزایش زیاد وزن، ورزش خیلی زیاد، بعضی روش‌های هورمونی جلوگیری و شیردهی.",
+     "گاهی فاصلهٔ پریودها خودبه‌خود هر بار فرق می‌کند."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "tests",
+      "textFa": "بیشتر تست‌های بارداری از روز اول عقب افتادن پریود قابل اعتمادترند. اگر زمان پریود را نمی‌دانی، دست‌کم ۲۱ روز بعد از رابطهٔ بدون محافظت تست بده. جواب مثبت تقریباً همیشه درست است؛ جواب منفی، به‌خصوص اگر زود باشد، کمتر قابل اعتماد است.",
+      "evidence": "good",
+      "sourceIds": [
+       "NHS_PTEST"
+      ]
+     }
+    ],
+    "careFa": [
+     "اگر پریود شروع شده ولی ثبت نکرده‌ای، الان تاریخ شروع را ثبت کن.",
+     "اگر ممکن است باردار باشی، تست بارداری بده. اگر منفی بود و هنوز پریود نیامده، چند روز بعد دوباره تست بده.",
+     "اگر رابطهٔ بدون محافظت در ۳ تا ۵ روز گذشته داشته‌ای، برای جلوگیری اضطراری صبر نکن؛ هرچه زودتر مؤثرتر است. با پزشک یا داروخانه مشورت کن.",
+     "در صفحهٔ «تأخیر و تست» می‌توانی تاریخ و نتیجهٔ تست را ثبت کنی."
+    ],
+    "seekCareFa": [
+     "اگر ۳ بار پشت سر هم پریود نیامده، یا بیشتر از ۹۰ روز پریود نشده‌ای و باردار نیستی، با پزشک صحبت کن.",
+     "اگر تست مثبت است و درد یک‌طرفهٔ شکم، خون‌ریزی غیرعادی یا درد نوک شانه داری، زود بررسی شو.",
+     "درد ناگهانی و شدید شکم همراه با سرگیجه یا غش، اورژانسی است.",
+     "اگر تست دوم هم منفی بود و پریود نیامد، با پزشک صحبت کن."
+    ],
+    "claims": [
+     {
+      "textFa": "دلایل رایج پریود دیرکرد یا نیامده.",
+      "sourceIds": [
+       "NHS_MISSED"
+      ]
+     },
+     {
+      "textFa": "پریود عقب‌افتاده سه بار پشت سر هم → مراجعه.",
+      "sourceIds": [
+       "NHS_MISSED"
+      ]
+     },
+     {
+      "textFa": "۹۰ روز بدون پریود و بدون بارداری/شیردهی → مراجعه.",
+      "sourceIds": [
+       "OWH",
+       "MAYO_CYCLE"
+      ]
+     },
+     {
+      "textFa": "حتی زنان با چرخهٔ منظم گاهی تخمک‌گذاری دیررس دارند.",
+      "sourceIds": [
+       "WILCOX2000"
+      ]
+     },
+     {
+      "textFa": "زمان تست بارداری و قابل اعتماد بودن جواب مثبت/منفی.",
+      "sourceIds": [
+       "NHS_PTEST"
+      ]
+     },
+     {
+      "textFa": "جلوگیری اضطراری ظرف ۳ تا ۵ روز و هرچه زودتر مؤثرتر.",
+      "sourceIds": [
+       "NHS_EC"
+      ]
+     },
+     {
+      "textFa": "علائم هشدار بارداری خارج از رحم.",
+      "sourceIds": [
+       "NHS_ECTOPIC"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sw_unknown",
+   "category": "cycle_hormones",
+   "titleFa": "مرحلهٔ امروز معلوم نیست",
+   "summaryFa": "برای تخمین مرحلهٔ امروز اطلاعات کافی نداریم. توضیح کلی چرخه را می‌بینی.",
+   "bodyFa": "برای این‌که بگوییم امروز احتمالاً کجای چرخه هستی، به تاریخ شروع آخرین پریود و طول چرخه (یا چند چرخهٔ ثبت‌شده) نیاز داریم. تا آن موقع، توضیح کلی را می‌خوانی.\n\nچرخه از روز اول پریود شروع می‌شود و تا روز قبل از پریود بعدی ادامه دارد. نیمهٔ اول، «فاز فولیکولی» (رشد فولیکول و ضخیم شدن پوشش رحم) و نیمهٔ دوم، «فاز لوتئال» (بعد از تخمک‌گذاری) است. طول چرخهٔ منظم برای بزرگسالان معمولاً بین ۲۱ تا ۳۵ روز (یا طبق منابع دیگر ۲۴ تا ۳۸ روز) است.\n\nتخمدان: در نیمهٔ اول یک فولیکول رشد می‌کند و تخمک را آزاد می‌کند؛ بعد به جسم زرد تبدیل می‌شود.\n\nپوشش رحم: پوشش رحم در نیمهٔ اول ضخیم می‌شود، در نیمهٔ دوم برای لانه‌گزینی آماده می‌شود و اگر بارداری نباشد، به‌صورت پریود می‌ریزد.\n\nترشحات: ترشحات بعد از پریود کم و چسبناک است، نزدیک تخمک‌گذاری شفاف و کش‌دار می‌شود و بعد دوباره غلیظ می‌شود.\n\nدمای بدن: دمای پایه بعد از تخمک‌گذاری کمی بالا می‌رود.",
+   "applicableContexts": [
+    "regular_or_estimated_cycle"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "guideline_and_physiology_review",
+   "sourceIds": [
+    "NHS_FERT",
+    "OWH",
+    "MAYO_CYCLE",
+    "ENDOTEXT",
+    "STATPEARLS",
+    "BULL2019",
+    "NHS_IRREG"
+   ],
+   "sources": [
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "MAYO_CYCLE",
+     "title": "Menstrual cycle: What's typical, what's not",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186",
+     "accessed": "2026-10-06",
+     "note": "Dated 03 Jun 2026"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "BULL2019",
+     "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles (Bull JR et al., 2019)",
+     "org": "npj Digital Medicine",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6710244/",
+     "accessed": "2026-10-06",
+     "note": "npj Digit Med 2019;2:83"
+    },
+    {
+     "id": "NHS_IRREG",
+     "title": "Irregular periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/irregular-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 26 Jun 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "unknown"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• تاریخ شروع آخرین پریود را ثبت کن.\n• اگر طول چرخه‌ات را می‌دانی، در تنظیمات وارد کن؛ اگر نمی‌دانی، پریودهای بعدی را ثبت کن تا برنامه از سابقهٔ خودت حساب کند.\n• علائم روزانه را ثبت کن؛ حتی بدون تخمین مرحله هم الگوهایت قابل دیدن است.",
+   "whenToSeekFa": "• اگر فاصلهٔ پریودها کمتر از ۲۱ یا بیشتر از ۳۵ روز است یا الگوی پریودت عوض شده، با پزشک صحبت کن.\n• خون‌ریزی خیلی زیاد، درد شدید یا خون‌ریزی بین پریودها نیاز به بررسی دارد.",
+   "careTags": [],
+   "phase": {
+    "subWindow": "unknown",
+    "cardTitleFa": "مرحلهٔ امروز معلوم نیست",
+    "todayFa": "برای این‌که بگوییم امروز احتمالاً کجای چرخه هستی، به تاریخ شروع آخرین پریود و طول چرخه (یا چند چرخهٔ ثبت‌شده) نیاز داریم. تا آن موقع، توضیح کلی را می‌خوانی.",
+    "timingFa": "چرخه از روز اول پریود شروع می‌شود و تا روز قبل از پریود بعدی ادامه دارد. نیمهٔ اول، «فاز فولیکولی» (رشد فولیکول و ضخیم شدن پوشش رحم) و نیمهٔ دوم، «فاز لوتئال» (بعد از تخمک‌گذاری) است. طول چرخهٔ منظم برای بزرگسالان معمولاً بین ۲۱ تا ۳۵ روز (یا طبق منابع دیگر ۲۴ تا ۳۸ روز) است.",
+    "hormoneNoteFa": "این روندها آموزشی‌اند و برای یک چرخهٔ معمولِ همراه با تخمک‌گذاری نوشته شده‌اند؛ مقدار هورمون بدن تو نیستند و از روی تاریخ قابل اندازه‌گیری نیستند.",
+    "hormones": [
+     {
+      "hormone": "estrogen",
+      "trend": "cycle",
+      "noteFa": "استروژن در نیمهٔ اول بالا می‌رود، قبل از تخمک‌گذاری به اوج می‌رسد، بعد افت می‌کند و در میانهٔ نیمهٔ دوم دوباره بالا می‌رود."
+     },
+     {
+      "hormone": "progesterone",
+      "trend": "cycle",
+      "noteFa": "پروژسترون بعد از تخمک‌گذاری بالا می‌رود و اگر بارداری نباشد، قبل از پریود پایین می‌آید."
+     },
+     {
+      "hormone": "fsh",
+      "trend": "cycle",
+      "noteFa": "FSH اول چرخه رشد فولیکول‌ها را شروع می‌کند."
+     },
+     {
+      "hormone": "lh",
+      "trend": "cycle",
+      "noteFa": "جهش LH در میانهٔ چرخه باعث تخمک‌گذاری می‌شود."
+     }
+    ],
+    "ovaryFa": "در نیمهٔ اول یک فولیکول رشد می‌کند و تخمک را آزاد می‌کند؛ بعد به جسم زرد تبدیل می‌شود.",
+    "uterusFa": "پوشش رحم در نیمهٔ اول ضخیم می‌شود، در نیمهٔ دوم برای لانه‌گزینی آماده می‌شود و اگر بارداری نباشد، به‌صورت پریود می‌ریزد.",
+    "mucusFa": "ترشحات بعد از پریود کم و چسبناک است، نزدیک تخمک‌گذاری شفاف و کش‌دار می‌شود و بعد دوباره غلیظ می‌شود.",
+    "temperatureFa": "دمای پایه بعد از تخمک‌گذاری کمی بالا می‌رود.",
+    "experiencesFa": [
+     "طول چرخه از ماهی به ماه دیگر کمی فرق می‌کند و این عادی است."
+    ],
+    "lifeLinks": [
+     {
+      "topic": "cycle",
+      "textFa": "در داده‌های بیش از ۶۰۰ هزار چرخه، میانگین طول چرخه ۲۹٫۳ روز بود و فقط ۱۳٪ چرخه‌ها دقیقاً ۲۸ روز بودند.",
+      "evidence": "good",
+      "sourceIds": [
+       "BULL2019"
+      ]
+     }
+    ],
+    "careFa": [
+     "تاریخ شروع آخرین پریود را ثبت کن.",
+     "اگر طول چرخه‌ات را می‌دانی، در تنظیمات وارد کن؛ اگر نمی‌دانی، پریودهای بعدی را ثبت کن تا برنامه از سابقهٔ خودت حساب کند.",
+     "علائم روزانه را ثبت کن؛ حتی بدون تخمین مرحله هم الگوهایت قابل دیدن است."
+    ],
+    "seekCareFa": [
+     "اگر فاصلهٔ پریودها کمتر از ۲۱ یا بیشتر از ۳۵ روز است یا الگوی پریودت عوض شده، با پزشک صحبت کن.",
+     "خون‌ریزی خیلی زیاد، درد شدید یا خون‌ریزی بین پریودها نیاز به بررسی دارد."
+    ],
+    "claims": [
+     {
+      "textFa": "چرخه از روز اول پریود تا روز قبل از پریود بعدی است.",
+      "sourceIds": [
+       "NHS_FERT",
+       "OWH"
+      ]
+     },
+     {
+      "textFa": "طول چرخهٔ منظم ۲۱ تا ۳۵ روز (NHS) یا ۲۴ تا ۳۸ روز (OWH، Mayo).",
+      "sourceIds": [
+       "NHS_FERT",
+       "OWH",
+       "MAYO_CYCLE"
+      ]
+     },
+     {
+      "textFa": "استروژن دو بار بالا و پایین می‌رود.",
+      "sourceIds": [
+       "ENDOTEXT"
+      ]
+     },
+     {
+      "textFa": "میانگین طول چرخه ۲۹٫۳ روز؛ ۱۳٪ دقیقاً ۲۸ روز.",
+      "sourceIds": [
+       "BULL2019"
+      ]
+     },
+     {
+      "textFa": "نامنظم یعنی فاصلهٔ کمتر از ۲۱ یا بیشتر از ۳۵ روز.",
+      "sourceIds": [
+       "NHS_IRREG"
+      ]
+     }
+    ]
+   },
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ctx_irregular",
+   "category": "cycle_hormones",
+   "titleFa": "چرخهٔ نامنظم و توضیح مرحله‌ها",
+   "summaryFa": "چون چرخه‌ات را نامنظم ثبت کرده‌ای، مرحلهٔ امروز را حدس نمی‌زنیم و توضیح کلی را نشان می‌دهیم.",
+   "bodyFa": "پریود وقتی «نامنظم» حساب می‌شود که فاصلهٔ شروع دو پریود کمتر از ۲۱ روز یا بیشتر از ۳۵ روز باشد، یا هر بار خیلی فرق کند. این حالت در سال‌های اول بعد از شروع پریود و نزدیک یائسگی شایع‌تر است.\n\nدر چرخهٔ نامنظم، تخمک‌گذاری معمولاً دیرتر و با فاصلهٔ متغیرتری اتفاق می‌افتد. برای همین، گفتن این‌که «امروز احتمالاً کدام مرحله‌ای» گمراه‌کننده است و ما آن را نمی‌گوییم.\n\nروند کلی چرخه همان است: در نیمهٔ اول یک فولیکول رشد می‌کند و استروژن بالا می‌رود؛ بعد از تخمک‌گذاری، پروژسترون بالا می‌رود؛ اگر بارداری نباشد، هورمون‌ها افت می‌کنند و پریود شروع می‌شود. اگر روزهای خون‌ریزی را ثبت کنی، توضیح همان روزها را می‌بینی.",
+   "applicableContexts": [
+    "irregular"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_IRREG",
+    "WILCOX2000",
+    "OWH",
+    "STATPEARLS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_IRREG",
+     "title": "Irregular periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/irregular-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 26 Jun 2026"
+    },
+    {
+     "id": "WILCOX2000",
+     "title": "The timing of the 'fertile window' in the menstrual cycle (Wilcox AJ, Dunson D, Baird DD, 2000)",
+     "org": "BMJ",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC27529/",
+     "accessed": "2026-10-06",
+     "note": "BMJ 2000;321:1259"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• روزهای شروع و پایان خون‌ریزی را ثبت کن؛ این سابقه برای پزشک خیلی مفید است.\n• علائم را ثبت کن؛ الگوهای تو حتی بدون تخمین مرحله قابل دیدن است.\n• اگر قصد بارداری داری، NHS می‌گوید رابطه هر ۲ تا ۳ روز در طول چرخه کمک می‌کند.",
+   "whenToSeekFa": "• اگر پریودهایت نامنظم است یا الگوی آن عوض شده، با پزشک صحبت کن.\n• اگر پریود بیشتر از ۷ روز طول می‌کشد، بین پریودها خون‌ریزی داری، یا همراه آن افزایش وزن، خستگی، رشد موی صورت یا پوست خیلی خشک یا چرب داری، بررسی لازم است.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ctx_hormonal_contraception",
+   "category": "cycle_hormones",
+   "titleFa": "روش هورمونی جلوگیری و مرحله‌های چرخه",
+   "summaryFa": "با روش هورمونی، الگوی طبیعی هورمون‌ها فرق می‌کند؛ برای همین مرحلهٔ تقویمی را نشان نمی‌دهیم.",
+   "bodyFa": "بعضی روش‌های هورمونی جلوگیری، مثل قرص ترکیبی، چسب ضدبارداری و آمپول، با متوقف کردن تخمک‌گذاری کار می‌کنند. بعضی روش‌ها مثل قرص فقط‌پروژستینی، آمپول یا آی‌یو‌اس (IUS) ممکن است پریود را نامنظم کنند یا آن را قطع کنند.\n\nوقتی تخمک‌گذاری متوقف شده یا الگوی هورمون‌ها با دارو تعیین می‌شود، توضیح «امروز در کدام مرحله‌ای» برای تو درست نیست. برای همین فقط توضیح کلی را نشان می‌دهیم.\n\nثبت خون‌ریزی، درد و علائم همچنان مفید است.",
+   "applicableContexts": [
+    "hormonal_contraception"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_FERT",
+    "NHS_IRREG",
+    "NHS_MISSED",
+    "MAYO_CYCLE"
+   ],
+   "sources": [
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_IRREG",
+     "title": "Irregular periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/irregular-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 26 Jun 2026"
+    },
+    {
+     "id": "NHS_MISSED",
+     "title": "Missed or late periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/stopped-or-missed-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 12 Jun 2026"
+    },
+    {
+     "id": "MAYO_CYCLE",
+     "title": "Menstrual cycle: What's typical, what's not",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186",
+     "accessed": "2026-10-06",
+     "note": "Dated 03 Jun 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• خون‌ریزی‌ها و علائمت را ثبت کن.\n• دربارهٔ این‌که با روش تو چه انتظاری باید داشته باشی، از پزشک یا ماما بپرس.",
+   "whenToSeekFa": "• اگر خون‌ریزی غیرعادی، درد شدید یا تغییر ناگهانی داری، با پزشک صحبت کن.\n• اگر فکر می‌کنی ممکن است باردار باشی، تست بارداری بده؛ هورمون‌های قرص جواب تست را خراب نمی‌کنند.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ctx_postpartum",
+   "category": "cycle_hormones",
+   "titleFa": "بعد از زایمان یا در دوران شیردهی",
+   "summaryFa": "بعد از زایمان و در شیردهی، زمان برگشت تخمک‌گذاری و پریود قابل پیش‌بینی نیست؛ مرحلهٔ تقویمی را نشان نمی‌دهیم.",
+   "bodyFa": "شیردهی معمولاً برگشت پریود بعد از زایمان را عقب می‌اندازد. در این دوران ممکن است تخمک‌گذاری انجام شود یا نشود، و زمان آن قابل پیش‌بینی نیست.\n\nروش «شیردهی برای جلوگیری» (LAM) فقط تا ۶ ماه اول و فقط با رعایت دقیق شرایطش مؤثر است. اگر نمی‌خواهی دوباره باردار شوی، دربارهٔ روش جلوگیری با پزشک صحبت کن.\n\nبرای همین، تا وقتی این شرایط را در برنامه فعال گذاشته‌ای، فقط توضیح کلی چرخه و ثبت روزانه را می‌بینی.",
+   "applicableContexts": [
+    "postpartum_or_breastfeeding"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "OWH",
+    "MAYO_CYCLE",
+    "NHS_NFP"
+   ],
+   "sources": [
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "MAYO_CYCLE",
+     "title": "Menstrual cycle: What's typical, what's not",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186",
+     "accessed": "2026-10-06",
+     "note": "Dated 03 Jun 2026"
+    },
+    {
+     "id": "NHS_NFP",
+     "title": "Natural family planning",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/methods-of-contraception/natural-family-planning/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• خون‌ریزی‌ها را ثبت کن تا برگشت پریود را ببینی.\n• وقتی پریودهایت برگشت و منظم شد، این گزینه را در تنظیمات خاموش کن.",
+   "whenToSeekFa": "• خون‌ریزی خیلی زیاد بعد از زایمان، تب یا درد شدید نیاز به بررسی فوری دارد.\n• اگر حالت روحی‌ات خیلی پایین است یا فکر آسیب به خودت را داری، همین حالا کمک بگیر.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ctx_perimenopause",
+   "category": "cycle_hormones",
+   "titleFa": "نزدیک یائسگی",
+   "summaryFa": "در سال‌های نزدیک یائسگی، چرخه‌ها نامنظم‌تر می‌شوند و همیشه تخمک‌گذاری نیست؛ مرحلهٔ تقویمی را نشان نمی‌دهیم.",
+   "bodyFa": "دوران نزدیک یائسگی معمولاً بین ۴۵ تا ۵۵ سالگی است. در این دوران ممکن است هر ماه تخمک‌گذاری نباشد. پریودها ممکن است یک یا چند ماه نیایند و دوباره شروع شوند، کوتاه‌تر یا بلندتر، یا کم‌تر یا بیشتر از همیشه باشند.\n\nدر داده‌های واقعی، تفاوت طول چرخه‌ها بعد از ۴۰ سالگی به‌طور چشمگیری بیشتر شد. برای همین تخمین «امروز در کدام مرحله‌ای» قابل اعتماد نیست.\n\nیائسگی یعنی ۱۲ ماه پشت سر هم پریود نشدن.",
+   "applicableContexts": [
+    "perimenopause"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "OWH",
+    "BULL2019",
+    "NHS_MISSED",
+    "MAYO_CYCLE"
+   ],
+   "sources": [
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "BULL2019",
+     "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles (Bull JR et al., 2019)",
+     "org": "npj Digital Medicine",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6710244/",
+     "accessed": "2026-10-06",
+     "note": "npj Digit Med 2019;2:83"
+    },
+    {
+     "id": "NHS_MISSED",
+     "title": "Missed or late periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/stopped-or-missed-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 12 Jun 2026"
+    },
+    {
+     "id": "MAYO_CYCLE",
+     "title": "Menstrual cycle: What's typical, what's not",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186",
+     "accessed": "2026-10-06",
+     "note": "Dated 03 Jun 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• پریودها و علائمی مثل گُرگرفتگی یا بدخوابی را ثبت کن.\n• دربارهٔ تغییرات با پزشک صحبت کن؛ درمان‌هایی برای علائم این دوران وجود دارد.",
+   "whenToSeekFa": "• خون‌ریزی نامنظم نزدیک یائسگی را با پزشک در میان بگذار.\n• خون‌ریزی خیلی زیاد یا خون‌ریزی بعد از یائسگی نیاز به بررسی دارد.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ctx_insufficient_data",
+   "category": "cycle_hormones",
+   "titleFa": "اطلاعات هنوز کافی نیست",
+   "summaryFa": "برای تخمین مرحلهٔ امروز، تاریخ آخرین پریود و طول چرخه یا چند چرخهٔ ثبت‌شده لازم است.",
+   "bodyFa": "ما مرحلهٔ امروز را فقط وقتی تخمین می‌زنیم که بدانیم آخرین پریودت کی شروع شده و طول چرخه‌ات تقریباً چقدر است (یا دست‌کم ۲ چرخهٔ کامل ثبت کرده باشی).\n\nطول چرخه بین افراد و حتی از ماهی به ماه دیگر فرق می‌کند. در داده‌های بیش از ۶۰۰ هزار چرخه، فقط ۱۳٪ دقیقاً ۲۸ روز بودند. پس عدد ۲۸ را برای تو فرض نمی‌کنیم.\n\nتا آن موقع، توضیح کلی چرخه را می‌بینی و ثبت روزانه کاملاً کار می‌کند.",
+   "applicableContexts": [
+    "insufficient_data"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "BULL2019",
+    "NHS_FERT",
+    "OWH"
+   ],
+   "sources": [
+    {
+     "id": "BULL2019",
+     "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles (Bull JR et al., 2019)",
+     "org": "npj Digital Medicine",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6710244/",
+     "accessed": "2026-10-06",
+     "note": "npj Digit Med 2019;2:83"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• وقتی پریود بعدی شروع شد، آن را ثبت کن.\n• اگر طول چرخه‌ات را مطمئنی، در تنظیمات وارد کن.",
+   "whenToSeekFa": "• اگر فاصلهٔ پریودها کمتر از ۲۱ یا بیشتر از ۳۵ روز است، با پزشک صحبت کن.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ctx_pregnancy",
+   "category": "cycle_hormones",
+   "titleFa": "حالت بارداری فعال است",
+   "summaryFa": "در بارداری تخمک‌گذاری و پریود متوقف می‌شود؛ توضیح مرحله‌های چرخه را نشان نمی‌دهیم.",
+   "bodyFa": "در دوران بارداری تخمک‌گذاری انجام نمی‌شود و پریود نمی‌آید. برای همین، توضیح مرحله‌های چرخه و پیش‌بینی پریود متوقف شده است.\n\nاگر این حالت را اشتباهی روشن کرده‌ای، یا بارداری ادامه پیدا نکرده، می‌توانی آن را در تنظیمات خاموش کنی.",
+   "applicableContexts": [
+    "pregnancy_mode"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "OWH",
+    "NHS_PTEST",
+    "NHS_ECTOPIC"
+   ],
+   "sources": [
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "NHS_PTEST",
+     "title": "Doing a pregnancy test",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/pregnancy/trying-for-a-baby/doing-a-pregnancy-test/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2022"
+    },
+    {
+     "id": "NHS_ECTOPIC",
+     "title": "Ectopic pregnancy – Symptoms",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/ectopic-pregnancy/symptoms/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 23 Aug 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• برای مراقبت‌های بارداری با پزشک یا ماما در تماس باش.",
+   "whenToSeekFa": "• خون‌ریزی، درد یک‌طرفهٔ شکم یا درد نوک شانه در اوایل بارداری نیاز به بررسی دارد.\n• درد ناگهانی و شدید شکم همراه با سرگیجه یا غش، اورژانسی است.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "cycle_overview",
+   "category": "cycle_hormones",
+   "titleFa": "چرخهٔ قاعدگی چیست؟",
+   "summaryFa": "چرخه از روز اول پریود شروع می‌شود و تا روز قبل از پریود بعدی ادامه دارد.",
+   "bodyFa": "چرخهٔ قاعدگی از روز اول پریود شروع می‌شود و وقتی پریود بعدی شروع شد، دوباره از روز ۱ حساب می‌شود. در طول چرخه، بدن مقدار هورمون‌های مختلف را کم و زیاد می‌کند تا برای بارداری احتمالی آماده شود.\n\nطول چرخه برای افراد مختلف فرق دارد. NHS فاصلهٔ ۲۱ تا ۳۵ روز را طبیعی می‌داند و OWH فاصلهٔ ۲۴ تا ۳۸ روز را «منظم» حساب می‌کند. طول چرخه حتی از ماهی به ماه دیگر کمی فرق می‌کند.\n\nتخمک‌گذاری معمولاً ۱۰ تا ۱۶ روز قبل از پریود بعدی است؛ پس برای همه «روز ۱۴» نیست.\n\nنمودارهای هورمونی این برنامه فقط آموزشی‌اند و مقدار هورمون تو را نشان نمی‌دهند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "OWH",
+    "NHS_FERT"
+   ],
+   "sources": [
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "hormones_roles",
+   "category": "cycle_hormones",
+   "titleFa": "استروژن، پروژسترون، FSH و LH چه می‌کنند؟",
+   "summaryFa": "چهار هورمون اصلی چرخه را هدایت می‌کنند؛ این توضیح آموزشی است، نه اندازه‌گیری بدن تو.",
+   "bodyFa": "• FSH (هورمون محرک فولیکول): از غدهٔ هیپوفیز در مغز ترشح می‌شود و اول چرخه باعث رشد فولیکول‌ها (کیسه‌های کوچک تخمک) در تخمدان می‌شود.\n• استروژن: بیشترش را فولیکول در حال رشد می‌سازد. پوشش رحم را ضخیم می‌کند و ترشحات را نزدیک تخمک‌گذاری شفاف و کش‌دار می‌کند.\n• LH: آن هم از هیپوفیز می‌آید. وقتی استروژن به حد کافی بالا رفت، LH یک‌باره زیاد می‌شود (جهش LH) و حدود یک تا یک‌ونیم روز بعد تخمک آزاد می‌شود.\n• پروژسترون: بعد از تخمک‌گذاری، جسم زرد (ساختار موقتی که از فولیکول درست می‌شود) آن را می‌سازد. پوشش رحم را برای لانه‌گزینی آماده می‌کند، ترشحات را غلیظ می‌کند و دمای پایهٔ بدن را کمی بالا می‌برد.\n\nاگر بارداری رخ ندهد، استروژن و پروژسترون پایین می‌آیند و پریود شروع می‌شود.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "STATPEARLS",
+    "ENDOTEXT",
+    "OWH",
+    "NHS_FERT"
+   ],
+   "sources": [
+    {
+     "id": "STATPEARLS",
+     "title": "Physiology, Menstrual Cycle (Thiyagarajan DK, Basit H, Jeanmonod R)",
+     "org": "StatPearls – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK500020/",
+     "accessed": "2026-10-06",
+     "note": "Updated 27 Sep 2024"
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "bbt_tracking",
+   "category": "fertility_discharge",
+   "titleFa": "دمای پایهٔ بدن چیست و چطور ثبت شود؟",
+   "summaryFa": "دمای بدن بعد از تخمک‌گذاری کمی بالا می‌رود؛ اما فقط بعد از اتفاق نشان می‌دهد.",
+   "bodyFa": "دمای پایه، دمای بدن در حالت کامل استراحت است؛ یعنی صبح، بعد از خواب و قبل از بلند شدن. بعد از تخمک‌گذاری، پروژسترون آن را کمی بالا می‌برد (حدود ۰٫۲ تا ۰٫۵ درجهٔ سانتی‌گراد) و معمولاً تا آخر چرخه بالاتر می‌ماند.\n\nاگر دست‌کم ۳ روز پشت سر هم دمای بالاتر ببینی، احتمالاً تخمک‌گذاری گذشته است. یعنی دمای پایه به‌تنهایی برای پیدا کردن روزهای باروری از قبل یا برای جلوگیری از بارداری کافی نیست.\n\nالکل، تب، کم‌خوابی، استرس، بعضی داروها، سفر به منطقهٔ زمانی دیگر و شیردهی می‌توانند دما را تغییر دهند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "CC_BBT",
+    "ACOG_FAB",
+    "CC_LUTEAL"
+   ],
+   "sources": [
+    {
+     "id": "CC_BBT",
+     "title": "Basal Body Temperature",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21065-basal-body-temperature",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ACOG_FAB",
+     "title": "Fertility Awareness-Based Methods of Family Planning",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "CC_LUTEAL",
+     "title": "Luteal Phase",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/24417-luteal-phase",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• دماسنج مخصوص دمای پایه را کنار تخت بگذار.\n• هر روز همان ساعت و قبل از هر کاری اندازه بگیر.\n• عواملی مثل بیماری یا کم‌خوابی را یادداشت کن.",
+   "whenToSeekFa": "• اگر چند ماه است قصد بارداری داری و موفق نشده‌ای، با پزشک صحبت کن.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "lh_tests",
+   "category": "fertility_discharge",
+   "titleFa": "تست تخمک‌گذاری (LH) خانگی",
+   "summaryFa": "تست مثبت یعنی تخمک‌گذاری احتمالاً نزدیک است، نه این‌که قطعاً انجام شده.",
+   "bodyFa": "تست تخمک‌گذاری خانگی، افزایش ناگهانی هورمون LH را در ادرار پیدا می‌کند. جواب مثبت یعنی تخمک‌گذاری احتمالاً در ۲۴ تا ۳۶ ساعت آینده است؛ اما این برای همه صدق نمی‌کند و گاهی جواب مثبتِ کاذب پیش می‌آید.\n\nزمان شروع تست به طول چرخه بستگی دارد. اگر یک روز تست ندهی ممکن است جهش LH را از دست بدهی، و در چرخهٔ نامنظم پیدا کردن آن سخت‌تر است. نوشیدن مقدار زیاد مایعات قبل از تست و بعضی داروهای هورمونی می‌توانند روی جواب اثر بگذارند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "MEDLINE_LH",
+    "ENDOTEXT"
+   ],
+   "sources": [
+    {
+     "id": "MEDLINE_LH",
+     "title": "Ovulation home test",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/007062.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ENDOTEXT",
+     "title": "The Normal Menstrual Cycle and the Control of Ovulation (Reed BG, Carr BR)",
+     "org": "Endotext – NCBI Bookshelf",
+     "url": "https://www.ncbi.nlm.nih.gov/books/NBK279054/",
+     "accessed": "2026-10-06",
+     "note": "Last update 05 Aug 2018"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• طبق دستور همان بسته تست بده.\n• نتیجه را در ثبت روزانه بنویس؛ برنامه آن را تأیید قطعی تخمک‌گذاری حساب نمی‌کند.",
+   "whenToSeekFa": "• اگر نمی‌توانی جهش را پیدا کنی یا بعد از چند ماه باردار نشده‌ای، با پزشک صحبت کن.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "period_pain_care",
+   "category": "period_pain",
+   "titleFa": "درد پریود؛ چه چیزهایی کمک می‌کند؟",
+   "summaryFa": "درد یا ناراحتی قبل یا در روزهای اول پریود شایع است و راه‌های ساده‌ای برای کم کردنش هست.",
+   "bodyFa": "درد پریود وقتی پیش می‌آید که رحم منقبض می‌شود. ماده‌ای به نام پروستاگلاندین در پوشش رحم این انقباض را ایجاد می‌کند و روز اول بیشتر است؛ برای همین درد معمولاً بعد از چند روز اول کم می‌شود. درد ممکن است تیز یا مبهم باشد و به کمر و ران برسد. معمولاً تا حدود ۳ روز طول می‌کشد.\n\nگاهی درد پریود به‌خاطر بیماری‌هایی مثل اندومتریوز (رشد بافتی شبیه پوشش رحم در جاهای دیگر)، فیبروم (توده‌های غیرسرطانی رحم) یا عفونت لگن است. آی‌یو‌دی مسی هم در ۳ تا ۶ ماه اول ممکن است درد را بیشتر کند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PAIN",
+    "ACOG_PAIN"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PAIN",
+     "title": "Period pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/period-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Mar 2026"
+    },
+    {
+     "id": "ACOG_PAIN",
+     "title": "Dysmenorrhea: Painful Periods – FAQ046",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Jan 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• کیسهٔ آب گرم پیچیده در حوله روی شکم، یا دوش و حمام گرم.\n• ماساژ شکم و کمر.\n• ورزش سبک مثل یوگا، شنا، پیاده‌روی یا دوچرخه.\n• مسکن‌هایی مثل ایبوپروفن یا استامینوفن طبق دستور بسته.\n• خواب کافی؛ کم کردن الکل و نکشیدن سیگار هم ممکن است کمک کند.",
+   "whenToSeekFa": "• اگر درد شدید یا بدتر از همیشه است و مسکن کمکی نکرده، همان روز کمک پزشکی بگیر.\n• اگر پریودها دردناک‌تر، سنگین‌تر یا نامنظم شده‌اند، یا درد جلوی کارهای روزانه‌ات را می‌گیرد، با پزشک صحبت کن.\n• درد هنگام رابطه، ادرار یا اجابت مزاج، تورم شکم، بی‌اشتهایی یا کاهش وزن بی‌دلیل را با پزشک در میان بگذار.",
+   "careTags": [
+    "pain"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "heavy_periods",
+   "category": "period_pain",
+   "titleFa": "خون‌ریزی زیاد",
+   "summaryFa": "خون‌ریزی زیاد ممکن است برای بعضی‌ها عادی باشد، اما اگر زندگی‌ات را مختل می‌کند، درمان دارد.",
+   "bodyFa": "ممکن است خون‌ریزی‌ات زیاد باشد اگر:\n• هر ۱ تا ۲ ساعت باید پد یا تامپون را عوض کنی.\n• مجبوری دو نوع محصول را با هم استفاده کنی (مثلاً پد و تامپون).\n• پریود بیشتر از ۷ روز طول می‌کشد.\n• لختهٔ بزرگ‌تر از حدود ۲٫۵ سانتی‌متر دفع می‌کنی.\n• خون به لباس یا ملافه می‌رسد.\n• به‌خاطر پریود کارهای روزانه را کنار می‌گذاری.\n• زیاد احساس خستگی یا تنگی نفس داری.\n\nخون‌ریزی زیاد می‌تواند به کم‌خونی ناشی از کمبود آهن برسد.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_HEAVY",
+    "ACOG_HEAVY"
+   ],
+   "sources": [
+    {
+     "id": "NHS_HEAVY",
+     "title": "Heavy periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/heavy-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 19 Sep 2024"
+    },
+    {
+     "id": "ACOG_HEAVY",
+     "title": "Heavy Menstrual Bleeding – FAQ193",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/heavy-menstrual-bleeding",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed May 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• میزان خون‌ریزی و تعداد پد یا تامپون را در روزهای پریود ثبت کن.\n• این ثبت را برای پزشک ببر.",
+   "whenToSeekFa": "• اگر خون‌ریزی زیاد زندگی‌ات را مختل می‌کند یا مدتی است ادامه دارد، با پزشک صحبت کن.\n• درد شدید، خون‌ریزی بین پریودها یا بعد از رابطه هم نیاز به بررسی دارد.",
+   "careTags": [
+    "heavy"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ovulation_pain",
+   "category": "period_pain",
+   "titleFa": "درد تخمک‌گذاری",
+   "summaryFa": "بعضی‌ها حدود ۱۴ روز قبل از پریود، درد کوتاه و یک‌طرفه در پایین شکم دارند.",
+   "bodyFa": "درد تخمک‌گذاری ممکن است به شکل درد مبهم یا تیر کشیدن ناگهانی باشد، از چند دقیقه تا ۱ یا ۲ روز طول بکشد و هر بار فقط یک طرف شکم را درگیر کند. ممکن است کمی خون‌ریزی یا ترشح هم همراهش باشد.\n\nبیماری‌هایی مثل اندومتریوز، کیست تخمدان، بعضی عفونت‌های آمیزشی، چسبندگی بعد از جراحی و بارداری خارج از رحم ممکن است درد مشابهی ایجاد کنند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_OVPAIN"
+   ],
+   "sources": [
+    {
+     "id": "NHS_OVPAIN",
+     "title": "Ovulation pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/ovulation-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 17 Jul 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• حمام گرم یا مسکن رایج طبق دستور.",
+   "whenToSeekFa": "• اگر درد شدید است و مسکن کمکی نکرده، مدام برمی‌گردد، یا ممکن است باردار باشی، زودتر کمک پزشکی بگیر.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "fertility_window_limits",
+   "category": "fertility_discharge",
+   "titleFa": "بازهٔ تخمینی باروری و محدودیت‌هایش",
+   "summaryFa": "تقویم فقط تخمین می‌زند؛ نه تخمک‌گذاری را تأیید می‌کند و نه روش جلوگیری است.",
+   "bodyFa": "بارداری تقریباً فقط وقتی رخ می‌دهد که رابطه در یک دورهٔ حدود ۶ روزه باشد که به روز تخمک‌گذاری ختم می‌شود. اسپرم چند روز زنده می‌ماند و تخمک فقط ۱۲ تا ۲۴ ساعت.\n\nاما زمان این دوره حتی در چرخه‌های منظم هم جابه‌جا می‌شود. در یک مطالعه فقط حدود ۳۰٪ زنان کل روزهای باروری‌شان در روزهای ۱۰ تا ۱۷ چرخه بود.\n\nاین برنامه بازهٔ باروری را از روی تاریخ تخمینی پریود بعدی و این شواهد تخمین می‌زند. هیچ «روز امنی» نمی‌سازد، درصد احتمال بارداری نمی‌دهد و روش جلوگیری نیست. روش‌های آگاهی از باروری فقط با آموزش و ثبت دقیق روزانهٔ دما و ترشحات مؤثرترند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "WILCOX1995",
+    "WILCOX2000",
+    "OWH",
+    "NHS_FERT",
+    "NHS_NFP"
+   ],
+   "sources": [
+    {
+     "id": "WILCOX1995",
+     "title": "Timing of sexual intercourse in relation to ovulation (Wilcox AJ, Weinberg CR, Baird DD, 1995)",
+     "org": "New England Journal of Medicine",
+     "url": "https://pubmed.ncbi.nlm.nih.gov/7477165/",
+     "accessed": "2026-10-06",
+     "note": "NEJM 1995;333:1517-21 – abstract read"
+    },
+    {
+     "id": "WILCOX2000",
+     "title": "The timing of the 'fertile window' in the menstrual cycle (Wilcox AJ, Dunson D, Baird DD, 2000)",
+     "org": "BMJ",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC27529/",
+     "accessed": "2026-10-06",
+     "note": "BMJ 2000;321:1259"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_NFP",
+     "title": "Natural family planning",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/methods-of-contraception/natural-family-planning/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر قصد بارداری داری، رابطهٔ منظم (مثلاً هر ۲ تا ۳ روز) بهتر از تکیه بر یک روز خاص است.\n• اگر نمی‌خواهی باردار شوی، از یک روش جلوگیری مطمئن استفاده کن.",
+   "whenToSeekFa": "• اگر بعد از رابطهٔ بدون محافظت نگرانی، جلوگیری اضطراری را بخوان و زود اقدام کن.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "discharge_normal",
+   "category": "fertility_discharge",
+   "titleFa": "ترشحات طبیعی و ترشحات نگران‌کننده",
+   "summaryFa": "ترشحات واژن طبیعی است و در طول چرخه عوض می‌شود.",
+   "bodyFa": "ترشحات واژن مایعی است که واژن را تمیز و مرطوب نگه می‌دارد و از عفونت محافظت می‌کند. معمولاً جای نگرانی نیست اگر بوی تند یا بد ندارد و شفاف یا سفید، غلیظ و چسبناک، یا لغزنده و مرطوب است. نزدیک تخمک‌گذاری ترشحات معمولاً شفاف‌تر، مرطوب‌تر و بیشتر است.\n\nاگر بو، رنگ یا حالت ترشحات عوض شود، ممکن است نشانهٔ عفونت باشد. خودت تشخیص نده و بررسی شو.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_DISCHARGE",
+    "NHS_FERT",
+    "CC_MUCUS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_DISCHARGE",
+     "title": "Vaginal discharge",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/vaginal-discharge/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 15 Feb 2024"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "CC_MUCUS",
+     "title": "Cervical Mucus",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21957-cervical-mucus",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• با آب گرم و صابون ملایم بدون عطر، فقط بیرون واژن را بشوی.\n• از صابون یا اسپری خوشبو و دستمال مرطوب معطر استفاده نکن.\n• داخل واژن را شستشو نده.",
+   "whenToSeekFa": "• تغییر رنگ، بو یا حالت ترشحات، ترشح بیشتر از همیشه، خارش یا سوزش، خون‌ریزی بین پریودها یا بعد از رابطه، درد هنگام ادرار یا درد لگن نیاز به بررسی دارد.",
+   "careTags": [
+    "discharge"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "pregnancy_test_timing",
+   "category": "fertility_discharge",
+   "titleFa": "کِی تست بارداری بدهم؟",
+   "summaryFa": "بیشتر تست‌ها از روز اول عقب افتادن پریود قابل اعتمادترند.",
+   "bodyFa": "بیشتر تست‌های بارداری خانگی را می‌توان از روز اول عقب افتادن پریود انجام داد. اگر نمی‌دانی پریودت کی باید می‌آمد، دست‌کم ۲۱ روز بعد از آخرین رابطهٔ بدون محافظت تست بده. نمونهٔ ادرار هر ساعتی از روز قابل استفاده است.\n\nتست‌ها هورمون hCG (هورمون بارداری) را پیدا می‌کنند. جواب مثبت تقریباً همیشه درست است؛ جواب منفی کمتر قابل اعتماد است، به‌خصوص اگر زود تست داده باشی. قرص ضدبارداری روی جواب تست اثر ندارد.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PTEST"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PTEST",
+     "title": "Doing a pregnancy test",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/pregnancy/trying-for-a-baby/doing-a-pregnancy-test/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• دستور همان تست را دقیق انجام بده.\n• اگر منفی بود و هنوز فکر می‌کنی باردار باشی، چند روز بعد دوباره تست بده.",
+   "whenToSeekFa": "• اگر تست دوم هم منفی بود و پریود نیامد، با پزشک صحبت کن.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "emergency_contraception",
+   "category": "fertility_discharge",
+   "titleFa": "جلوگیری اضطراری",
+   "summaryFa": "بعد از رابطهٔ بدون محافظت یا شکست روش جلوگیری، هرچه زودتر اقدام کنی مؤثرتر است.",
+   "bodyFa": "جلوگیری اضطراری می‌تواند بعد از رابطهٔ بدون محافظت (یا وقتی روش جلوگیری شاید کار نکرده) از بارداری جلوگیری کند. باید ظرف ۳ تا ۵ روز بعد از رابطه استفاده شود و هرچه زودتر، معمولاً مؤثرتر است. لازم نیست صبر کنی تا پریود عقب بیفتد.\n\nدو نوع اصلی دارد:\n• آی‌یو‌دی مسی: تا ۵ روز (۱۲۰ ساعت) بعد از رابطه توسط پزشک یا ماما گذاشته می‌شود و مؤثرترین روش است.\n• قرص اورژانسی: نوع لوونورژسترل تا ۳ روز (۷۲ ساعت) و نوع اولیپریستال تا ۵ روز (۱۲۰ ساعت) بعد از رابطه.\n\nدر دسترس بودن این روش‌ها در کشورهای مختلف فرق می‌کند؛ با پزشک یا داروخانه مشورت کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_EC"
+   ],
+   "sources": [
+    {
+     "id": "NHS_EC",
+     "title": "Emergency contraception",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/emergency-contraception/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 31 Jan 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": true,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• هرچه زودتر با پزشک، ماما یا داروخانه صحبت کن.",
+   "whenToSeekFa": "• اگر بعد از استفاده، پریود عقب افتاد یا غیرعادی بود، تست بارداری بده.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "pms_overview",
+   "category": "sleep_mood",
+   "titleFa": "علائم پیش از پریود (PMS)",
+   "summaryFa": "تغییرات جسمی و روحی در روزهای قبل از پریود شایع است و اگر زندگی‌ات را مختل کند، کمک وجود دارد.",
+   "bodyFa": "PMS نام علائمی است که بعضی‌ها در روزها یا هفته‌های قبل از پریود دارند. علائم هر کس فرق می‌کند و از ماهی به ماه دیگر هم فرق دارد. شایع‌ترین‌ها: نوسان خلق، احساس غم یا زودرنجی، اضطراب، خستگی یا بدخوابی، نفخ یا گرفتگی، حساسیت سینه، سردرد، جوش، چرب شدن مو، تغییر اشتها.\n\nعلائم معمولاً چند روز بعد از شروع پریود برطرف می‌شوند. علت دقیق PMS معلوم نیست؛ احتمالاً تغییر هورمون‌ها و حساسیت بیشتر بعضی افراد به این تغییرات نقش دارد.\n\nاین برنامه PMS یا PMDD را تشخیص نمی‌دهد. برای تشخیص، پزشک الگوی علائم را در چند چرخه بررسی می‌کند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACOG_PMS",
+    "MEDLINE_PMS",
+    "MAYO_PMS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "MAYO_PMS",
+     "title": "Premenstrual syndrome (PMS) – Symptoms & causes",
+     "org": "Mayo Clinic",
+     "url": "https://www.mayoclinic.org/diseases-conditions/premenstrual-syndrome/symptoms-causes/syc-20376780",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• ورزش منظم در تمام ماه.\n• غذای متعادل و وعده‌های کوچک‌تر هر ۲ تا ۳ ساعت.\n• خواب کافی و منظم.\n• کم کردن استرس، مثلاً با یوگا یا مدیتیشن.\n• علائم را دست‌کم ۲ چرخه ثبت کن.\n• سیگار نکش و الکل زیاد ننوش.",
+   "whenToSeekFa": "• اگر تغییر سبک زندگی کمکی نکرده یا علائم زندگی روزمره‌ات را مختل می‌کند، با پزشک صحبت کن.\n• اگر فکر آسیب به خودت را داری، همین حالا با اورژانس محلی تماس بگیر.",
+   "careTags": [
+    "mood"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "pmdd_info",
+   "category": "sleep_mood",
+   "titleFa": "PMDD چیست؟ (آموزشی)",
+   "summaryFa": "شکل شدیدتر علائم پیش از پریود که روی زندگی روزمره اثر زیادی دارد. این برنامه آن را تشخیص نمی‌دهد.",
+   "bodyFa": "اختلال ملال پیش از قاعدگی (PMDD) شکل شدید PMS است که تعداد کمی از زنان دارند. علائمش شبیه PMS است اما خیلی شدیدتر: مثلاً احساس اضطراب، خشم یا افسردگی شدید، سردرد، درد عضلات و مفاصل، پرخوری و بدخوابی، و گاهی افکار خودکشی.\n\nعلت آن کاملاً معلوم نیست؛ با حساسیت زیاد به تغییرات هورمونی و عوامل ارثی مرتبط دانسته شده است. درمان‌هایی وجود دارد که پزشک می‌تواند پیشنهاد دهد.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACOG_PMS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• علائم و شدتشان را روزانه ثبت کن و برای پزشک ببر.",
+   "whenToSeekFa": "• اگر فکر خودکشی یا آسیب به خودت را داری، همین حالا با اورژانس محلی یا یک خط کمک فوری تماس بگیر.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "sleep_cycle",
+   "category": "sleep_mood",
+   "titleFa": "خواب و چرخه",
+   "summaryFa": "بدخوابی برای بعضی‌ها قبل از پریود و روزهای اول آن بیشتر است؛ اما برای همه نه.",
+   "bodyFa": "مطالعات نشان می‌دهند بدخوابی بیشتر در چند روز آخر قبل از پریود و چند روز اول خون‌ریزی گزارش می‌شود، به‌خصوص در کسانی که درد پریود یا علائم پیش از پریود دارند. همهٔ مطالعات این را نشان نداده‌اند.\n\nدر نیمهٔ دوم چرخه دمای بدن کمی بالاتر است و در مطالعات آزمایشگاهی خواب REM کمی کمتر بوده است. چرخه‌های نامنظم و خون‌ریزی زیاد هم با خواب بدتر همراه بوده‌اند؛ اما این هم‌زمانی به معنی علت بودن نیست.\n\nسطح شواهد: متوسط و نتایج یکسان نیست.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "SLEEP2023",
+    "ACOG_PMS",
+    "ACOG_PAIN"
+   ],
+   "sources": [
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "ACOG_PAIN",
+     "title": "Dysmenorrhea: Painful Periods – FAQ046",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Jan 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• ساعت خواب و بیداری ثابت، حتی آخر هفته.\n• اگر درد پریود خوابت را خراب می‌کند، مراقبت‌های درد را قبل از خواب انجام بده.\n• کیفیت خوابت را ثبت کن تا الگوی خودت را ببینی.",
+   "whenToSeekFa": "• اگر بدخوابی طولانی است یا روی زندگی‌ات اثر زیادی دارد، با پزشک صحبت کن.",
+   "careTags": [
+    "sleep"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "energy_logging",
+   "category": "sleep_mood",
+   "titleFa": "انرژی و خستگی",
+   "summaryFa": "از روی روز چرخه نمی‌شود گفت انرژی تو امروز زیاد است یا کم؛ ثبت خودت بهترین راهنماست.",
+   "bodyFa": "خستگی از علائم شایع پیش از پریود است و در یک نظرسنجی، حدود نیمی از ۱۵۶ زن سالم در ۵ روز قبل و حین پریود خستگی گزارش کردند. اما این برای همه یکسان نیست و این ادعا که در روزهای خاصی از چرخه همه انرژی بیشتری دارند، پشتوانهٔ محکمی ندارد.\n\nاگر انرژی‌ات را چند چرخه ثبت کنی، برنامه فقط از ثبت‌های خودت الگو نشان می‌دهد.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "GI2014"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "GI2014",
+     "title": "Gastrointestinal symptoms before and during menses in healthy women (Bernstein MT et al., 2014)",
+     "org": "BMC Women's Health",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3901893/",
+     "accessed": "2026-10-06",
+     "note": "BMC Womens Health 2014;14:14 – survey of 156 women"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• انرژی را هر روز ثبت کن: کم، متوسط یا زیاد.",
+   "whenToSeekFa": "• خستگی شدید یا طولانی، به‌خصوص همراه با خون‌ریزی زیاد یا تنگی نفس، نیاز به بررسی دارد (ممکن است کم‌خونی باشد).",
+   "careTags": [
+    "energy"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "digestion_cycle",
+   "category": "digestion_skin",
+   "titleFa": "نفخ و گوارش در طول چرخه",
+   "summaryFa": "نفخ، دل‌درد، یبوست یا اسهال قبل یا حین پریود برای بعضی‌ها پیش می‌آید.",
+   "bodyFa": "نفخ از علائم شایع پیش از پریود است. یبوست یا اسهال هم در فهرست علائم PMS آمده است. در یک نظرسنجی کوچک از ۱۵۶ زن سالم، بیش از نیمی در ۵ روز قبل یا حین پریود دل‌درد گزارش کردند و حدود یک‌چهارم اسهال.\n\nACOG می‌گوید علائم بعضی بیماری‌ها، مثل سندرم روده تحریک‌پذیر (IBS؛ نوعی اختلال گوارشی)، ممکن است شبیه PMS باشد یا با آن هم‌پوشانی داشته باشد.\n\nاین‌ها هم‌زمانی‌اند؛ برنامه علت گوارشی را تشخیص نمی‌دهد. افزایش وزن کوتاه‌مدت را هم خودبه‌خود به «آب» یا «چربی» نسبت نمی‌دهیم.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACOG_PMS",
+    "GI2014",
+    "MEDLINE_PMS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "GI2014",
+     "title": "Gastrointestinal symptoms before and during menses in healthy women (Bernstein MT et al., 2014)",
+     "org": "BMC Women's Health",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3901893/",
+     "accessed": "2026-10-06",
+     "note": "BMC Womens Health 2014;14:14 – survey of 156 women"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• وعده‌های کوچک‌تر و مکرر.\n• نمک کمتر و آب کافی.\n• کافئین و الکل کمتر.\n• علائم گوارشی را ثبت کن تا ببینی با چرخه‌ات هم‌زمان است یا نه.",
+   "whenToSeekFa": "• درد شدید شکم، خون در مدفوع، کاهش وزن بی‌دلیل، بی‌اشتهایی یا تورم شکم نیاز به بررسی دارد.",
+   "careTags": [
+    "bloating",
+    "digestion"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "skin_cycle",
+   "category": "digestion_skin",
+   "titleFa": "پوست و جوش در طول چرخه",
+   "summaryFa": "جوش و چرب شدن مو از علائم شایع پیش از پریود است.",
+   "bodyFa": "NHS جوش و چرب شدن مو را در فهرست علائم شایع PMS آورده است. در یک نظرسنجی از زنان بزرگسالی که جوش داشتند، ۶۵٪ گفتند جوششان با پریود بدتر می‌شود و از این گروه، بیش از نیمی (۵۶٪) بدتر شدن را قبل از شروع پریود گزارش کردند. این یک مطالعهٔ نظرسنجی است و شواهد آن محدود است.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACNE2014",
+    "CC_LUTEAL"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACNE2014",
+     "title": "Perimenstrual Flare of Adult Acne (Geller L et al., 2014)",
+     "org": "Journal of Clinical and Aesthetic Dermatology",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4142818/",
+     "accessed": "2026-10-06",
+     "note": "J Clin Aesthet Dermatol 2014;7(8):30-34 – survey study"
+    },
+    {
+     "id": "CC_LUTEAL",
+     "title": "Luteal Phase",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/24417-luteal-phase",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• روال ملایم مراقبت پوست را ادامه بده.\n• جوش را در ثبت روزانه علامت بزن تا الگوی خودت را ببینی.",
+   "whenToSeekFa": "• اگر جوش شدید یا دردناک است، یا همراه با رشد موی صورت و پریود نامنظم است، با پزشک صحبت کن.",
+   "careTags": [
+    "acne"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "when_to_seek_care",
+   "category": "pattern_care",
+   "titleFa": "چه زمانی بررسی پزشکی لازم است؟",
+   "summaryFa": "خلاصهٔ علامت‌هایی که بهتر است دربارهٔ آن‌ها با پزشک صحبت کنی.",
+   "bodyFa": "با پزشک صحبت کن اگر:\n• فاصلهٔ پریودها کمتر از ۲۱ یا بیشتر از ۳۵ روز است، یا الگوی پریودت عوض شده.\n• ۳ بار پشت سر هم پریود نشده‌ای.\n• پریود بیشتر از ۷ روز طول می‌کشد یا خون‌ریزی خیلی زیاد است.\n• بین پریودها یا بعد از رابطه خون‌ریزی داری.\n• درد پریود جلوی کارهای روزانه‌ات را می‌گیرد.\n• علائم پیش از پریود زندگی‌ات را مختل می‌کند.\n\nزودتر (همان روز) کمک بگیر اگر:\n• درد شکم یا لگن شدید است و مسکن کمکی نکرده.\n• ممکن است باردار باشی و درد یک‌طرفهٔ شکم یا خون‌ریزی داری.\n\nفوری با اورژانس محلی تماس بگیر اگر:\n• درد ناگهانی و شدید شکم همراه با سرگیجه یا غش داری.\n• فکر آسیب زدن به خودت را داری.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_IRREG",
+    "NHS_MISSED",
+    "NHS_HEAVY",
+    "NHS_PAIN",
+    "NHS_PMS",
+    "NHS_ECTOPIC"
+   ],
+   "sources": [
+    {
+     "id": "NHS_IRREG",
+     "title": "Irregular periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/irregular-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 26 Jun 2026"
+    },
+    {
+     "id": "NHS_MISSED",
+     "title": "Missed or late periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/stopped-or-missed-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 12 Jun 2026"
+    },
+    {
+     "id": "NHS_HEAVY",
+     "title": "Heavy periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/heavy-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 19 Sep 2024"
+    },
+    {
+     "id": "NHS_PAIN",
+     "title": "Period pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/period-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Mar 2026"
+    },
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "NHS_ECTOPIC",
+     "title": "Ectopic pregnancy – Symptoms",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/ectopic-pregnancy/symptoms/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 23 Aug 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "ectopic_warning_edu",
+   "category": "pattern_care",
+   "titleFa": "علائم هشدار بارداری خارج از رحم (آموزشی)",
+   "summaryFa": "اگر ممکن است باردار باشی، بعضی دردها و خون‌ریزی‌ها نیاز به بررسی سریع دارند.",
+   "bodyFa": "بارداری خارج از رحم یعنی جنین بیرون از رحم (معمولاً در لولهٔ رحم) لانه کند. علائم معمولاً بین هفتهٔ ۴ تا ۱۲ بارداری شروع می‌شود و بعضی‌ها اول هیچ علامتی ندارند.\n\nعلائم ممکن: خون‌ریزی واژن که با پریود معمول فرق دارد (قطع و وصل می‌شود، آبکی و قهوه‌ای تیره)، درد شکم معمولاً پایین و یک‌طرفه، درد نوک شانه، و ناراحتی هنگام ادرار یا اجابت مزاج.\n\nعلائم پارگی (اورژانسی): درد ناگهانی، تیز و شدید شکم، سرگیجهٔ شدید یا غش، و حالت تهوع.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_ECTOPIC"
+   ],
+   "sources": [
+    {
+     "id": "NHS_ECTOPIC",
+     "title": "Ectopic pregnancy – Symptoms",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/ectopic-pregnancy/symptoms/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 23 Aug 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر ممکن است باردار باشی و این علائم را داری، حتی با تست منفی، با پزشک تماس بگیر.",
+   "whenToSeekFa": "• در علائم پارگی، فوراً با اورژانس محلی تماس بگیر یا به اورژانس برو.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "late_period_info",
+   "category": "fertility_discharge",
+   "titleFa": "پریود دیر کرده؛ چه کنم؟",
+   "summaryFa": "چند روز جابه‌جایی رایج است. اول بررسی کن ثبت را فراموش نکرده باشی.",
+   "bodyFa": "دلیل‌های رایج دیر شدن پریود: بارداری، استرس، شروع دوران نزدیک یائسگی، سندرم تخمدان پلی‌کیستیک (که اکنون PMOS هم نامیده می‌شود)، کاهش یا افزایش زیاد وزن، ورزش خیلی زیاد، بعضی روش‌های هورمونی و شیردهی.\n\nحتی در کسانی که معمولاً منظم‌اند، گاهی تخمک‌گذاری دیرتر انجام می‌شود و پریود هم دیرتر می‌آید.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_MISSED",
+    "WILCOX2000",
+    "NHS_PTEST"
+   ],
+   "sources": [
+    {
+     "id": "NHS_MISSED",
+     "title": "Missed or late periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/stopped-or-missed-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 12 Jun 2026"
+    },
+    {
+     "id": "WILCOX2000",
+     "title": "The timing of the 'fertile window' in the menstrual cycle (Wilcox AJ, Dunson D, Baird DD, 2000)",
+     "org": "BMJ",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC27529/",
+     "accessed": "2026-10-06",
+     "note": "BMJ 2000;321:1259"
+    },
+    {
+     "id": "NHS_PTEST",
+     "title": "Doing a pregnancy test",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/pregnancy/trying-for-a-baby/doing-a-pregnancy-test/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": "• اگر پریود شروع شده و ثبت نکرده‌ای، ثبتش کن.\n• اگر ممکن است باردار باشی، از روز اول عقب افتادن پریود تست بده.",
+   "whenToSeekFa": "• اگر ۳ بار پشت سر هم پریود نشده‌ای، یا همراه آن تغییر وزن، خستگی، رشد موی صورت یا پوست خیلی خشک یا چرب داری، با پزشک صحبت کن.",
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_menstruation_early",
+   "category": "pattern_care",
+   "titleFa": "مراقبت در روزهای اول پریود",
+   "summaryFa": "گرما، حرکت سبک، استراحت کافی و مسکن طبق دستور.",
+   "bodyFa": "• کیسهٔ آب گرم روی شکم یا دوش گرم.\n• ورزش سبک مثل پیاده‌روی یا یوگا اگر حالش را داری.\n• مسکن رایج طبق دستور بسته، اگر منعی نداری.\n• میزان خون‌ریزی و درد را ثبت کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PAIN",
+    "ACOG_PAIN"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PAIN",
+     "title": "Period pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/period-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Mar 2026"
+    },
+    {
+     "id": "ACOG_PAIN",
+     "title": "Dysmenorrhea: Painful Periods – FAQ046",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Jan 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "menstruation_early"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_menstruation_late",
+   "category": "pattern_care",
+   "titleFa": "مراقبت در روزهای آخر پریود",
+   "summaryFa": "روز پایان را ثبت کن و به مدت خون‌ریزی توجه کن.",
+   "bodyFa": "• روز پایان خون‌ریزی را ثبت کن.\n• اگر خون‌ریزی بیشتر از ۷ روز شد، با پزشک صحبت کن.\n• محصول بهداشتی را طبق دستور عوض کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_HEAVY",
+    "OWH"
+   ],
+   "sources": [
+    {
+     "id": "NHS_HEAVY",
+     "title": "Heavy periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/heavy-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 19 Sep 2024"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "menstruation_late"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_follicular_early",
+   "category": "pattern_care",
+   "titleFa": "مراقبت بعد از پریود",
+   "summaryFa": "زمان خوبی برای کامل کردن ثبت‌هاست.",
+   "bodyFa": "• اگر پایان پریود را ثبت نکرده‌ای، ثبتش کن.\n• اگر ترشحات را دنبال می‌کنی، حالت آن را بنویس.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "OWH",
+    "CC_MUCUS"
+   ],
+   "sources": [
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    },
+    {
+     "id": "CC_MUCUS",
+     "title": "Cervical Mucus",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21957-cervical-mucus",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "follicular_early"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_follicular_late",
+   "category": "pattern_care",
+   "titleFa": "مراقبت نزدیک تخمک‌گذاری تخمینی",
+   "summaryFa": "این تخمین روش جلوگیری نیست.",
+   "bodyFa": "• اگر قصد بارداری داری، رابطهٔ منظم مثلاً هر ۲ تا ۳ روز کمک می‌کند.\n• اگر نمی‌خواهی باردار شوی، از روش جلوگیری مطمئن استفاده کن.\n• حالت ترشحات را ثبت کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_IRREG",
+    "NHS_FERT",
+    "ACOG_FAB"
+   ],
+   "sources": [
+    {
+     "id": "NHS_IRREG",
+     "title": "Irregular periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/irregular-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 26 Jun 2026"
+    },
+    {
+     "id": "NHS_FERT",
+     "title": "Periods and fertility in the menstrual cycle",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/periods/fertility-in-the-menstrual-cycle/",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "ACOG_FAB",
+     "title": "Fertility Awareness-Based Methods of Family Planning",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "follicular_late"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_peri_ovulatory",
+   "category": "pattern_care",
+   "titleFa": "مراقبت حوالی تخمک‌گذاری",
+   "summaryFa": "درد کوتاه یک‌طرفه شایع است؛ درد شدید نیاز به بررسی دارد.",
+   "bodyFa": "• برای درد خفیف، حمام گرم یا مسکن رایج.\n• تست LH مثبت یعنی تخمک‌گذاری احتمالاً نزدیک است، نه قطعی.\n• کاندوم تنها محافظ در برابر عفونت‌های آمیزشی است.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_OVPAIN",
+    "MEDLINE_LH",
+    "NHS_NFP"
+   ],
+   "sources": [
+    {
+     "id": "NHS_OVPAIN",
+     "title": "Ovulation pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/ovulation-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 17 Jul 2026"
+    },
+    {
+     "id": "MEDLINE_LH",
+     "title": "Ovulation home test",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/007062.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_NFP",
+     "title": "Natural family planning",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/methods-of-contraception/natural-family-planning/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "peri_ovulatory"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_luteal_early",
+   "category": "pattern_care",
+   "titleFa": "مراقبت بعد از تخمک‌گذاری",
+   "summaryFa": "اگر دمای پایه را ثبت می‌کنی، هر روز همان ساعت.",
+   "bodyFa": "• دمای پایه را صبح، قبل از بلند شدن و همان ساعت اندازه بگیر.\n• بیماری، کم‌خوابی یا الکل را یادداشت کن چون روی دما اثر دارند.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "CC_BBT"
+   ],
+   "sources": [
+    {
+     "id": "CC_BBT",
+     "title": "Basal Body Temperature",
+     "org": "Cleveland Clinic",
+     "url": "https://my.clevelandclinic.org/health/articles/21065-basal-body-temperature",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "luteal_early"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_luteal_mid",
+   "category": "pattern_care",
+   "titleFa": "مراقبت در میانهٔ نیمهٔ دوم چرخه",
+   "summaryFa": "ورزش منظم و خواب منظم برای خیلی‌ها علائم پیش از پریود را کم می‌کند.",
+   "bodyFa": "• ورزش هوازی حدود ۳۰ دقیقه بیشتر روزهای هفته.\n• ساعت خواب و بیداری ثابت.\n• وعده‌های کوچک‌تر و نمک و کافئین کمتر.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "ACOG_PMS",
+    "NHS_PMS",
+    "MEDLINE_PMS"
+   ],
+   "sources": [
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "luteal_mid"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_luteal_late",
+   "category": "pattern_care",
+   "titleFa": "مراقبت در روزهای پیش از پریود",
+   "summaryFa": "خودت را آماده کن و علائم را ثبت کن.",
+   "bodyFa": "• وسایل پریود را آماده داشته باش.\n• خواب کافی، ورزش سبک و کم کردن استرس.\n• علائم را ثبت کن؛ ثبت ۲ تا ۳ چرخه برای پزشک مفید است.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACOG_PMS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "luteal_late_premenstrual"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_late",
+   "category": "pattern_care",
+   "titleFa": "مراقبت وقتی پریود دیر کرده",
+   "summaryFa": "اول ثبت را بررسی کن؛ اگر ممکن است باردار باشی، تست بده.",
+   "bodyFa": "• اگر پریود شروع شده و ثبت نکرده‌ای، ثبتش کن.\n• از روز اول عقب افتادن پریود تست بارداری قابل اعتمادتر است.\n• اگر در ۳ تا ۵ روز گذشته رابطهٔ بدون محافظت داشته‌ای، جلوگیری اضطراری را زود بررسی کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PTEST",
+    "NHS_EC",
+    "NHS_MISSED"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PTEST",
+     "title": "Doing a pregnancy test",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/pregnancy/trying-for-a-baby/doing-a-pregnancy-test/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 09 Feb 2022"
+    },
+    {
+     "id": "NHS_EC",
+     "title": "Emergency contraception",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/contraception/emergency-contraception/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 31 Jan 2024"
+    },
+    {
+     "id": "NHS_MISSED",
+     "title": "Missed or late periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/stopped-or-missed-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 12 Jun 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "late_period"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_sw_unknown",
+   "category": "pattern_care",
+   "titleFa": "مراقبت عمومی",
+   "summaryFa": "ثبت منظم، خواب کافی و توجه به علائم هشدار.",
+   "bodyFa": "• تاریخ پریودها و علائم را ثبت کن.\n• ورزش منظم و خواب کافی.\n• علائم هشدار را در «چه زمانی بررسی لازم است؟» بخوان.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "OWH"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "OWH",
+     "title": "Your menstrual cycle",
+     "org": "Office on Women's Health (womenshealth.gov)",
+     "url": "https://womenshealth.gov/menstrual-cycle/your-menstrual-cycle",
+     "accessed": "2026-10-06",
+     "note": "Page last updated 13 Jan 2025"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "unknown"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_log_heavy",
+   "category": "pattern_care",
+   "titleFa": "امروز «خون‌ریزی زیاد» ثبت کرده‌ای",
+   "summaryFa": "میزان خون‌ریزی را زیر نظر بگیر و علائم خون‌ریزی زیاد را بشناس.",
+   "bodyFa": "• تعداد پد یا تامپون را بنویس.\n• اگر هر ۱ تا ۲ ساعت محصول پر می‌شود، لختهٔ بزرگ‌تر از ۲٫۵ سانتی‌متر داری، یا خیلی خسته و کم‌نفسی، با پزشک صحبت کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_HEAVY",
+    "ACOG_HEAVY"
+   ],
+   "sources": [
+    {
+     "id": "NHS_HEAVY",
+     "title": "Heavy periods",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/heavy-periods/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 19 Sep 2024"
+    },
+    {
+     "id": "ACOG_HEAVY",
+     "title": "Heavy Menstrual Bleeding – FAQ193",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/heavy-menstrual-bleeding",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed May 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [
+    "heavy"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_log_pain",
+   "category": "pattern_care",
+   "titleFa": "امروز درد ثبت کرده‌ای",
+   "summaryFa": "چند کار ساده که برای درد پریود کمک می‌کند.",
+   "bodyFa": "• کیسهٔ آب گرم روی شکم یا دوش گرم.\n• ماساژ و حرکت سبک.\n• مسکن رایج طبق دستور، اگر منعی نداری.\n• اگر درد شدید است و مسکن کمکی نکرده، همان روز کمک پزشکی بگیر.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PAIN",
+    "ACOG_PAIN"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PAIN",
+     "title": "Period pain",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/symptoms/period-pain/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Mar 2026"
+    },
+    {
+     "id": "ACOG_PAIN",
+     "title": "Dysmenorrhea: Painful Periods – FAQ046",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/dysmenorrhea-painful-periods",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Jan 2022"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [
+    "pain"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_log_mood",
+   "category": "pattern_care",
+   "titleFa": "امروز حال روحی سخت‌تری ثبت کرده‌ای",
+   "summaryFa": "مراقبت از خودت مهم است؛ اگر حالت خیلی بد است، کمک بگیر.",
+   "bodyFa": "• کمی حرکت یا پیاده‌روی، اگر برایت ممکن است.\n• خواب منظم و کم کردن استرس، مثلاً با تنفس آرام یا مدیتیشن.\n• با کسی که به او اعتماد داری حرف بزن.\n• اگر فکر آسیب به خودت را داری، همین حالا با اورژانس محلی تماس بگیر.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "ACOG_PMS",
+    "MEDLINE_PMS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [
+    "mood"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_log_bloating",
+   "category": "pattern_care",
+   "titleFa": "امروز نفخ یا علائم گوارشی ثبت کرده‌ای",
+   "summaryFa": "چند کار ساده برای نفخ.",
+   "bodyFa": "• وعده‌های کوچک‌تر و مکرر.\n• نمک، کافئین و الکل کمتر.\n• آب کافی بنوش.\n• درد شدید شکم یا خون در مدفوع نیاز به بررسی دارد.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "NHS_PMS",
+    "MEDLINE_PMS"
+   ],
+   "sources": [
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    },
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [
+    "bloating"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_log_headache",
+   "category": "pattern_care",
+   "titleFa": "امروز سردرد یا حساسیت سینه ثبت کرده‌ای",
+   "summaryFa": "مراقبت ساده برای این علائم.",
+   "bodyFa": "• استراحت و آب کافی.\n• مسکن رایج طبق دستور، اگر منعی نداری.\n• اگر سردرد خیلی شدید، ناگهانی یا متفاوت از همیشه است، زود کمک پزشکی بگیر.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "MEDLINE_PMS",
+    "NHS_PMS"
+   ],
+   "sources": [
+    {
+     "id": "MEDLINE_PMS",
+     "title": "Premenstrual syndrome",
+     "org": "MedlinePlus (NIH)",
+     "url": "https://medlineplus.gov/ency/article/001505.htm",
+     "accessed": "2026-10-06",
+     "note": ""
+    },
+    {
+     "id": "NHS_PMS",
+     "title": "PMS (premenstrual syndrome)",
+     "org": "NHS",
+     "url": "https://www.nhs.uk/conditions/pre-menstrual-syndrome/",
+     "accessed": "2026-10-06",
+     "note": "Page last reviewed 18 Jun 2024"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [
+    "headache"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  },
+  {
+   "id": "care_log_sleep_energy",
+   "category": "pattern_care",
+   "titleFa": "امروز انرژی کم یا بدخوابی ثبت کرده‌ای",
+   "summaryFa": "خواب منظم کمک می‌کند؛ از روی تقویم علت را نمی‌دانیم.",
+   "bodyFa": "• ساعت خواب و بیداری ثابت.\n• اگر درد خوابت را خراب می‌کند، قبل از خواب گرما یا مسکن طبق دستور.\n• اگر خستگی شدید یا طولانی است، به‌خصوص با خون‌ریزی زیاد، با پزشک صحبت کن.",
+   "applicableContexts": [
+    "general"
+   ],
+   "excludedContexts": [],
+   "evidenceType": "public_health_guidance",
+   "sourceIds": [
+    "ACOG_PMS",
+    "SLEEP2023",
+    "ACOG_HEAVY"
+   ],
+   "sources": [
+    {
+     "id": "ACOG_PMS",
+     "title": "Premenstrual Syndrome (PMS) – FAQ057",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/premenstrual-syndrome",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed Nov 2025"
+    },
+    {
+     "id": "SLEEP2023",
+     "title": "The Menstrual Cycle and Sleep (Alzueta E, Baker FC, 2023)",
+     "org": "Sleep Medicine Clinics",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11562818/",
+     "accessed": "2026-10-06",
+     "note": "Sleep Med Clin 2023;18(4):399-413"
+    },
+    {
+     "id": "ACOG_HEAVY",
+     "title": "Heavy Menstrual Bleeding – FAQ193",
+     "org": "ACOG",
+     "url": "https://www.acog.org/womens-health/faqs/heavy-menstrual-bleeding",
+     "accessed": "2026-10-06",
+     "note": "Last reviewed May 2026"
+    }
+   ],
+   "displayRules": {
+    "showWhenPhase": [
+     "any"
+    ],
+    "showWhenSubWindow": [
+     "any"
+    ],
+    "hideWhenPregnancyMode": false,
+    "requiresFertilityEnabled": false,
+    "minCycleDay": null,
+    "maxCycleDay": null
+   },
+   "whatYouCanDoFa": null,
+   "whenToSeekFa": null,
+   "careTags": [
+    "sleep",
+    "energy"
+   ],
+   "phase": null,
+   "sourceCheckedDate": "2026-10-06",
+   "contentVersion": "2.0.0",
+   "medicalReviewStatus": "مبتنی بر منابع؛ بازبینی پزشکی مستقل انجام نشده"
+  }
+ ]
+}
