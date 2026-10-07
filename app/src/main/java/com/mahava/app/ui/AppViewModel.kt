@@ -40,8 +40,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 
 data class AppUiState(
@@ -93,6 +96,24 @@ class AppViewModel(
     private val checkerJson: StateFlow<String?> = prefs.lastCheckerJson
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    // ---- Partner ----
+    private val partnerRepo get() = app.partnerRepository
+    val accountRole: StateFlow<String> = prefs.accountRole
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    val intendedRole: StateFlow<String> = prefs.intendedRole
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    val sharedFromPartner: StateFlow<Boolean> = prefs.sharedFromPartner
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val partnerConsent: StateFlow<Boolean> = prefs.partnerConsent
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val partnerStatus: StateFlow<com.mahava.app.network.PartnerStatusDto?> = app.partnerRepository.status
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val partnerShare: StateFlow<com.mahava.app.network.PartnerShareDto?> = app.partnerRepository.share
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    // ---- Server sync of her data ----
+    val dataSyncStatus: StateFlow<com.mahava.app.sync.DataSyncStatus> = app.dataSync.status
+
 
     private data class Core(val profile: UserProfileEntity?, val periods: List<PeriodEventEntity>, val logs: List<DailyLogEntity>, val cycle: CycleEngineResult, val patterns: List<PatternInsight>)
     private val core = combine(
@@ -128,6 +149,7 @@ class AppViewModel(
             reminderScheduler.ensurePeriodic()
             authRepository.loadApiBaseUrl()
             refreshAccountFromServer()
+            if (authRepository.hasSessionTokens()) partnerRefresh()
         }
     }
 
@@ -157,6 +179,8 @@ class AppViewModel(
             if (authRepository.hasSessionTokens()) {
                 authRepository.verifySessionOrClear()
                 refreshInbox()
+                partnerRefresh()
+                if (prefs.getAccountRole() != "male") com.mahava.app.sync.DataSync.syncNow(app)
             }
         }
     }
@@ -289,7 +313,7 @@ class AppViewModel(
             if (lastStart != null) {
                 repo.upsertPeriod(PeriodEventEntity(startEpochDay = lastStart.toEpochDay(), endEpochDay = null, stillOngoing = ongoing, createdAt = 0, updatedAt = 0))
             }
-            _message.value = "آماده‌ای! اطلاعاتت روی گوشی ذخیره شد."
+            _message.value = "آماده‌ای! اطلاعاتت ذخیره شد."
         } catch (t: Throwable) {
             _message.value = periodErrorFa(t.message)
         }
@@ -365,6 +389,25 @@ class AppViewModel(
         _message.value = "ذخیره شد"
     }
 
+    private val todaySignalSaveMutex = Mutex()
+
+    /** Keep unrelated daily-log fields when the user taps a signal on Today. */
+    fun saveTodaySignals(food: Set<String>, body: Set<String>, mood: String?) = viewModelScope.launch {
+        todaySignalSaveMutex.withLock {
+            val epochDay = today().toEpochDay()
+            val now = clock.nowMillis()
+            val current = repo.getDailyLog(epochDay)
+                ?: DailyLogEntity(epochDay = epochDay, createdAt = now, updatedAt = now)
+            repo.upsertDailyLog(current.copy(
+                foodCravings = food.sorted().joinToString(",").ifBlank { null },
+                physicalSymptoms = body.sorted().joinToString(",").ifBlank { null },
+                moods = mood,
+                noSymptoms = if (body.isNotEmpty()) false else current.noSymptoms,
+                updatedAt = now
+            ))
+        }
+    }
+
     fun logFor(day: LocalDate): DailyLogEntity? =
         state.value.dailyLogs.find { it.epochDay == day.toEpochDay() }
 
@@ -378,14 +421,19 @@ class AppViewModel(
         reminderScheduler.cancelAll()
         repo.ensureProfile()
         _locked.value = false
-        _message.value = "همهٔ اطلاعات پاک شد"
+        // The sync job sends the deletions to the server too (queued until online).
+        _message.value = if (authRepository.hasSessionTokens()) "همهٔ اطلاعات پاک شد؛ از سرور هم پاک می‌شود." else "همهٔ اطلاعات پاک شد"
     }
 
     suspend fun exportBackup(password: CharArray): ByteArray =
         backupManager.exportEncrypted(password, clock.nowMillis())
 
-    suspend fun restoreBackup(password: CharArray, bytes: ByteArray): RestoreResult =
-        backupManager.restoreEncrypted(password, bytes)
+    suspend fun restoreBackup(password: CharArray, bytes: ByteArray): RestoreResult {
+        val r = backupManager.restoreEncrypted(password, bytes)
+        // A restore is an explicit choice: its contents should win over older server copies.
+        if (r is RestoreResult.Success) app.dataSync.markLocalWins()
+        return r
+    }
 
     suspend fun exportJson(): String = repo.exportJson()
     suspend fun exportCsv(): String = repo.exportCsv()
@@ -426,7 +474,8 @@ class AppViewModel(
     suspend fun login(phone: String, password: String): String? {
         return try {
             authRepository.login(phone.trim(), password)
-            null
+            applyIntendedRole()
+            restoreFromServer()
         } catch (e: MahApiException) {
             e.message ?: "ورود ناموفق بود."
         } catch (t: Throwable) {
@@ -434,10 +483,12 @@ class AppViewModel(
         }
     }
 
-    suspend fun register(phone: String, password: String, name: String?): String? {
+    suspend fun register(phone: String, password: String, name: String?, role: String? = null): String? {
         return try {
-            authRepository.register(phone.trim(), password, name)
-            null
+            authRepository.register(phone.trim(), password, name, role)
+            if (!role.isNullOrBlank()) prefs.setIntendedRole(role)
+            applyIntendedRole()
+            restoreFromServer()
         } catch (e: MahApiException) {
             e.message ?: "ثبت‌نام ناموفق بود."
         } catch (t: Throwable) {
@@ -445,8 +496,68 @@ class AppViewModel(
         }
     }
 
-    suspend fun logoutAccount() {
+    /**
+     * After login/register: bring her data back from the server (new phone) and upload what
+     * this phone had before (first login: upload once and merge). Never blocks login on failure.
+     */
+    private suspend fun restoreFromServer(): String? {
+        if (prefs.getAccountRole() == "male") return null
+        val outcome = kotlinx.coroutines.withTimeoutOrNull(30_000) { app.dataSync.sync() }
+        com.mahava.app.sync.DataSync.ensurePeriodic(app)
+        if (outcome !is com.mahava.app.sync.SyncOutcome.Ok && outcome !is com.mahava.app.sync.SyncOutcome.Skipped) {
+            com.mahava.app.sync.DataSync.syncNow(app)
+            _message.value = "وارد شدی. بازیابی اطلاعات از سرور کامل نشد؛ با وصل شدن اینترنت خودکار انجام می‌شود."
+        }
+        return null
+    }
+
+    fun refreshSyncPending() = viewModelScope.launch { app.dataSync.refreshPending() }
+
+    /** Manual "sync now" from the account screen. Returns a short Persian result line. */
+    suspend fun syncDataNow(): String = when (val r = app.dataSync.sync()) {
+        is com.mahava.app.sync.SyncOutcome.Ok -> "اطلاعاتت با سرور همگام شد."
+        is com.mahava.app.sync.SyncOutcome.Skipped -> "برای این حساب همگام‌سازی لازم نیست."
+        is com.mahava.app.sync.SyncOutcome.Failed -> "همگام نشد (${r.message ?: "اینترنت"}). بعداً خودکار دوباره امتحان می‌شود."
+    }
+
+    /**
+     * Logout clears the phone's copy (the server keeps everything). First tries to send pending
+     * changes; if some could not be sent and [force] is false, returns "pending" so the UI can warn.
+     */
+    suspend fun logoutAccount(force: Boolean = true): String? {
+        if (prefs.getAccountRole() != "male") {
+            kotlinx.coroutines.withTimeoutOrNull(10_000) { app.dataSync.sync() }
+            if (!force && app.dataSync.pendingCount() > 0) return "pending"
+        }
+        com.mahava.app.partner.PartnerSync.cancel(app)
+        com.mahava.app.sync.DataSync.cancel(app)
         authRepository.logout()
+        clearLocalAfterSignOut()
+        return null
+    }
+
+    /** Delete the account on the server (with all synced data), then clear this phone. */
+    suspend fun deleteAccount(password: String): String? {
+        return try {
+            authRepository.withToken { app.apiClient.deleteAccount(it, password) }
+            com.mahava.app.partner.PartnerSync.cancel(app)
+            com.mahava.app.sync.DataSync.cancel(app)
+            prefs.clearAuth()
+            clearLocalAfterSignOut()
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "حذف حساب انجام نشد."
+        } catch (t: Throwable) {
+            t.message ?: "حذف حساب انجام نشد."
+        }
+    }
+
+    private suspend fun clearLocalAfterSignOut() {
+        app.dataSync.clearLocalCache()
+        reminderScheduler.cancelAll()
+        _locked.value = false
+        repo.ensureProfile()
+        com.mahava.app.widget.CycleWidgetUpdater.requestUpdate(app)
     }
 
     suspend fun refreshAccountFromServer(): Boolean {
@@ -509,6 +620,106 @@ class AppViewModel(
             s.dailyLogs,
             s.profile?.typicalCycleLength ?: 28
         )
+    }
+
+    // ---- Personal pattern (computed on the device) ----
+
+    fun personalSignal(kind: String, key: String): com.mahava.app.pattern.PersonalSignal? {
+        val s = state.value
+        return com.mahava.app.pattern.PersonalPatternEngine.forSignal(kind, key, s.periods, s.dailyLogs)
+    }
+
+    fun personalForPhase(phaseGroup: String): List<com.mahava.app.pattern.PersonalSignal> {
+        val s = state.value
+        return com.mahava.app.pattern.PersonalPatternEngine.forPhase(phaseGroup, s.periods, s.dailyLogs)
+    }
+
+    fun personalCycleSummary(): com.mahava.app.pattern.PersonalCycleSummary? =
+        com.mahava.app.pattern.PersonalPatternEngine.cycleSummary(state.value.periods)
+
+    fun completeCycleCount(): Int =
+        com.mahava.app.pattern.PersonalPatternEngine.completeCycleCount(state.value.periods)
+
+    /** Today's phase group with the same honest fallbacks as the Today card. */
+    fun todayPhaseGroup(): String {
+        val s = state.value
+        return com.mahava.app.content.TodaySignalContent.effectivePhaseGroup(
+            dayContext().subWindow, s.cycle?.phase,
+            hormonalContraception = s.profile?.hormonalContraception == true,
+            regularCycles = s.profile?.regularCycles
+        )
+    }
+
+    // ---- Partner actions. Each returns null on success or a Persian error. ----
+
+    private suspend fun partnerCall(block: suspend () -> Unit): String? = try {
+        block(); null
+    } catch (e: MahApiException) {
+        e.message
+    } catch (_: java.io.IOException) {
+        "اینترنت در دسترس نیست. دوباره تلاش کن."
+    } catch (t: Throwable) {
+        t.message ?: "خطایی پیش آمد. دوباره تلاش کن."
+    }
+
+    fun partnerRefresh() = viewModelScope.launch {
+        partnerCall {
+            val st = partnerRepo.refreshStatus()
+            if (st.pair != null) com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
+            if (st.pair?.status == "active") {
+                if (st.role == "male") partnerRepo.fetchShare() else partnerRepo.pushSnapshotIfChanged()
+            }
+        }
+    }
+
+    suspend fun partnerSetRole(role: String): String? = partnerCall { partnerRepo.setRole(role) }
+
+    suspend fun partnerCreateCode(): Pair<com.mahava.app.network.PartnerCodeDto?, String?> {
+        var code: com.mahava.app.network.PartnerCodeDto? = null
+        val err = partnerCall {
+            code = partnerRepo.createCode()
+            val ttl = partnerRepo.cachedStatus()?.codeTtlMinutes ?: 30
+            com.mahava.app.partner.PartnerSync.awaitRequest(app, ttl + 5)
+            com.mahava.app.partner.PartnerSync.syncNow(app)
+        }
+        return code to err
+    }
+
+    suspend fun partnerRedeem(code: String): String? = partnerCall {
+        partnerRepo.redeem(code)
+        com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
+        com.mahava.app.partner.PartnerSync.syncNow(app)
+    }
+
+    suspend fun partnerRespond(pairId: String, approve: Boolean): String? = partnerCall {
+        partnerRepo.respond(pairId, approve)
+        com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
+    }
+
+    suspend fun partnerUnpair(): String? = partnerCall {
+        partnerRepo.unpair()
+        com.mahava.app.partner.PartnerSync.cancel(app)
+        com.mahava.app.widget.CycleWidgetUpdater.requestUpdate(app)
+    }
+
+    fun setPartnerConsent(v: Boolean) = viewModelScope.launch { prefs.setPartnerConsent(v) }
+
+    /** Onboarding shortcut for the partner (man): no cycle questions, straight to login/register. */
+    fun startAsPartner() = viewModelScope.launch {
+        prefs.setIntendedRole("male")
+        val cur = repo.ensureProfile()
+        repo.saveProfile(cur.copy(onboardingDone = true, goal = "partner"))
+    }
+
+    fun setIntendedRole(role: String) = viewModelScope.launch { prefs.setIntendedRole(role) }
+
+    /** After login: apply the role chosen before the account existed. */
+    private suspend fun applyIntendedRole() {
+        try {
+            val intended = prefs.intendedRole.first()
+            if (intended.isNotBlank() && prefs.getAccountRole().isBlank()) partnerRepo.setRole(intended)
+            partnerRepo.refreshStatus()
+        } catch (_: Throwable) { }
     }
 
     fun lastCheckerResult(): CheckerResult? {

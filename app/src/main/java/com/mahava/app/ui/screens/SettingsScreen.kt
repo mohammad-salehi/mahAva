@@ -27,7 +27,7 @@ import com.mahava.app.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}) {
+fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onPartner: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}) {
     val state by vm.state.collectAsState()
     val profile = state.profile
     val scope = rememberCoroutineScope()
@@ -75,8 +75,8 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("settings_screen")) {
         ScreenHeader("تنظیمات و حریم خصوصی", onBack = onBack)
         Illustration(R.drawable.ill_privacy_shield, Modifier.height(100.dp))
-        Text("اطلاعاتت روی همین گوشی می‌ماند", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("اطلاعات چرخه روی همین گوشی می‌ماند. حساب کاربری فقط برای اشتراک است و داده‌های چرخه‌ات را به سرور نمی‌فرستد.")
+        Text("اطلاعاتت امن روی سرور ذخیره می‌شود", style = MaterialTheme.typography.headlineLarge)
+        QuietInfo("اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید یا ورود دوباره برگردد. فقط همراهی که خودت تأیید کنی، بخش مشترک (مرحلهٔ چرخه و حال امروز) را می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود. بدون اینترنت هم می‌توانی ثبت کنی؛ تغییرها بعداً خودکار فرستاده می‌شوند.")
 
         val premium by vm.isPremium.collectAsState()
         val accountPhone by vm.accountPhone.collectAsState()
@@ -97,6 +97,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             ) { vm.setPremium(it) }
         }
 
+
+        SettingsGroup("همراه") {
+            QuietInfo("وضعیت چرخه و حال امروزت را با همسر یا همراهت شریک شو. هر وقت بخواهی قطعش می‌کنی.")
+            SecondaryButton("همراه من", modifier = Modifier.testTag("settings_partner"), onClick = onPartner)
+        }
 
         SettingsGroup("هدف من") {
             ChipsFlow(listOf("track_period" to "پیگیری پریود", "body_awareness" to "شناخت بدن", "ttc" to "اقدام برای بارداری"), profile?.goal) { k ->
@@ -220,7 +225,7 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
                 title = { Text("همهٔ اطلاعات پاک شود؟") },
-                text = { Text("همهٔ پریودها، ثبت‌های روزانه، یادآوری‌ها و تنظیمات از این گوشی پاک می‌شوند و برنمی‌گردند. اگر می‌خواهی بعداً برشان گردانی، اول فایل پشتیبان بساز.") },
+                text = { Text("همهٔ پریودها، ثبت‌های روزانه، یادآوری‌ها و تنظیمات از این گوشی و از سرور ماه پاک می‌شوند و برنمی‌گردند. اگر می‌خواهی بعداً برشان گردانی، اول فایل پشتیبان بساز.") },
                 confirmButton = {
                     TextButton(onClick = {
                         vm.deleteAll()

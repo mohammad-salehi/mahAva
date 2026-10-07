@@ -39,7 +39,7 @@ fun PhaseScienceScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
         }
         Spacer(Modifier.height(8.dp))
         MahavaCard {
-            Text("هورمون‌ها (ساده‌شده)", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
+            Text("هورمون‌ها به زبان ساده", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
             Text(science.hormoneFa)
         }
         Spacer(Modifier.height(8.dp))
@@ -64,9 +64,12 @@ fun PhaseScienceScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
         }
         Spacer(Modifier.height(8.dp))
         MahavaCard {
-            Text("اگر این حس را دیدی", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
+            Text("کی به پزشک سر بزنی؟", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
             Text(science.ifYouFeelFa)
         }
+        Spacer(Modifier.height(8.dp))
+        SourcesCard(science.sourceIds)
+        Spacer(Modifier.height(8.dp))
         QuietInfo(science.disclaimerFa)
         Spacer(Modifier.height(24.dp))
     }
@@ -112,7 +115,7 @@ fun QuickSymptomLogScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () ->
         }
         SectionLabel("علائم")
         MultiChipsFlow(
-            listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "nausea" to "تهوع", "acne" to "جوش"),
+            listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "fatigue" to "خستگی", "nausea" to "تهوع", "acne" to "جوش"),
             symptoms, "q_sym"
         ) { k -> symptoms = if (k in symptoms) symptoms - k else symptoms + k }
         SectionLabel("درد ۰ تا ۱۰")

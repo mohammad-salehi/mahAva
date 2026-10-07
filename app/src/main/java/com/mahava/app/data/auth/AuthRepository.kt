@@ -84,8 +84,8 @@ class AuthRepository(
         return serverActive || (BuildConfig.DEBUG && local)
     }
 
-    suspend fun register(phone: String, password: String, name: String?): MahAuthResponse {
-        val res = api.register(phone, password, name)
+    suspend fun register(phone: String, password: String, name: String?, role: String? = null): MahAuthResponse {
+        val res = api.register(phone, password, name, role)
         persistSession(res)
         return res
     }
@@ -94,6 +94,18 @@ class AuthRepository(
         val res = api.login(phone, password)
         persistSession(res)
         return res
+    }
+
+    /** Run an authed call; on 401 refresh the session once and retry. */
+    suspend fun <T> withToken(block: suspend (String) -> T): T {
+        val token = prefs.getAccessToken() ?: throw MahApiException(401, "اول وارد حساب شو")
+        return try {
+            block(token)
+        } catch (e: MahApiException) {
+            if (e.status == 401 && refreshIfNeeded()) {
+                block(prefs.getAccessToken() ?: throw e)
+            } else throw e
+        }
     }
 
     suspend fun refreshIfNeeded(): Boolean {
@@ -128,12 +140,14 @@ class AuthRepository(
         return try {
             val s = api.subscriptionStatus(access)
             prefs.setServerSubscription(s.hasActiveSubscription, s.plan, s.endsAt, s.priceYearlyTomans)
+            prefs.setSubscriptionShare(s.ownSubscriptionActive, s.sharedFromPartner)
             s
         } catch (e: MahApiException) {
             if (e.status == 401 && refreshIfNeeded()) {
                 access = prefs.getAccessToken() ?: return null
                 val s = api.subscriptionStatus(access)
                 prefs.setServerSubscription(s.hasActiveSubscription, s.plan, s.endsAt, s.priceYearlyTomans)
+                prefs.setSubscriptionShare(s.ownSubscriptionActive, s.sharedFromPartner)
                 s
             } else null
         }
@@ -167,7 +181,10 @@ class AuthRepository(
             if (!res.accessToken.isNullOrBlank()) prefs.setAccessToken(res.accessToken)
             if (!res.refreshToken.isNullOrBlank()) prefs.setRefreshToken(res.refreshToken)
         }
-        res.user?.let { prefs.setAccount(it.phone, it.name, it.id) }
+        res.user?.let {
+            prefs.setAccount(it.phone, it.name, it.id)
+            prefs.setAccountRole(it.role)
+        }
         res.subscription?.let {
             prefs.setServerSubscription(
                 it.hasActiveSubscription,
@@ -175,6 +192,7 @@ class AuthRepository(
                 it.endsAt,
                 it.priceYearlyTomans
             )
+            prefs.setSubscriptionShare(it.ownSubscriptionActive || (it.hasActiveSubscription && !it.sharedFromPartner), it.sharedFromPartner)
         }
     }
 }

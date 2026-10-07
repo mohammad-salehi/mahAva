@@ -135,7 +135,7 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
         }
         if (!noSymptoms) {
             MultiChipsFlow(
-                listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "nausea" to "حالت تهوع", "acne" to "جوش"),
+                listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "fatigue" to "خستگی", "nausea" to "حالت تهوع", "acne" to "جوش"),
                 symptoms, "sym"
             ) { k -> symptoms = if (k in symptoms) symptoms - k else symptoms + k }
             SectionLabel("شدت درد از ۰ تا ۱۰ (اختیاری)")
@@ -170,7 +170,7 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
             label = { Text("یادداشت (اختیاری)") }
         )
         Spacer(Modifier.height(16.dp))
-        PrimaryButton("ذخیره روی گوشی", modifier = Modifier.testTag("save_daily")) {
+        PrimaryButton("ذخیره", modifier = Modifier.testTag("save_daily")) {
             val now = System.currentTimeMillis()
             vm.saveDailyLog(
                 (existing ?: DailyLogEntity(epochDay = day.toEpochDay(), createdAt = now, updatedAt = now)).copy(

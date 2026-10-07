@@ -9,3 +9,9 @@ captures/
 *.apk
 *.ap_
 *.dex
+
+# Local scratch, build caches and outputs (never commit)
+/_scratch/
+/.kotlin/
+/out/
+*.init.gradle

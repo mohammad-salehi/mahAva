@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 open class MahavaApplication : Application() {
@@ -54,6 +55,11 @@ open class MahavaApplication : Application() {
         private set
     lateinit var cryptoManager: CryptoManager
         private set
+    lateinit var partnerRepository: com.mahava.app.partner.PartnerRepository
+
+    /** Full sync of her own data with the server (server = source of truth, Room = offline cache). */
+    lateinit var dataSync: com.mahava.app.sync.DataSyncRepository
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -75,7 +81,12 @@ open class MahavaApplication : Application() {
         apiClient = MahApiClient()
         authRepository = AuthRepository(apiClient, prefs)
         reminderScheduler = ReminderScheduler(this)
+        partnerRepository = com.mahava.app.partner.PartnerRepository(apiClient, authRepository, prefs, database, repository, clock)
+        dataSync = com.mahava.app.sync.DataSyncRepository(this, database, prefs, apiClient, authRepository, clock)
         createNotificationChannel()
+        com.mahava.app.partner.PartnerSync.createChannel(this)
+        startPartnerSharing()
+        startDataSync()
         appScope.launch {
             repository.observeCycleResult().collectLatest {
                 CycleWidgetUpdater.requestUpdate(this@MahavaApplication)
@@ -84,6 +95,85 @@ open class MahavaApplication : Application() {
         appScope.launch {
             authRepository.isPremiumEffective.distinctUntilChanged().collectLatest {
                 CycleWidgetUpdater.requestUpdate(this@MahavaApplication)
+            }
+        }
+    }
+
+    /**
+     * Woman's side: when her logs or cycle change and she is actively paired (with consent),
+     * upload the new snapshot right away. The periodic worker covers day changes and retries.
+     */
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    private fun startPartnerSharing() {
+        appScope.launch {
+            try {
+                if (partnerRepository.cachedStatus()?.pair != null) {
+                    com.mahava.app.partner.PartnerSync.ensurePeriodic(this@MahavaApplication)
+                }
+            } catch (_: Throwable) { }
+        }
+        appScope.launch {
+            kotlinx.coroutines.flow.combine(
+                repository.observeDailyLogs(),
+                repository.observeCycleResult()
+            ) { logs, cycle -> logs.size.toLong() * 31 + (logs.lastOrNull()?.updatedAt ?: 0L) + cycle.hashCode() }
+                .distinctUntilChanged()
+                .debounce(2500)
+                .collectLatest {
+                    try {
+                        if (prefs.getAccountRole() != "male" && prefs.getPartnerConsent() &&
+                            partnerRepository.isActivelyPaired()
+                        ) {
+                            com.mahava.app.partner.PartnerSync.syncNow(this@MahavaApplication)
+                        }
+                    } catch (_: Throwable) { }
+                }
+        }
+    }
+
+    /**
+     * Any change to her data (profile, periods, logs, reminders, consent) queues a sync.
+     * The job waits for internet, so offline edits go up when the phone is back online.
+     */
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    private fun startDataSync() {
+        appScope.launch {
+            try { scheduleBackgroundWork(this@MahavaApplication) } catch (_: Throwable) { }
+        }
+        appScope.launch {
+            kotlinx.coroutines.flow.combine(
+                repository.observeProfile(),
+                repository.observePeriods(),
+                repository.observeDailyLogs(),
+                repository.observeReminders(),
+                prefs.partnerConsent
+            ) { p, periods, logs, rem, consent ->
+                listOf(p?.updatedAt, periods.size, periods.sumOf { it.updatedAt % 1_000_003 }, logs.size,
+                    logs.sumOf { it.updatedAt % 1_000_003 }, rem.hashCode(), consent).hashCode()
+            }
+                .distinctUntilChanged()
+                .debounce(3000)
+                .collectLatest {
+                    try {
+                        if (authRepository.hasSessionTokens() && prefs.getAccountRole() != "male") {
+                            com.mahava.app.sync.DataSync.syncNow(this@MahavaApplication)
+                        }
+                    } catch (_: Throwable) { }
+                }
+        }
+    }
+
+    companion object {
+        /**
+         * (Re)enqueue the unique background jobs. Called on app start, after boot and after an
+         * app update, so partner updates, notifications and the widget keep working with the app closed.
+         */
+        suspend fun scheduleBackgroundWork(app: MahavaApplication) {
+            if (!app.authRepository.hasSessionTokens()) return
+            val role = app.prefs.getAccountRole()
+            if (role != "male") com.mahava.app.sync.DataSync.ensurePeriodic(app)
+            if (app.partnerRepository.cachedStatus()?.pair != null || com.mahava.app.partner.PartnerSync.isAwaiting(app)) {
+                com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
             }
         }
     }

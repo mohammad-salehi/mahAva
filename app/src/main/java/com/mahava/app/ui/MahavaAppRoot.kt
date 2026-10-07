@@ -9,7 +9,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,7 +50,9 @@ fun MahavaAppRoot(
     openAccount: Boolean = false,
     onOpenAccountConsumed: () -> Unit = {},
     openLogin: Boolean = false,
-    onOpenLoginConsumed: () -> Unit = {}
+    onOpenLoginConsumed: () -> Unit = {},
+    openPartner: Boolean = false,
+    onOpenPartnerConsumed: () -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
     if (!state.ready) {
@@ -76,10 +77,58 @@ fun MahavaAppRoot(
         if (loggedIn) nav.navigate(Routes.ACCOUNT) { launchSingleTop = true }
         else nav.navigate(Routes.LOGIN) { launchSingleTop = true }
     }
+    val accountRole by vm.accountRole.collectAsState()
+    val isPartnerAccount = loggedIn && accountRole == "male"
+    val goHomeAfterAuth: () -> Unit = {
+        val target = when {
+            vm.accountRole.value == "male" -> Routes.PARTNER_HOME
+            // Logged in but nothing came back from the server (new account): ask the setup questions.
+            vm.state.value.profile?.onboardingDone != true -> Routes.ONBOARDING
+            else -> Routes.TODAY
+        }
+        nav.navigate(target) {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
 
-    LaunchedEffect(openToday, state.ready, onboardingDone) {
-        if (openToday && state.ready && onboardingDone) {
+    // A male (partner) account never sees the cycle-owner home; send it to the partner home.
+    val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(isPartnerAccount, currentRoute) {
+        if (isPartnerAccount && currentRoute in Routes.womanMain) {
+            nav.navigate(Routes.PARTNER_HOME) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    LaunchedEffect(openPartner, state.ready, onboardingDone, loggedIn) {
+        if (openPartner && state.ready && onboardingDone && loggedIn) {
+            nav.navigate(if (isPartnerAccount) Routes.PARTNER_HOME else Routes.PARTNER_HUB) { launchSingleTop = true }
+            onOpenPartnerConsumed()
+        } else if (openPartner && state.ready) {
+            onOpenPartnerConsumed()
+        }
+    }
+
+    // If the user logs out (or never logged in), stay only on auth screens.
+    LaunchedEffect(loggedIn, onboardingDone, state.ready) {
+        if (!state.ready || !onboardingDone || loggedIn) return@LaunchedEffect
+        val current = nav.currentBackStackEntry?.destination?.route
+        if (current == null || current !in Routes.authOnly) {
+            nav.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    LaunchedEffect(openToday, state.ready, onboardingDone, loggedIn) {
+        if (openToday && state.ready && onboardingDone && loggedIn) {
             nav.navigate(Routes.TODAY) { launchSingleTop = true }
+            onOpenTodayConsumed()
+        } else if (openToday && state.ready) {
             onOpenTodayConsumed()
         }
     }
@@ -98,19 +147,18 @@ fun MahavaAppRoot(
         }
     }
 
-    LaunchedEffect(deepLink, state.ready) {
+    LaunchedEffect(deepLink, state.ready, loggedIn, onboardingDone) {
         if (!BuildConfig.DEBUG || !state.ready || deepLink == null) return@LaunchedEffect
         val host = deepLink.host ?: return@LaunchedEffect
         val path = deepLink.path?.trim('/') ?: ""
         if (host == "qa" && path == "seed") {
-            // Debug builds only (intent filter lives in src/debug). Data is flagged qaSampleData and labeled on Today.
+            if (!loggedIn) return@LaunchedEffect
             vm.seedSampleData()
             kotlinx.coroutines.delay(500)
             nav.navigate(Routes.TODAY) { popUpTo(0) { inclusive = true } }
             return@LaunchedEffect
         }
-        if (host == "screen" && onboardingDone) {
-            // Debug-only navigation shortcuts for screenshots. Never seeds or changes data.
+        if (host == "screen" && onboardingDone && loggedIn) {
             val route = when (path) {
                 "today" -> Routes.TODAY
                 "calendar" -> Routes.CALENDAR
@@ -125,6 +173,11 @@ fun MahavaAppRoot(
                 "doctor" -> Routes.DOCTOR_PDF
                 "phase" -> Routes.phaseDetail(vm.phaseTodaySelection().item.id)
                 "care_today" -> Routes.phaseDetail(vm.careToday().item.id)
+                "signal" -> deepLink.getQueryParameter("kind")?.let { k ->
+                    deepLink.getQueryParameter("key")?.let { Routes.signalDetail(k, it) }
+                }
+                "science" -> Routes.PHASE_SCIENCE
+                "partner" -> Routes.PARTNER_HUB
                 else -> null
             }
             if (route != null) nav.navigate(route) { launchSingleTop = true }
@@ -132,7 +185,15 @@ fun MahavaAppRoot(
     }
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
-    val showBottom = onboardingDone && route in setOf(Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.BODY)
+    val showBottom = onboardingDone && loggedIn && !isPartnerAccount &&
+        route in setOf(Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.BODY)
+
+    val startDestination = when {
+        !onboardingDone -> Routes.ONBOARDING
+        !loggedIn -> Routes.LOGIN
+        isPartnerAccount -> Routes.PARTNER_HOME
+        else -> Routes.TODAY
+    }
 
     Scaffold(
         bottomBar = {
@@ -148,7 +209,6 @@ fun MahavaAppRoot(
         },
         snackbarHost = {
             state.message?.let { msg ->
-                // Plain text (not a Surface) so it never swallows taps on what is underneath.
                 Text(
                     msg, color = Color.White,
                     modifier = Modifier.padding(16.dp)
@@ -161,12 +221,20 @@ fun MahavaAppRoot(
     ) { padding ->
         NavHost(
             navController = nav,
-            startDestination = if (onboardingDone) Routes.TODAY else Routes.ONBOARDING,
+            startDestination = startDestination,
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.ONBOARDING) {
-                OnboardingFlow(vm) {
-                    nav.navigate(Routes.TODAY) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+                OnboardingFlow(vm, onLogin = { nav.navigate(Routes.LOGIN) { launchSingleTop = true } }) {
+                    // After privacy + setup, require login before any main screen.
+                    if (vm.isLoggedIn.value) {
+                        goHomeAfterAuth()
+                    } else {
+                        nav.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.ONBOARDING) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 }
             }
             composable(Routes.TODAY) {
@@ -192,6 +260,8 @@ fun MahavaAppRoot(
                     onFertility = { nav.navigate(Routes.FERTILITY_WINDOW) },
                     onDoctor = { nav.navigate(Routes.DOCTOR_PDF) },
                     onScience = { nav.navigate(Routes.PHASE_SCIENCE) },
+                    onSignal = { kind, key -> nav.navigate(Routes.signalDetail(kind, key)) },
+                    onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
                     onMore = { nav.navigate(Routes.LOG_HUB) }
                 )
             }
@@ -308,6 +378,12 @@ fun MahavaAppRoot(
                     onAccount = { goAccountOrLogin() }
                 )
             }
+            composable(Routes.PARTNER_HUB) {
+                PartnerHubScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.PARTNER_HOME) {
+                PartnerHomeScreen(vm, onAccount = { goAccountOrLogin() })
+            }
             composable(Routes.CARE) {
                 CareScreen(
                     vm,
@@ -319,14 +395,11 @@ fun MahavaAppRoot(
             composable(Routes.LOGIN) {
                 LoginScreen(
                     vm,
-                    onBack = { nav.popBackStack() },
+                    // No back when login is required; user must sign in or register.
+                    onBack = if (loggedIn) ({ nav.popBackStack() }) else null,
                     onGoRegister = { nav.navigate(Routes.REGISTER) { launchSingleTop = true } },
-                    onSuccess = {
-                        nav.navigate(Routes.TODAY) {
-                            popUpTo(nav.graph.findStartDestination().id) { inclusive = false }
-                            launchSingleTop = true
-                        }
-                    }
+                    onForgotPassword = { nav.navigate(Routes.PASSWORD_RECOVERY) { launchSingleTop = true } },
+                    onSuccess = { goHomeAfterAuth() }
                 )
             }
             composable(Routes.REGISTER) {
@@ -334,13 +407,11 @@ fun MahavaAppRoot(
                     vm,
                     onBack = { nav.popBackStack() },
                     onGoLogin = { nav.navigate(Routes.LOGIN) { launchSingleTop = true } },
-                    onSuccess = {
-                        nav.navigate(Routes.TODAY) {
-                            popUpTo(nav.graph.findStartDestination().id) { inclusive = false }
-                            launchSingleTop = true
-                        }
-                    }
+                    onSuccess = { goHomeAfterAuth() }
                 )
+            }
+            composable(Routes.PASSWORD_RECOVERY) {
+                PasswordRecoveryScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.ACCOUNT) {
                 AccountScreen(
@@ -348,6 +419,20 @@ fun MahavaAppRoot(
                     onBack = { nav.popBackStack() },
                     onLogin = { nav.navigate(Routes.LOGIN) },
                     onRegister = { nav.navigate(Routes.REGISTER) }
+                )
+            }
+            composable(
+                route = Routes.SIGNAL_DETAIL,
+                arguments = listOf(
+                    navArgument("kind") { type = NavType.StringType },
+                    navArgument("key") { type = NavType.StringType }
+                )
+            ) { entry ->
+                SignalDetailScreen(
+                    vm,
+                    kind = entry.arguments?.getString("kind") ?: "mood",
+                    key = entry.arguments?.getString("key") ?: "",
+                    onBack = { nav.popBackStack() }
                 )
             }
             composable(Routes.PHASE_SCIENCE) {
@@ -367,6 +452,7 @@ fun MahavaAppRoot(
                     vm, activity,
                     onBack = { nav.popBackStack() },
                     onAccount = { goAccountOrLogin() },
+                    onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
                     onAfterDeleteAll = {
                         nav.navigate(Routes.ONBOARDING) { popUpTo(0) { inclusive = true } }
                     }

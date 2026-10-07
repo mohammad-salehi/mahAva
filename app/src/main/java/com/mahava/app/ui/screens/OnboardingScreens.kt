@@ -26,7 +26,7 @@ import com.mahava.app.util.PersianDigits
 import java.time.LocalDate
 
 @Composable
-fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
+fun OnboardingFlow(vm: AppViewModel, onLogin: () -> Unit = {}, onFinished: () -> Unit) {
     val today = vm.today()
     var step by remember { mutableIntStateOf(0) }
     var goal by remember { mutableStateOf("track_period") }
@@ -50,7 +50,8 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
             }
         }
         when (step) {
-            0 -> WelcomeGoalStep(goal = goal, onGoal = { goal = it }, onNext = { step = 1 })
+            0 -> WelcomeGoalStep(goal = goal, onGoal = { goal = it }, onNext = { step = 1 },
+                onPartner = { vm.startAsPartner(); onFinished() }, onLogin = onLogin)
             1 -> CycleInfoStep(
                 today = today,
                 lastStart = lastStart, onLast = { lastStart = it; lastUnknown = false },
@@ -100,7 +101,7 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
 }
 
 @Composable
-private fun WelcomeGoalStep(goal: String, onGoal: (String) -> Unit, onNext: () -> Unit) {
+private fun WelcomeGoalStep(goal: String, onGoal: (String) -> Unit, onNext: () -> Unit, onPartner: () -> Unit = {}, onLogin: () -> Unit = {}) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
         Text("خوش آمدی", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(8.dp))
@@ -112,7 +113,7 @@ private fun WelcomeGoalStep(goal: String, onGoal: (String) -> Unit, onNext: () -
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MahavaIcon(R.drawable.ic_lock)
                 Spacer(Modifier.width(8.dp))
-                Text("داده‌های پریود و چرخه‌ات فقط روی همین گوشی می‌ماند و به سرور فرستاده نمی‌شود. اگر برای اشتراک حساب بسازی، فقط همان حساب است — اطلاعات سلامتت روی دستگاهت می‌ماند.", style = MaterialTheme.typography.bodyMedium)
+                Text("اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید یا ورود دوباره برگردد. فقط همراهی که خودت تأیید کنی، بخش مشترک (مرحلهٔ چرخه و حال امروز) را می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.", style = MaterialTheme.typography.bodyMedium)
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -122,6 +123,15 @@ private fun WelcomeGoalStep(goal: String, onGoal: (String) -> Unit, onNext: () -
         GoalRow("ttc", goal, "اقدام برای بارداری", R.drawable.ic_heart, MahavaMenstruation, onGoal)
         Spacer(Modifier.height(20.dp))
         PrimaryButton("شروع کنیم", modifier = Modifier.testTag("onb_start"), onClick = onNext)
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.material3.TextButton(
+            onClick = onPartner,
+            modifier = Modifier.fillMaxWidth().testTag("onb_partner")
+        ) { Text("آقا هستی و همسرت از ماه استفاده می‌کند؟ ورود به بخش همراه") }
+        androidx.compose.material3.TextButton(
+            onClick = onLogin,
+            modifier = Modifier.fillMaxWidth().testTag("onb_login")
+        ) { Text("قبلاً حساب داشتی؟ وارد شو تا اطلاعاتت برگردد") }
     }
 }
 

@@ -24,12 +24,14 @@ class MainActivity : FragmentActivity() {
         const val EXTRA_OPEN_TODAY = "open_today"
         const val EXTRA_OPEN_ACCOUNT = "open_account"
         const val EXTRA_OPEN_LOGIN = "open_login"
+        const val EXTRA_OPEN_PARTNER = "open_partner"
     }
 
     private val deepLinkState = mutableStateOf<android.net.Uri?>(null)
     private val openTodayState = mutableStateOf(false)
     private val openAccountState = mutableStateOf(false)
     private val openLoginState = mutableStateOf(false)
+    private val openPartnerState = mutableStateOf(false)
     private var viewModelRef: AppViewModel? = null
 
     override fun onStart() {
@@ -57,6 +59,7 @@ class MainActivity : FragmentActivity() {
                     val openToday by openTodayState
                     val openAccount by openAccountState
                     val openLogin by openLoginState
+                    val openPartner by openPartnerState
                     val useJalali = vm.state.collectAsState().value.profile?.calendarType != "gregorian"
                     androidx.compose.runtime.CompositionLocalProvider(com.mahava.app.ui.components.LocalUseJalali provides useJalali) {
                         MahavaAppRoot(
@@ -68,7 +71,9 @@ class MainActivity : FragmentActivity() {
                             openAccount = openAccount,
                             onOpenAccountConsumed = { openAccountState.value = false },
                             openLogin = openLogin,
-                            onOpenLoginConsumed = { openLoginState.value = false }
+                            onOpenLoginConsumed = { openLoginState.value = false },
+                            openPartner = openPartner,
+                            onOpenPartnerConsumed = { openPartnerState.value = false }
                         )
                     }
                 }
@@ -92,6 +97,9 @@ class MainActivity : FragmentActivity() {
         }
         if (intent?.getBooleanExtra(EXTRA_OPEN_LOGIN, false) == true) {
             openLoginState.value = true
+        }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_PARTNER, false) == true) {
+            openPartnerState.value = true
         }
     }
 }

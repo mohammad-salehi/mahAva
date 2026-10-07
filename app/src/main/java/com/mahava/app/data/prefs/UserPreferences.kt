@@ -36,6 +36,18 @@ class UserPreferences(private val context: Context) {
     private val KEY_YEARLY_PRICE = intPreferencesKey("mah_yearly_price")
     private val KEY_API_BASE = stringPreferencesKey("mah_api_base_url")
 
+    // Partner pairing
+    private val KEY_ROLE = stringPreferencesKey("mah_account_role") // female | male | ""
+    private val KEY_INTENDED_ROLE = stringPreferencesKey("mah_intended_role") // chosen before login
+    private val KEY_SHARED_FROM_PARTNER = booleanPreferencesKey("mah_sub_shared_from_partner")
+    private val KEY_OWN_SUB_ACTIVE = booleanPreferencesKey("mah_own_sub_active")
+    private val KEY_PARTNER_CONSENT = booleanPreferencesKey("partner_share_consent")
+    private val KEY_PARTNER_STATUS = stringPreferencesKey("partner_status_json")
+    private val KEY_PARTNER_SNAPSHOT = stringPreferencesKey("partner_snapshot_json")
+    private val KEY_PARTNER_SINCE = stringPreferencesKey("partner_changes_since")
+    private val KEY_PARTNER_PUSH_HASH = stringPreferencesKey("partner_last_push_hash")
+    private val KEY_PARTNER_DAILY_DAY = stringPreferencesKey("partner_daily_notified_day")
+
     val lastUnlockMillis: Flow<Long?> = store.data.map { it[KEY_LAST_UNLOCK]?.toLongOrNull() }
     val sampleDataMode: Flow<Boolean> = store.data.map { it[KEY_SAMPLE_MODE] ?: false }
     /** Local debug / demo unlock only. Prefer AuthRepository.isPremiumEffective for gates. */
@@ -52,6 +64,52 @@ class UserPreferences(private val context: Context) {
     val serverEndsAt: Flow<String?> = store.data.map { it[KEY_SERVER_ENDS] }
     val yearlyPriceTomans: Flow<Int> = store.data.map { it[KEY_YEARLY_PRICE] ?: 585000 }
     val apiBaseUrlFlow: Flow<String?> = store.data.map { it[KEY_API_BASE] }
+    val accountRole: Flow<String> = store.data.map { it[KEY_ROLE] ?: "" }
+    val intendedRole: Flow<String> = store.data.map { it[KEY_INTENDED_ROLE] ?: "" }
+    val sharedFromPartner: Flow<Boolean> = store.data.map { it[KEY_SHARED_FROM_PARTNER] ?: false }
+    val ownSubscriptionActive: Flow<Boolean> = store.data.map { it[KEY_OWN_SUB_ACTIVE] ?: false }
+    val partnerConsent: Flow<Boolean> = store.data.map { it[KEY_PARTNER_CONSENT] ?: false }
+    val partnerStatusJson: Flow<String?> = store.data.map { it[KEY_PARTNER_STATUS] }
+    val partnerSnapshotJson: Flow<String?> = store.data.map { it[KEY_PARTNER_SNAPSHOT] }
+
+    suspend fun setAccountRole(role: String?) {
+        store.edit { if (role.isNullOrBlank()) it.remove(KEY_ROLE) else it[KEY_ROLE] = role }
+    }
+    suspend fun setIntendedRole(role: String?) {
+        store.edit { if (role.isNullOrBlank()) it.remove(KEY_INTENDED_ROLE) else it[KEY_INTENDED_ROLE] = role }
+    }
+    suspend fun setSubscriptionShare(own: Boolean, shared: Boolean) {
+        store.edit { it[KEY_OWN_SUB_ACTIVE] = own; it[KEY_SHARED_FROM_PARTNER] = shared }
+    }
+    suspend fun setPartnerConsent(v: Boolean) { store.edit { it[KEY_PARTNER_CONSENT] = v } }
+    suspend fun setPartnerStatusJson(json: String?) {
+        store.edit { if (json == null) it.remove(KEY_PARTNER_STATUS) else it[KEY_PARTNER_STATUS] = json }
+    }
+    suspend fun setPartnerSnapshotJson(json: String?) {
+        store.edit { if (json == null) it.remove(KEY_PARTNER_SNAPSHOT) else it[KEY_PARTNER_SNAPSHOT] = json }
+    }
+    suspend fun getPartnerSince(): Long = store.data.first()[KEY_PARTNER_SINCE]?.toLongOrNull() ?: 0L
+    suspend fun setPartnerSince(ms: Long) { store.edit { it[KEY_PARTNER_SINCE] = ms.toString() } }
+    suspend fun getPartnerPushHash(): String? = store.data.first()[KEY_PARTNER_PUSH_HASH]
+    suspend fun setPartnerPushHash(h: String?) {
+        store.edit { if (h == null) it.remove(KEY_PARTNER_PUSH_HASH) else it[KEY_PARTNER_PUSH_HASH] = h }
+    }
+    suspend fun getPartnerDailyDay(): Long = store.data.first()[KEY_PARTNER_DAILY_DAY]?.toLongOrNull() ?: -1L
+    suspend fun setPartnerDailyDay(day: Long) { store.edit { it[KEY_PARTNER_DAILY_DAY] = day.toString() } }
+    suspend fun getAccountRole(): String = store.data.first()[KEY_ROLE] ?: ""
+    suspend fun getPartnerConsent(): Boolean = store.data.first()[KEY_PARTNER_CONSENT] ?: false
+    suspend fun getPartnerStatusJson(): String? = store.data.first()[KEY_PARTNER_STATUS]
+
+    /** Drop everything partner-related on this phone (after unpair or logout). */
+    suspend fun clearPartnerLocal() {
+        store.edit {
+            it.remove(KEY_PARTNER_STATUS)
+            it.remove(KEY_PARTNER_SNAPSHOT)
+            it.remove(KEY_PARTNER_SINCE)
+            it.remove(KEY_PARTNER_PUSH_HASH)
+            it.remove(KEY_PARTNER_DAILY_DAY)
+        }
+    }
 
     suspend fun setLastUnlock(millis: Long) {
         store.edit { it[KEY_LAST_UNLOCK] = millis.toString() }
@@ -116,6 +174,15 @@ class UserPreferences(private val context: Context) {
             it[KEY_SERVER_ACTIVE] = false
             it.remove(KEY_SERVER_PLAN)
             it.remove(KEY_SERVER_ENDS)
+            it.remove(KEY_ROLE)
+            it.remove(KEY_SHARED_FROM_PARTNER)
+            it.remove(KEY_OWN_SUB_ACTIVE)
+            it.remove(KEY_PARTNER_CONSENT)
+            it.remove(KEY_PARTNER_STATUS)
+            it.remove(KEY_PARTNER_SNAPSHOT)
+            it.remove(KEY_PARTNER_SINCE)
+            it.remove(KEY_PARTNER_PUSH_HASH)
+            it.remove(KEY_PARTNER_DAILY_DAY)
         }
     }
 

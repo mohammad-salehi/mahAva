@@ -24,11 +24,12 @@ class MahApiClient(
 
     fun currentBaseUrl(): String = baseUrl.trimEnd('/')
 
-    suspend fun register(phone: String, password: String, name: String?): MahAuthResponse =
+    suspend fun register(phone: String, password: String, name: String?, role: String? = null): MahAuthResponse =
         post("/api/mah/auth/register", mapOf(
             "phone" to phone,
             "password" to password,
-            "name" to (name ?: "")
+            "name" to (name ?: ""),
+            "role" to (role ?: "")
         ))
 
     suspend fun login(phone: String, password: String): MahAuthResponse =
@@ -54,7 +55,10 @@ class MahApiClient(
             endsAt = obj.get("endsAt")?.takeIf { !it.isJsonNull }?.asString,
             plan = obj.get("plan")?.asString ?: "none",
             priceYearlyTomans = obj.get("priceYearlyTomans")?.asInt ?: 585000,
-            paymentGatewayReady = obj.get("paymentGatewayReady")?.asBoolean ?: false
+            paymentGatewayReady = obj.get("paymentGatewayReady")?.asBoolean ?: false,
+            ownSubscriptionActive = obj.get("ownSubscriptionActive")?.takeIf { !it.isJsonNull }?.asBoolean
+                ?: (obj.get("hasActiveSubscription")?.asBoolean ?: false),
+            sharedFromPartner = obj.get("sharedFromPartner")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
         )
     }
 
@@ -75,6 +79,62 @@ class MahApiClient(
 
     suspend fun dismissInbox(accessToken: String, id: String) {
         request("POST", "/api/mah/inbox/$id/dismiss", emptyMap(), accessToken)
+    }
+
+    // ---- Partner pairing (/api/mah/partner) ----
+
+    suspend fun partnerStatus(token: String): PartnerStatusDto =
+        gson.fromJson(request("GET", "/api/mah/partner/status", null, token), PartnerStatusDto::class.java)
+
+    suspend fun partnerSetRole(token: String, role: String): PartnerStatusDto =
+        gson.fromJson(request("POST", "/api/mah/partner/role", mapOf("role" to role), token), PartnerStatusDto::class.java)
+
+    suspend fun partnerCreateCode(token: String): PartnerCodeDto =
+        gson.fromJson(request("POST", "/api/mah/partner/code", emptyMap(), token), PartnerCodeDto::class.java)
+
+    suspend fun partnerRedeem(token: String, code: String): PartnerPairResponse =
+        gson.fromJson(request("POST", "/api/mah/partner/redeem", mapOf("code" to code), token), PartnerPairResponse::class.java)
+
+    suspend fun partnerRespond(token: String, pairId: String, approve: Boolean): PartnerPairResponse =
+        gson.fromJson(
+            request("POST", "/api/mah/partner/respond", mapOf("pairId" to pairId, "approve" to approve), token),
+            PartnerPairResponse::class.java
+        )
+
+    suspend fun partnerUnpair(token: String) {
+        request("POST", "/api/mah/partner/unpair", emptyMap(), token)
+    }
+
+    suspend fun partnerPutShare(token: String, snapshot: PartnerSnapshotDto) {
+        request("PUT", "/api/mah/partner/share", mapOf("snapshot" to snapshot), token)
+    }
+
+    suspend fun partnerGetShare(token: String): PartnerShareDto =
+        gson.fromJson(request("GET", "/api/mah/partner/share", null, token), PartnerShareDto::class.java)
+
+    suspend fun partnerChanges(token: String, sinceMs: Long): PartnerChangesDto =
+        gson.fromJson(request("GET", "/api/mah/partner/changes?since=$sinceMs", null, token), PartnerChangesDto::class.java)
+
+    // ---- Full data sync (/api/mah/data) ----
+
+    suspend fun dataPull(token: String, since: Long): DataPullDto =
+        gson.fromJson(request("GET", "/api/mah/data?since=$since", null, token), DataPullDto::class.java)
+
+    suspend fun dataPush(token: String, changes: List<com.mahava.app.sync.SyncRecord>): DataPushDto {
+        val body = mapOf(
+            "changes" to changes.map {
+                mapOf("kind" to it.kind, "key" to it.key, "data" to it.data, "deleted" to it.deleted, "updatedAt" to it.updatedAt)
+            }
+        )
+        return gson.fromJson(request("POST", "/api/mah/data/sync", body, token), DataPushDto::class.java)
+    }
+
+    suspend fun dataWipe(token: String) {
+        request("DELETE", "/api/mah/data", null, token)
+    }
+
+    suspend fun deleteAccount(token: String, password: String) {
+        request("POST", "/api/mah/auth/delete-account", mapOf("password" to password), token)
     }
 
     private suspend fun post(path: String, body: Map<String, Any?>, token: String? = null): MahAuthResponse {

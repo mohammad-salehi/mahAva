@@ -19,6 +19,7 @@ import com.mahava.app.MahavaApplication
 import com.mahava.app.R
 import com.mahava.app.widget.CycleWidgetUpdater
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.launch
 
 /**
  * Reminders via WorkManager only — no SCHEDULE_EXACT_ALARM.
@@ -128,10 +129,23 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
     }
 }
 
+/**
+ * Boot, app update and clock changes: re-enqueue reminders, data sync and the partner
+ * poller (unique work, so nothing is duplicated) and refresh the widget.
+ */
 class BootAndTimeReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val app = context.applicationContext as? MahavaApplication ?: return
         app.reminderScheduler.ensurePeriodic()
         CycleWidgetUpdater.requestUpdate(context)
+        val pending = goAsync()
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                MahavaApplication.scheduleBackgroundWork(app)
+            } catch (_: Throwable) {
+            } finally {
+                pending.finish()
+            }
+        }
     }
 }

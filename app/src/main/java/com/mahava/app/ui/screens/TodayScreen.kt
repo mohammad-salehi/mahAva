@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -46,6 +47,8 @@ fun TodayScreen(
     onFertility: () -> Unit = {},
     onDoctor: () -> Unit = {},
     onScience: () -> Unit = {},
+    onSignal: (String, String) -> Unit = { _, _ -> },
+    onPartner: () -> Unit = {},
     onMore: () -> Unit = onDailyLog
 ) {
     val state by vm.state.collectAsState()
@@ -126,34 +129,45 @@ fun TodayScreen(
                 }
             }
 
+            TodaySignalsCard(vm, onOpenSignal = onSignal)
+
+            // Based on her own past cycles (on-device). Hidden until there is enough data.
+            val phaseGroupToday = vm.todayPhaseGroup()
+            val personal = remember(state.dailyLogs, state.periods, phaseGroupToday) { vm.personalForPhase(phaseGroupToday) }
+            if (personal.isNotEmpty()) {
+                MahavaCard(Modifier.testTag("personal_pattern_card").clickable { onPatterns() }) {
+                    Text("الگوی خودت در این روزها", style = MaterialTheme.typography.titleMedium)
+                    personal.take(2).forEach { p -> Text("• ${p.textFa}", style = MaterialTheme.typography.bodyMedium) }
+                    QuietInfo("بر اساس ثبت‌های خودت.")
+                }
+            }
+
             if (premium) {
                 // Phase science card
                 MahavaCard(Modifier.testTag("phase_science_card").clickable { onScience() }) {
                     Text("در بدنم چه می‌گذرد؟", style = MaterialTheme.typography.titleMedium)
                     Text(science.titleFa, color = MahavaPrimary, style = MaterialTheme.typography.titleSmall)
-                    Text(science.bodyFa.let { if (it.length > 140) it.take(140).trimEnd() + "…" else it })
+                    Text(science.teaserFa)
                     Spacer(Modifier.height(6.dp))
-                    QuietInfo("هورمون‌ها: ${science.hormoneFa.let { if (it.length > 90) it.take(90).trimEnd() + "…" else it }}")
-                    Text("جزئیات علمی", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                    Text("توضیح کامل و منبع‌ها ‹", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
                 }
 
                 // Tomorrow forecast
                 MahavaCard(Modifier.testTag("phase_forecast_card").clickable { onForecast() }) {
                     Text("فردا ممکنه چی حس کنی", style = MaterialTheme.typography.titleMedium)
-                    QuietInfo(forecast.hormoneSnapshotFa)
-                    forecast.summaryLinesFa.forEach { line ->
+                    forecast.summaryLinesFa.take(2).forEach { line ->
                         Text("• $line", style = MaterialTheme.typography.bodyMedium)
                     }
-                    Text("دلیل علمی و جزئیات", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                    Text("دلیلش ‹", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
                 }
 
                 // 3 care tips
                 MahavaCard(Modifier.testTag("care_tips_card").clickable { onCareDetail(vm.careToday().item.id) }) {
                     Text("امروز چیکار کنی", style = MaterialTheme.typography.titleMedium)
-                    science.careTipsFa.take(3).forEach { tip ->
+                    science.careTipsFa.take(2).forEach { tip ->
                         Text("• $tip")
                     }
-                    Text("بیشتر", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                    Text("همهٔ نکته‌ها ‹", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
                 }
 
                 // Tool shortcuts row
@@ -206,6 +220,21 @@ fun TodayScreen(
                         .testTag("today_account_link")
                         .clickable { onAccount() }
                         .padding(vertical = 4.dp)
+                )
+            }
+
+            // Partner: one short line; details on its own screen.
+            val partnerStatus by vm.partnerStatus.collectAsState()
+            val pairNow = partnerStatus?.pair
+            MahavaCard(Modifier.testTag("today_partner_card").clickable { onPartner() }) {
+                Text(
+                    when (pairNow?.status) {
+                        "active" -> "💞 ${com.mahava.app.content.PartnerAdvice.name(pairNow.partner?.name)} وضعیتت را می‌بیند"
+                        "pending" -> "💞 یک درخواست اتصال داری"
+                        else -> "💞 همراهت را وصل کن"
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MahavaPrimary
                 )
             }
 

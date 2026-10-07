@@ -8,12 +8,14 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.mahava.app.MainActivity
 import com.mahava.app.MahavaApplication
+import com.mahava.app.BuildConfig
 import com.mahava.app.R
 import com.mahava.app.cycle.CycleDayContextResolver
 import com.mahava.app.cycle.CyclePhase
 import com.mahava.app.cycle.CycleSubWindow
 import com.mahava.app.cycle.PredictionKind
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /**
@@ -21,7 +23,7 @@ import kotlinx.coroutines.withContext
  * Premium-only: without an active subscription shows a locked placeholder (no cycle data).
  */
 object CycleWidgetUpdater {
-    const val ACTION_REFRESH = "com.mahava.app.widget.ACTION_REFRESH"
+    val ACTION_REFRESH = "${BuildConfig.APPLICATION_ID}.widget.ACTION_REFRESH"
 
     fun requestUpdate(context: Context) {
         val appCtx = context.applicationContext
@@ -42,13 +44,65 @@ object CycleWidgetUpdater {
         val loggedIn = try {
             app?.authRepository?.hasSessionTokens() == true
         } catch (_: Throwable) { false }
-        val snapshot = if (premium) loadSnapshot(context) else WidgetSnapshot.empty()
+        val partnerView = loggedIn && try {
+            app?.prefs?.accountRole?.first() == "male"
+        } catch (_: Throwable) { false }
+        val snapshot = when {
+            !premium -> WidgetSnapshot.empty()
+            partnerView -> loadPartnerSnapshot(context)
+            else -> loadSnapshot(context)
+        }
         appWidgetIds.forEach { id ->
             appWidgetManager.updateAppWidget(
                 id,
-                buildViews(context, appWidgetManager, id, snapshot, premium, loggedIn)
+                buildViews(context, appWidgetManager, id, snapshot, premium, loggedIn, partnerView)
             )
         }
+    }
+
+    /**
+     * Male (partner) account: the ring shows HER status from the last synced share snapshot.
+     * Not paired -> "not connected" placeholder (no data).
+     */
+    private suspend fun loadPartnerSnapshot(context: Context): WidgetSnapshot = withContext(Dispatchers.IO) {
+        val app = context.applicationContext as? MahavaApplication
+            ?: return@withContext WidgetSnapshot.empty()
+        val repo = app.partnerRepository
+        val active = try { repo.isActivelyPaired() } catch (_: Throwable) { false }
+        if (!active) return@withContext WidgetSnapshot.empty().copy(phaseShort = "همراه وصل نیست")
+        val share = try { repo.share.first() } catch (_: Throwable) { null }
+        val s = share?.snapshot ?: return@withContext WidgetSnapshot.empty().copy(phaseShort = "در انتظار اطلاعات")
+        val todayEpoch = app.clock.today().toEpochDay()
+        val elapsed = s.today?.epochDay?.let { (todayEpoch - it).toInt().coerceAtLeast(0) } ?: 0
+        val len = s.cycleLength
+        val day = s.cycleDay?.let { d -> val v = d + elapsed; if (len != null && v > len + 30) null else v }
+        val until = s.nextPeriodEpochDay?.let { (it - todayEpoch).toInt() } ?: s.daysUntilPeriod
+        val phase = when (s.phaseGroup) {
+            "menstrual" -> CyclePhase.MENSTRUATION
+            "follicular" -> CyclePhase.FOLLICULAR
+            "fertile" -> CyclePhase.OVULATION_WINDOW
+            "early_luteal", "late_luteal" -> CyclePhase.LUTEAL
+            else -> CyclePhase.UNKNOWN
+        }
+        val short = when (s.phaseGroup) {
+            "menstrual" -> "پریود"
+            "follicular" -> "بعد از پریود"
+            "fertile" -> "تخمک‌گذاری"
+            "early_luteal" -> "لوتئال"
+            "late_luteal" -> "پیش از پریود"
+            else -> "نامعلوم"
+        }
+        WidgetSnapshot(
+            hasData = day != null || s.nextPeriodEpochDay != null,
+            cycleDay = day,
+            cycleLength = len,
+            phase = phase,
+            phaseShort = short,
+            daysUntil = until,
+            isLate = s.isLate || (until != null && until < 0),
+            daysLate = s.daysLate,
+            periodOngoing = s.periodOngoing
+        )
     }
 
     private suspend fun isPremium(context: Context): Boolean {
@@ -106,14 +160,17 @@ object CycleWidgetUpdater {
         appWidgetId: Int,
         snap: WidgetSnapshot,
         premium: Boolean,
-        loggedIn: Boolean
+        loggedIn: Boolean,
+        partnerView: Boolean = false
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_cycle)
 
         val open = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             action = Intent.ACTION_MAIN
-            if (premium) {
+            if (partnerView) {
+                putExtra(MainActivity.EXTRA_OPEN_PARTNER, true)
+            } else if (premium) {
                 putExtra(MainActivity.EXTRA_OPEN_TODAY, true)
             } else if (loggedIn) {
                 putExtra(MainActivity.EXTRA_OPEN_ACCOUNT, true)
@@ -123,7 +180,7 @@ object CycleWidgetUpdater {
         }
         val pi = PendingIntent.getActivity(
             context,
-            if (premium) 7101 else 7102,
+            if (partnerView) 7103 else if (premium) 7101 else 7102,
             open,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -139,6 +196,7 @@ object CycleWidgetUpdater {
             CycleRingBitmapRenderer.renderLocked(context, sizePx)
         } else {
             val phaseTitle = when {
+                !snap.hasData && partnerView -> snap.phaseShort
                 !snap.hasData -> "اولین پریود را ثبت کن"
                 else -> snap.phaseShort
             }
