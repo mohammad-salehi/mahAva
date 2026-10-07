@@ -24,11 +24,10 @@ class MahApiClient(
 
     fun currentBaseUrl(): String = baseUrl.trimEnd('/')
 
-    suspend fun register(phone: String, password: String, name: String?, role: String? = null): MahAuthResponse =
+    suspend fun register(phone: String, password: String, role: String? = null): MahAuthResponse =
         post("/api/mah/auth/register", mapOf(
             "phone" to phone,
             "password" to password,
-            "name" to (name ?: ""),
             "role" to (role ?: "")
         ))
 

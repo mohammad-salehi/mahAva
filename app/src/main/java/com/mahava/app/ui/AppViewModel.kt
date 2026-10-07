@@ -100,12 +100,10 @@ class AppViewModel(
     private val partnerRepo get() = app.partnerRepository
     val accountRole: StateFlow<String> = prefs.accountRole
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
-    val intendedRole: StateFlow<String> = prefs.intendedRole
-        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
     val sharedFromPartner: StateFlow<Boolean> = prefs.sharedFromPartner
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
-    val partnerConsent: StateFlow<Boolean> = prefs.partnerConsent
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /** In-app notifications (pairing news, her updates…). */
+    val notices: StateFlow<List<com.mahava.app.notice.AppNotice>> = com.mahava.app.notice.AppNotices.items
     val partnerStatus: StateFlow<com.mahava.app.network.PartnerStatusDto?> = app.partnerRepository.status
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val partnerShare: StateFlow<com.mahava.app.network.PartnerShareDto?> = app.partnerRepository.share
@@ -141,6 +139,7 @@ class AppViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppUiState())
 
     init {
+        com.mahava.app.notice.AppNotices.load(app)
         checkForceUpdate()
 
         viewModelScope.launch {
@@ -451,12 +450,6 @@ class AppViewModel(
         } catch (_: Throwable) { null }
     }
 
-    fun setPremium(unlocked: Boolean) = viewModelScope.launch {
-        // Demo unlock only meaningful when already logged in (DEBUG gate in AuthRepository).
-        prefs.setPremium(unlocked)
-        com.mahava.app.widget.CycleWidgetUpdater.requestUpdate(app)
-    }
-
     /**
      * Call when entering a premium feature. Verifies tokens; on invalid/expired clears session
      * so [isPremium] flips false and UI can send user to login.
@@ -474,7 +467,7 @@ class AppViewModel(
     suspend fun login(phone: String, password: String): String? {
         return try {
             authRepository.login(phone.trim(), password)
-            applyIntendedRole()
+            refreshRoleAfterAuth()
             restoreFromServer()
         } catch (e: MahApiException) {
             e.message ?: "ورود ناموفق بود."
@@ -483,11 +476,10 @@ class AppViewModel(
         }
     }
 
-    suspend fun register(phone: String, password: String, name: String?, role: String? = null): String? {
+    suspend fun register(phone: String, password: String, role: String): String? {
         return try {
-            authRepository.register(phone.trim(), password, name, role)
-            if (!role.isNullOrBlank()) prefs.setIntendedRole(role)
-            applyIntendedRole()
+            authRepository.register(phone.trim(), password, role)
+            refreshRoleAfterAuth()
             restoreFromServer()
         } catch (e: MahApiException) {
             e.message ?: "ثبت‌نام ناموفق بود."
@@ -557,7 +549,19 @@ class AppViewModel(
         reminderScheduler.cancelAll()
         _locked.value = false
         repo.ensureProfile()
+        com.mahava.app.notice.AppNotices.clear(app)
         com.mahava.app.widget.CycleWidgetUpdater.requestUpdate(app)
+    }
+
+    /**
+     * Where to go after login/register: the husband goes to his home; a woman answers the
+     * cycle questions once (only if nothing came back from the server), then Today.
+     */
+    suspend fun homeRouteAfterAuth(): String {
+        if (prefs.getAccountRole() == "male") return com.mahava.app.ui.navigation.Routes.PARTNER_HOME
+        val profile = repo.ensureProfile()
+        return if (profile.onboardingDone) com.mahava.app.ui.navigation.Routes.TODAY
+        else com.mahava.app.ui.navigation.Routes.ONBOARDING
     }
 
     suspend fun refreshAccountFromServer(): Boolean {
@@ -702,24 +706,35 @@ class AppViewModel(
         com.mahava.app.widget.CycleWidgetUpdater.requestUpdate(app)
     }
 
-    fun setPartnerConsent(v: Boolean) = viewModelScope.launch { prefs.setPartnerConsent(v) }
-
-    /** Onboarding shortcut for the partner (man): no cycle questions, straight to login/register. */
-    fun startAsPartner() = viewModelScope.launch {
-        prefs.setIntendedRole("male")
-        val cur = repo.ensureProfile()
-        repo.saveProfile(cur.copy(onboardingDone = true, goal = "partner"))
+    /** After login/register: learn this account's role and pairing from the server. */
+    private suspend fun refreshRoleAfterAuth() {
+        try { partnerRepo.refreshStatus() } catch (_: Throwable) { }
     }
 
-    fun setIntendedRole(role: String) = viewModelScope.launch { prefs.setIntendedRole(role) }
+    // ---- In-app notifications ----
 
-    /** After login: apply the role chosen before the account existed. */
-    private suspend fun applyIntendedRole() {
+    fun markNoticesRead() = com.mahava.app.notice.AppNotices.markAllRead(app)
+    fun dismissNoticePopup(id: String) = com.mahava.app.notice.AppNotices.dismissPopup(app, id)
+    fun clearNotices() = com.mahava.app.notice.AppNotices.clear(app)
+    fun noteInApp(kind: String, title: String, body: String) =
+        com.mahava.app.notice.AppNotices.add(app, kind, title, body)
+
+    /**
+     * While the app is open: poll the partner feed so requests/approvals show up as in-app
+     * dialogs within seconds. Returns how long to wait before the next poll.
+     */
+    suspend fun partnerForegroundPoll(): Long {
+        if (!com.mahava.app.notice.AppNotices.foreground || !authRepository.hasSessionTokens()) return 10_000
         try {
-            val intended = prefs.intendedRole.first()
-            if (intended.isNotBlank() && prefs.getAccountRole().isBlank()) partnerRepo.setRole(intended)
-            partnerRepo.refreshStatus()
+            val poll = partnerRepo.pollChanges()
+            com.mahava.app.partner.PartnerSync.process(app, poll)
         } catch (_: Throwable) { }
+        val st = try { partnerRepo.cachedStatus() } catch (_: Throwable) { null }
+        return when {
+            st?.pair?.status == "pending" || com.mahava.app.partner.PartnerSync.isAwaiting(app) -> 5_000
+            st?.pair != null -> 30_000
+            else -> 60_000
+        }
     }
 
     fun lastCheckerResult(): CheckerResult? {

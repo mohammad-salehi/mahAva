@@ -40,7 +40,7 @@ fun LoginScreen(
     ) {
         ScreenHeader("ورود", onBack = onBack)
         Text("با شماره موبایل وارد شو", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("برای استفاده از برنامه باید وارد حسابت شوی. ثبت‌نام جدید یک ماه رایگان می‌گیرد. با ورود، اطلاعاتی که قبلاً ثبت کرده‌ای از سرور برمی‌گردد.")
+        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان می‌گیرد. اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید هم برگردد. اگر به همسرت وصل شوی، او همهٔ چیزهایی را که ثبت می‌کنی می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.")
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = phone,
@@ -84,9 +84,7 @@ fun LoginScreen(
 @Composable
 fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, onSuccess: () -> Unit = onBack) {
     val scope = rememberCoroutineScope()
-    val intended by vm.intendedRole.collectAsState()
-    var role by remember(intended) { mutableStateOf(if (intended == "male") "male" else "female") }
-    var name by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("female") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -98,23 +96,15 @@ fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, 
     ) {
         ScreenHeader("ثبت‌نام", onBack = onBack)
         Text("ساخت حساب ماه", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("با ثبت‌نام، یک ماه اشتراک رایگان خودکار فعال می‌شود. اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید یا ورود دوباره برگردد. فقط همراهی که خودت تأیید کنی، بخش مشترک (مرحلهٔ چرخه و حال امروز) را می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.")
+        QuietInfo("با ثبت‌نام، یک ماه اشتراک رایگان فعال می‌شود. اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید هم برگردد. اگر به همسرت وصل شوی، او همهٔ چیزهایی را که ثبت می‌کنی می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.")
         Spacer(Modifier.height(12.dp))
         Text("این حساب برای کیست؟", style = MaterialTheme.typography.titleSmall)
         Spacer(Modifier.height(6.dp))
         ChipsFlow(
-            listOf("female" to "خانم هستم", "male" to "آقا هستم (همراه)"),
+            listOf("female" to "خانم هستم", "male" to "آقا هستم (همسر)"),
             role, tagPrefix = "register_role"
         ) { role = it }
-        if (role == "male") QuietInfo("حساب آقا فقط وضعیت همسر یا همراهش را می‌بیند؛ بعد از ثبت‌نام، کد اتصال را از او بگیر.")
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("نام (اختیاری)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("register_name")
-        )
+        if (role == "male") QuietInfo("حساب آقا وضعیت همسرش را می‌بیند. بعد از ثبت‌نام، کد اتصال را از همسرت بگیر.")
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = phone,
@@ -140,7 +130,7 @@ fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, 
         PrimaryButton(if (busy) "صبر کن…" else "ثبت‌نام", enabled = !busy, modifier = Modifier.testTag("register_submit")) {
             busy = true; error = null; info = null
             scope.launch {
-                val msg = vm.register(phone, password, name.ifBlank { null }, role)
+                val msg = vm.register(phone, password, role)
                 busy = false
                 if (msg == null) onSuccess() else error = msg
             }
@@ -251,8 +241,8 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 ends?.let { QuietInfo("پایان تقریبی: $it") }
                 QuietInfo(if (premium) "دسترسی ویژه: روشن" else "دسترسی ویژه: خاموش")
                 val sharedSub by vm.sharedFromPartner.collectAsState()
-                if (sharedSub) QuietInfo("اشتراک از همراهت می‌آید. با یک اشتراک، هر دوی شما از امکانات ویژه استفاده می‌کنید.")
-                QuietInfo(when (role) { "male" -> "نوع حساب: آقا (همراه)"; "female" -> "نوع حساب: خانم"; else -> "نوع حساب: انتخاب نشده" })
+                if (sharedSub) QuietInfo("اشتراک از همسرت می‌آید. با یک اشتراک، هر دوی شما از امکانات ویژه استفاده می‌کنید.")
+                QuietInfo(if (role == "male") "نوع حساب: آقا (همسر)" else "نوع حساب: خانم")
                 Spacer(Modifier.height(8.dp))
                 SecondaryButton("به‌روزرسانی وضعیت") {
                     scope.launch {
@@ -274,7 +264,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
             Spacer(Modifier.height(12.dp))
             MahavaCard {
                 Text("حذف حساب", style = MaterialTheme.typography.titleMedium)
-                QuietInfo("با حذف حساب، همهٔ اطلاعاتت از سرور هم پاک می‌شود و اتصال همراه قطع می‌شود. این کار برگشت ندارد.")
+                QuietInfo("با حذف حساب، همهٔ اطلاعاتت از سرور هم پاک می‌شود و اتصال به همسر قطع می‌شود. این کار برگشت ندارد.")
                 Spacer(Modifier.height(8.dp))
                 SecondaryButton("حذف حساب و همهٔ اطلاعات", modifier = Modifier.testTag("delete_account_btn")) { askDelete = true }
             }

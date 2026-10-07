@@ -36,6 +36,17 @@ sealed class SyncOutcome {
     data class Failed(val message: String?) : SyncOutcome()
 }
 
+/** The server side of the sync (real API in the app, an in-memory fake in tests). */
+interface DataSyncRemote {
+    suspend fun pull(since: Long): com.mahava.app.network.DataPullDto
+    suspend fun push(changes: List<SyncRecord>): com.mahava.app.network.DataPushDto
+}
+
+class MahDataSyncRemote(private val api: MahApiClient, private val auth: AuthRepository) : DataSyncRemote {
+    override suspend fun pull(since: Long) = auth.withToken { api.dataPull(it, since) }
+    override suspend fun push(changes: List<SyncRecord>) = auth.withToken { api.dataPush(it, changes) }
+}
+
 /**
  * The server is the source of truth for the woman's data; Room is the offline cache.
  * Changes made offline are found by hash comparison and pushed when the network is back
@@ -47,7 +58,8 @@ class DataSyncRepository(
     private val prefs: UserPreferences,
     private val api: MahApiClient,
     private val auth: AuthRepository,
-    private val clock: AppClock
+    private val clock: AppClock,
+    private val remote: DataSyncRemote = MahDataSyncRemote(api, auth)
 ) {
     private val sp = context.getSharedPreferences("mahava_data_sync", Context.MODE_PRIVATE)
     private val gson = Gson()
@@ -67,6 +79,15 @@ class DataSyncRepository(
 
         /** Device-specific profile fields that never leave the phone. */
         val PROFILE_LOCAL_ONLY = setOf("id", "updatedAt", "lockEnabled", "lockTimeoutSeconds", "qaSampleData", "schemaVersion", "contentVersionShown")
+
+        /** Non-null entity fields: when the server copy lacks one, the default stays. */
+        private val NON_NULL_FIELDS = setOf(
+            "id", "epochDay", "startEpochDay", "createdAt", "updatedAt", "noSymptoms", "intimacyLogged", "stillOngoing",
+            "onboardingDone", "goal", "cycleLengthUnknown", "bleedLengthUnknown", "hormonalContraception",
+            "postpartumOrBreastfeeding", "perimenopause", "fertilityTrackingEnabled", "pregnancyMode", "calendarType",
+            "lockEnabled", "lockTimeoutSeconds", "privateNotifications", "hiddenBodyCategories", "contentVersionShown",
+            "qaSampleData", "schemaVersion", "enabled", "hour", "minute"
+        )
     }
 
     // ---------- local snapshot ----------
@@ -96,8 +117,6 @@ class DataSyncRepository(
             val r = SyncRecord("reminder", e.id, o, 0L)
             out[r.id] = r
         }
-        val consent = JsonObject().apply { addProperty("value", prefs.getPartnerConsent()) }
-        out["settings/partnerConsent"] = SyncRecord("settings", "partnerConsent", consent, 0L)
         out
     }
 
@@ -117,11 +136,10 @@ class DataSyncRepository(
                 val cur = db.profileDao().get()
                 val o = r.data.deepCopy()
                 PROFILE_LOCAL_ONLY.forEach { o.remove(it) }
-                if (cur != null) {
-                    val curJson = gson.toJsonTree(cur).asJsonObject
-                    PROFILE_LOCAL_ONLY.forEach { k -> curJson.get(k)?.let { o.add(k, it) } }
-                }
-                val p = gson.fromJson(o, UserProfileEntity::class.java)
+                // Start from this phone's profile (or the defaults) so device-only fields and
+                // fields the server copy lacks keep valid values (Gson skips Kotlin defaults).
+                val base = gson.toJsonTree(cur ?: UserProfileEntity()).asJsonObject
+                val p = gson.fromJson(withDefaults(base, o, keepFromBase = PROFILE_LOCAL_ONLY), UserProfileEntity::class.java)
                 db.profileDao().upsert(p.copy(id = 1, updatedAt = r.updatedAt))
             }
             "period" -> {
@@ -130,7 +148,8 @@ class DataSyncRepository(
                 if (r.deleted || r.data == null) {
                     existing?.let { db.periodDao().delete(it.id) }
                 } else {
-                    val e = gson.fromJson(r.data, PeriodEventEntity::class.java)
+                    val base = gson.toJsonTree(PeriodEventEntity(startEpochDay = start, createdAt = r.updatedAt, updatedAt = r.updatedAt)).asJsonObject
+                    val e = gson.fromJson(withDefaults(base, r.data), PeriodEventEntity::class.java)
                     db.periodDao().upsert(e.copy(id = existing?.id ?: 0L, startEpochDay = start, updatedAt = r.updatedAt))
                 }
             }
@@ -140,21 +159,32 @@ class DataSyncRepository(
                     db.dailyLogDao().deleteByDay(day)
                 } else {
                     val existing = db.dailyLogDao().getByDay(day)
-                    val e = gson.fromJson(r.data, DailyLogEntity::class.java)
+                    val base = gson.toJsonTree(DailyLogEntity(epochDay = day, createdAt = r.updatedAt, updatedAt = r.updatedAt)).asJsonObject
+                    val e = gson.fromJson(withDefaults(base, r.data), DailyLogEntity::class.java)
                     db.dailyLogDao().upsert(e.copy(id = existing?.id ?: 0L, epochDay = day, updatedAt = r.updatedAt))
                 }
             }
             "reminder" -> {
                 if (r.deleted || r.data == null) return
-                val o = r.data.deepCopy().apply { addProperty("id", r.key) }
+                val base = gson.toJsonTree(ReminderPrefEntity(id = r.key)).asJsonObject
+                val o = withDefaults(base, r.data).apply { addProperty("id", r.key) }
                 db.reminderDao().upsert(gson.fromJson(o, ReminderPrefEntity::class.java))
             }
-            "settings" -> {
-                if (r.key == "partnerConsent" && !r.deleted) {
-                    prefs.setPartnerConsent(r.data?.get("value")?.takeIf { it.isJsonPrimitive }?.asBoolean == true)
-                }
-            }
+            "settings" -> { } // nothing app-side yet (the old partner-consent switch is gone)
         }
+    }
+
+    /**
+     * The server copy over the entity's defaults: every field the server has wins, missing
+     * fields keep their default (a non-null default never turns into null).
+     */
+    private fun withDefaults(base: JsonObject, data: JsonObject, keepFromBase: Set<String> = emptySet()): JsonObject {
+        val out = base.deepCopy()
+        data.entrySet().forEach { (k, v) -> if (k !in keepFromBase && !v.isJsonNull) out.add(k, v) }
+        // A field the server explicitly cleared (absent = null) must be cleared here too,
+        // unless it is non-null by default (kept from the base) or device-only.
+        base.keySet().filter { it !in keepFromBase && !data.has(it) && it !in NON_NULL_FIELDS }.forEach { out.remove(it) }
+        return out
     }
 
     // ---------- network ----------
@@ -166,7 +196,7 @@ class DataSyncRepository(
         var cursor = since
         var pages = 0
         while (true) {
-            val res = auth.withToken { api.dataPull(it, cursor) }
+            val res = remote.pull(cursor)
             out += res.records.orEmpty().map { it.toRecord() }
             cursor = res.cursor
             pages += 1
@@ -179,7 +209,7 @@ class DataSyncRepository(
     private suspend fun pushAll(changes: List<SyncRecord>): List<SyncRecord> {
         val conflicts = mutableListOf<SyncRecord>()
         changes.chunked(BATCH).forEach { chunk ->
-            val res = auth.withToken { api.dataPush(it, chunk) }
+            val res = remote.push(chunk)
             conflicts += res.conflicts.orEmpty().map { it.toRecord() }
         }
         return conflicts
@@ -256,7 +286,7 @@ class DataSyncRepository(
         val (serverList, cursor) = pullAll(0L)
         val server = serverList.associateBy { it.id }
         val local = collectLocal()
-        val plan = DataSyncEngine.planInitial(local, server)
+        val plan = DataSyncEngine.planInitial(local, server, clock.nowMillis())
         applyAll(plan.applyLocal)
         val conflicts = pushAll(plan.push)
         applyAll(conflicts)

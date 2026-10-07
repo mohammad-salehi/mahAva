@@ -57,7 +57,6 @@ class UserPreferences(private val context: Context) {
     val accessToken: Flow<String?> = store.data.map { it[KEY_ACCESS] }
     val refreshToken: Flow<String?> = store.data.map { it[KEY_REFRESH] }
     val accountPhone: Flow<String?> = store.data.map { it[KEY_PHONE] }
-    val accountName: Flow<String?> = store.data.map { it[KEY_NAME] }
     val accountUserId: Flow<String?> = store.data.map { it[KEY_USER_ID] }
     val serverHasActiveSubscription: Flow<Boolean> = store.data.map { it[KEY_SERVER_ACTIVE] ?: false }
     val serverPlan: Flow<String?> = store.data.map { it[KEY_SERVER_PLAN] }
@@ -99,6 +98,7 @@ class UserPreferences(private val context: Context) {
     suspend fun getAccountRole(): String = store.data.first()[KEY_ROLE] ?: ""
     suspend fun getPartnerConsent(): Boolean = store.data.first()[KEY_PARTNER_CONSENT] ?: false
     suspend fun getPartnerStatusJson(): String? = store.data.first()[KEY_PARTNER_STATUS]
+    suspend fun getPartnerSnapshotJson(): String? = store.data.first()[KEY_PARTNER_SNAPSHOT]
 
     /** Drop everything partner-related on this phone (after unpair or logout). */
     suspend fun clearPartnerLocal() {
@@ -141,10 +141,10 @@ class UserPreferences(private val context: Context) {
         }
     }
 
-    suspend fun setAccount(phone: String?, name: String?, userId: String?) {
+    suspend fun setAccount(phone: String?, userId: String?) {
         store.edit {
             if (phone.isNullOrBlank()) it.remove(KEY_PHONE) else it[KEY_PHONE] = phone
-            if (name.isNullOrBlank()) it.remove(KEY_NAME) else it[KEY_NAME] = name
+            it.remove(KEY_NAME) // names are no longer kept
             if (userId.isNullOrBlank()) it.remove(KEY_USER_ID) else it[KEY_USER_ID] = userId
         }
     }

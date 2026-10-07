@@ -35,6 +35,8 @@ object Routes {
     const val PARTNER_HUB = "partner_hub"
     /** Man: the partner home (start screen for male accounts). */
     const val PARTNER_HOME = "partner_home"
+    /** In-app notification list. */
+    const val NOTIFICATIONS = "notifications"
 
     fun dailyLog(day: Long) = "daily_log?day=$day"
     fun bodyCat(cat: String) = "body_cat/$cat"
@@ -42,7 +44,7 @@ object Routes {
     fun phaseDetail(id: String) = "phase/$id"
     fun signalDetail(kind: String, key: String) = "signal/$kind/$key"
 
-    /** Screens allowed before the user has logged in (after onboarding). */
+    /** The only screens a logged-out user sees. */
     val authOnly = setOf(LOGIN, REGISTER, PASSWORD_RECOVERY)
 
     /** Cycle-owner screens a male (partner) account should not land on. */

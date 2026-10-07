@@ -133,7 +133,6 @@ class PartnerRepository(
     /** Woman's side. Returns true when something was uploaded. */
     suspend fun pushSnapshotIfChanged(force: Boolean = false): Boolean {
         if (prefs.getAccountRole() == "male") return false
-        if (!prefs.getPartnerConsent()) return false
         if (!isActivelyPaired()) return false
         val snap = buildSnapshot()
         val hash = gson.toJson(snap).hashCode().toString()

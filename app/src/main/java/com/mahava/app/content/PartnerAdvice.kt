@@ -4,9 +4,9 @@ import com.mahava.app.network.PartnerSnapshotDto
 import com.mahava.app.util.PersianDigits
 
 /**
- * Plain-Persian, science-based guidance for the partner (man) about the woman's day.
+ * Plain-Persian, science-based guidance for the husband about his wife's day.
  * Built only from facts already used (and sourced) in TodaySignalContent / PhaseScienceBank.
- * Always tentative: a cycle phase never tells you for sure how someone feels.
+ * No names: partners are always «همسر».
  */
 object PartnerAdvice {
 
@@ -24,9 +24,6 @@ object PartnerAdvice {
     const val CRISIS_FA =
         "اگر حالش چند هفته بد است یا از آسیب به خودش حرف می‌زند، همین حالا کمک بگیرید: اورژانس ۱۱۵ یا صدای مشاور بهزیستی ۱۴۸۰."
 
-    const val CAUTION_FA =
-        "این‌ها الگوهای رایج‌اند، نه پیش‌بینی قطعی. بهترین راه دانستن حالش، پرسیدن از خودش است."
-
     fun phaseNameFa(group: String): String = when (group) {
         "menstrual" -> "روزهای پریود"
         "follicular" -> "بعد از پریود"
@@ -36,9 +33,24 @@ object PartnerAdvice {
         else -> "مرحلهٔ نامعلوم"
     }
 
-    fun name(raw: String?): String = raw?.trim()?.takeIf { it.isNotBlank() } ?: "همراهت"
+    private const val N = "همسرت"
 
     private fun fa(n: Int) = PersianDigits.toPersian(n)
+
+    /** One simple word for the husband's widget ring. */
+    fun oneWordFa(s: PartnerSnapshotDto): String = when {
+        s.periodOngoing -> "پریود"
+        s.isLate -> "تأخیر"
+        s.generalOnly -> "نامعلوم"
+        else -> when (s.phaseGroup) {
+            "menstrual" -> "پریود"
+            "follicular" -> "پرانرژی"
+            "fertile" -> "تخمک‌گذاری"
+            "early_luteal" -> "آرام"
+            "late_luteal" -> "پیش‌پریود"
+            else -> "نامعلوم"
+        }
+    }
 
     fun statusFa(s: PartnerSnapshotDto): String {
         val parts = mutableListOf<String>()
@@ -55,13 +67,12 @@ object PartnerAdvice {
                 else -> if (d > 0) parts += "حدود ${fa(d)} روز تا پریود بعدی"
             }
         }
-        return parts.joinToString(" · ").ifBlank { "هنوز تاریخ کافی ثبت نشده" }
+        return parts.joinToString(" · ")
     }
 
-    fun forSnapshot(rawName: String?, s: PartnerSnapshotDto): Advice {
-        val n = name(rawName)
+    fun forSnapshot(s: PartnerSnapshotDto): Advice {
         val g = if (s.generalOnly) "general" else s.phaseGroup
-        val base = phaseBase(g, n)
+        val base = phaseBase(g, N)
         val sections = base.sections.toMutableList()
         val today = s.today
         val moods = today?.moods.orEmpty()
@@ -74,7 +85,7 @@ object PartnerAdvice {
             val negative = moods.any { it in setOf("sad", "anxious", "irritable") }
             sections.add(0, Section("💬", "امروز ثبت کرده: $labels",
                 if (negative) "بیشتر گوش بده و کمتر نصیحت کن. بپرس «چه کمکی از من برمی‌آید؟». اگر زودرنج است، شخصی نگیرش. $CRISIS_FA"
-                else "حال خوبش را ببین و همراهی کن."))
+                else "حال خوبش را ببین و کنارش باش."))
         }
         if (symptoms.isNotEmpty() || (pain ?: 0) > 0) {
             val labels = symptoms.map { TodaySignalContent.label("body", it) }
@@ -132,7 +143,7 @@ object PartnerAdvice {
             ),
             doFa = listOf(
                 "زمان خوبی برای برنامهٔ مشترک، پیاده‌روی یا ورزش با هم است.",
-                "از حال و برنامه‌هایش بپرس؛ همه مثل هم نیستند."
+                "اگر انرژی دارد، کار تازه یا برنامهٔ بیرون رفتن را این روزها بچینید."
             ),
             evidence = ScienceSources.Evidence.MEDIUM,
             sourceIds = listOf("cc_cycle", "acog_pms", "energy_review", "biocycle")
@@ -184,36 +195,38 @@ object PartnerAdvice {
             sourceIds = listOf("owh_pms", "acog_pms", "hartlage", "cc_pmdd", "biocycle")
         )
         else -> Advice(
-            headlineFa = "مرحلهٔ چرخهٔ $n معلوم نیست",
+            headlineFa = "راهنمای امروز برای کنار $n بودن",
             statusFa = "",
             sections = listOf(
-                Section("ℹ️", "چرا؟", "یا هنوز تاریخ کافی ثبت نشده، یا روش هورمونی جلوگیری یا چرخهٔ نامنظم ثبت شده. قرص ترکیبی جلوی تخمک‌گذاری را می‌گیرد؛ پس فازهای معمول چرخه صدق نمی‌کند."),
-                Section("💬", "بهترین راه", "از خودش بپرس امروز چه حسی دارد و چه کمکی از تو برمی‌آید.")
+                Section("🩸", "پریود و درد", "درد پریود از انقباض رحم است و معمولاً روزهای اول بیشتر است. کیسهٔ آب گرم و مسکن ضدالتهاب (اگر منع پزشکی ندارد) کمک می‌کند."),
+                Section("🌧️", "روزهای پیش از پریود", "زودرنجی، نفخ، حساسیت سینه و خستگی در چند روز قبل از پریود برای خیلی‌ها پیش می‌آید و با شروع پریود کم می‌شود."),
+                Section("💊", "روش هورمونی یا چرخهٔ نامنظم", "قرص ترکیبی جلوی تخمک‌گذاری را می‌گیرد؛ پس فازهای معمول چرخه با آن صدق نمی‌کند. با چرخهٔ نامنظم هم تاریخ‌ها جابه‌جا می‌شوند."),
+                Section("🍫", "هوس‌ها", "هوس شیرینی و شوری، به‌خصوص قبل از پریود، رایج است و نشانهٔ کمبود ماده‌ای در بدن نیست.")
             ),
-            doFa = listOf("حالش را از خودش بپرس.", "خواب و ورزش منظم برای هر دوتان مفید است."),
-            evidence = ScienceSources.Evidence.LOW,
-            sourceIds = listOf("cc_cycle", "cc_ovulation")
+            doFa = listOf("خواب و ورزش منظم برای هر دوتان مفید است.", "کارهای سنگین را در روزهای پریود خودت انجام بده."),
+            evidence = ScienceSources.Evidence.MEDIUM,
+            sourceIds = listOf("acog_cramps", "acog_pms", "cc_cycle", "cc_ovulation")
         )
     }
 
-    /** One short line for notifications and the widget-less daily status. */
-    fun dailyLineFa(rawName: String?, s: PartnerSnapshotDto): String {
-        val n = name(rawName)
+    /** One short line for notifications and the daily status. */
+    fun dailyLineFa(s: PartnerSnapshotDto): String {
         val g = if (s.generalOnly) "general" else s.phaseGroup
-        val tip = phaseBase(g, n).doFa.firstOrNull().orEmpty()
-        val head = if (g == "general") "$n: ${statusFa(s)}." else "$n در ${phaseNameFa(g)} است؛ ${statusFa(s)}."
+        val tip = phaseBase(g, N).doFa.firstOrNull().orEmpty()
+        val status = statusFa(s)
+        val head = if (g == "general") (if (status.isBlank()) "$N:" else "$N: $status.")
+        else "$N در ${phaseNameFa(g)} است${if (status.isBlank()) "" else "؛ $status"}."
         return "$head $tip".trim()
     }
 
-    fun changeLineFa(rawName: String?, changes: Collection<String>, s: PartnerSnapshotDto?): String {
-        val n = name(rawName)
-        if (s == null) return "$n وضعیتش را به‌روز کرد."
+    fun changeLineFa(changes: Collection<String>, s: PartnerSnapshotDto?): String {
+        if (s == null) return "$N چیز تازه‌ای ثبت کرد."
         val parts = mutableListOf<String>()
         val today = s.today
         if ("period" in changes) parts += when {
             s.periodOngoing -> "پریودش شروع شد"
             s.isLate -> "پریودش دیر کرده"
-            else -> "پریودش تمام شد"
+            else -> "تاریخ پریودش را به‌روز کرد"
         }
         if ("phase" in changes && "period" !in changes && !s.generalOnly) parts += "وارد ${phaseNameFa(s.phaseGroup)} شد"
         if ("mood" in changes && !today?.moods.isNullOrEmpty())
@@ -223,6 +236,28 @@ object PartnerAdvice {
         if ("pain" in changes && (today?.painScore ?: 0) > 0) parts += "درد ${fa(today!!.painScore!!)} از ۱۰"
         if ("cravings" in changes && !today?.cravings.isNullOrEmpty())
             parts += "هوس " + today!!.cravings!!.joinToString("، ") { FoodCravingKeys.labelFa(it) }
-        return if (parts.isEmpty()) "$n وضعیتش را به‌روز کرد." else "$n: " + parts.joinToString(" · ")
+        if ("flow" in changes) parts += "خون‌ریزی را ثبت کرد"
+        if ("note" in changes) parts += "یادداشت نوشت"
+        if ("intimacy" in changes) parts += "رابطه را ثبت کرد"
+        if (parts.isEmpty()) return "$N چیز تازه‌ای ثبت کرد."
+        return "$N: " + parts.distinct().joinToString(" · ")
     }
+
+    /**
+     * The same sourced explanations her Today screen shows, for the items most typical of this
+     * phase (cravings, mood, body and pain). Used when she has not logged anything today.
+     */
+    data class PhaseItem(val kind: String, val key: String, val explanation: TodaySignalContent.Explanation)
+
+    fun typicalItems(group: String): List<Pair<String, String>> = when (group) {
+        "menstrual" -> listOf("body" to "pain", "body" to "fatigue", "mood" to "sad", "food" to "sweet")
+        "follicular" -> listOf("mood" to "happy", "body" to "acne", "food" to "carbs")
+        "fertile" -> listOf("body" to "pain", "mood" to "happy", "food" to "chocolate")
+        "early_luteal" -> listOf("body" to "bloating", "body" to "breast_tenderness", "mood" to "calm", "food" to "carbs")
+        "late_luteal" -> listOf("mood" to "irritable", "mood" to "anxious", "body" to "bloating", "body" to "headache", "food" to "chocolate", "food" to "salty")
+        else -> listOf("body" to "pain", "mood" to "irritable", "food" to "sweet")
+    }
+
+    fun phaseScience(group: String): List<PhaseItem> =
+        typicalItems(group).map { (kind, key) -> PhaseItem(kind, key, TodaySignalContent.explainFull(kind, key, group)) }
 }

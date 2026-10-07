@@ -25,10 +25,9 @@ class AuthRepository(
      */
     val isPremiumEffective: Flow<Boolean> = combine(
         isLoggedIn,
-        prefs.serverHasActiveSubscription,
-        prefs.isPremium
-    ) { loggedIn, server, local ->
-        loggedIn && (server || (BuildConfig.DEBUG && local))
+        prefs.serverHasActiveSubscription
+    ) { loggedIn, server ->
+        loggedIn && server
     }
 
     suspend fun hasSessionTokens(): Boolean {
@@ -62,7 +61,7 @@ class AuthRepository(
                 if (!still) return false
                 // Probe subscription; MahApiException 401 clears via refresh path inside.
                 val sub = refreshSubscription()
-                sub != null || prefs.serverHasActiveSubscription.first() || (BuildConfig.DEBUG && prefs.isPremium.first())
+                sub != null || prefs.serverHasActiveSubscription.first()
             }
         } catch (e: MahApiException) {
             if (e.status == 401) {
@@ -79,13 +78,11 @@ class AuthRepository(
 
     suspend fun isPremiumEffectiveNow(): Boolean {
         if (!hasSessionTokens()) return false
-        val serverActive = prefs.serverHasActiveSubscription.first()
-        val local = prefs.isPremium.first()
-        return serverActive || (BuildConfig.DEBUG && local)
+        return prefs.serverHasActiveSubscription.first()
     }
 
-    suspend fun register(phone: String, password: String, name: String?, role: String? = null): MahAuthResponse {
-        val res = api.register(phone, password, name, role)
+    suspend fun register(phone: String, password: String, role: String? = null): MahAuthResponse {
+        val res = api.register(phone, password, role)
         persistSession(res)
         return res
     }
@@ -182,7 +179,7 @@ class AuthRepository(
             if (!res.refreshToken.isNullOrBlank()) prefs.setRefreshToken(res.refreshToken)
         }
         res.user?.let {
-            prefs.setAccount(it.phone, it.name, it.id)
+            prefs.setAccount(it.phone, it.id)
             prefs.setAccountRole(it.role)
         }
         res.subscription?.let {

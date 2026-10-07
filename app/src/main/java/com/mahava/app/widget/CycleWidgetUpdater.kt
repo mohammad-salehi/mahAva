@@ -69,9 +69,9 @@ object CycleWidgetUpdater {
             ?: return@withContext WidgetSnapshot.empty()
         val repo = app.partnerRepository
         val active = try { repo.isActivelyPaired() } catch (_: Throwable) { false }
-        if (!active) return@withContext WidgetSnapshot.empty().copy(phaseShort = "همراه وصل نیست")
+        if (!active) return@withContext WidgetSnapshot.empty().copy(phaseShort = "وصل نیست")
         val share = try { repo.share.first() } catch (_: Throwable) { null }
-        val s = share?.snapshot ?: return@withContext WidgetSnapshot.empty().copy(phaseShort = "در انتظار اطلاعات")
+        val s = share?.snapshot ?: return@withContext WidgetSnapshot.empty().copy(phaseShort = "در انتظار")
         val todayEpoch = app.clock.today().toEpochDay()
         val elapsed = s.today?.epochDay?.let { (todayEpoch - it).toInt().coerceAtLeast(0) } ?: 0
         val len = s.cycleLength
@@ -84,14 +84,8 @@ object CycleWidgetUpdater {
             "early_luteal", "late_luteal" -> CyclePhase.LUTEAL
             else -> CyclePhase.UNKNOWN
         }
-        val short = when (s.phaseGroup) {
-            "menstrual" -> "پریود"
-            "follicular" -> "بعد از پریود"
-            "fertile" -> "تخمک‌گذاری"
-            "early_luteal" -> "لوتئال"
-            "late_luteal" -> "پیش از پریود"
-            else -> "نامعلوم"
-        }
+        // Her status in ONE simple word inside the ring.
+        val short = com.mahava.app.content.PartnerAdvice.oneWordFa(s)
         WidgetSnapshot(
             hasData = day != null || s.nextPeriodEpochDay != null,
             cycleDay = day,
@@ -101,7 +95,8 @@ object CycleWidgetUpdater {
             daysUntil = until,
             isLate = s.isLate || (until != null && until < 0),
             daysLate = s.daysLate,
-            periodOngoing = s.periodOngoing
+            periodOngoing = s.periodOngoing,
+            oneWord = true
         )
     }
 
@@ -207,7 +202,8 @@ object CycleWidgetUpdater {
                 phaseTitleFa = phaseTitle,
                 daysUntilPeriod = if (snap.hasData) snap.daysUntil else null,
                 isLate = snap.isLate,
-                periodOngoing = snap.periodOngoing
+                periodOngoing = snap.periodOngoing,
+                summaryWord = if (partnerView && snap.oneWord) snap.phaseShort else null
             )
             CycleRingBitmapRenderer.render(context, model, sizePx)
         }
@@ -224,7 +220,9 @@ object CycleWidgetUpdater {
         val daysUntil: Int?,
         val isLate: Boolean,
         val daysLate: Int?,
-        val periodOngoing: Boolean
+        val periodOngoing: Boolean,
+        /** Husband's widget: phaseShort is her one-word status, drawn big inside the ring. */
+        val oneWord: Boolean = false
     ) {
         companion object {
             fun empty() = WidgetSnapshot(

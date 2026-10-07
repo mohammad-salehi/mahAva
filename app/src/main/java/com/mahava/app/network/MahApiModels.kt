@@ -3,7 +3,6 @@ package com.mahava.app.network
 data class MahUserDto(
     val id: String = "",
     val phone: String = "",
-    val name: String = "",
     val role: String = "",
     val isActive: Boolean = true,
     val createdAt: String? = null,
@@ -69,7 +68,7 @@ data class MahInboxResponse(
 
 // ---- Partner pairing ----
 
-data class PartnerInfoDto(val name: String = "", val phoneMasked: String = "")
+data class PartnerInfoDto(val phoneMasked: String = "")
 
 data class PartnerPairDto(
     val id: String = "",
@@ -97,10 +96,12 @@ data class PartnerTodayDto(
     val moods: List<String>? = null,
     val symptoms: List<String>? = null,
     val cravings: List<String>? = null,
-    val painScore: Int? = null
+    val painScore: Int? = null,
+    /** Her full daily log for today (every field she recorded), null when nothing logged. */
+    val log: com.google.gson.JsonObject? = null
 )
 
-/** The woman's shared status. Mirrors the server whitelist exactly. */
+/** The woman's status (cycle fields) plus today's full log. */
 data class PartnerSnapshotDto(
     val phaseGroup: String = "general",
     val subWindow: String = "",
@@ -119,8 +120,11 @@ data class PartnerSnapshotDto(
 
 data class PartnerShareDto(
     val ok: Boolean = false,
-    val partnerName: String = "",
     val snapshot: PartnerSnapshotDto? = null,
+    /** Everything she logged recently (full daily logs, newest first). */
+    val logs: List<com.google.gson.JsonObject>? = null,
+    /** Her periods, newest first. */
+    val periods: List<com.google.gson.JsonObject>? = null,
     val updatedAt: String? = null,
     val version: Int = 0
 )

@@ -76,11 +76,10 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
         ScreenHeader("تنظیمات و حریم خصوصی", onBack = onBack)
         Illustration(R.drawable.ill_privacy_shield, Modifier.height(100.dp))
         Text("اطلاعاتت امن روی سرور ذخیره می‌شود", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید یا ورود دوباره برگردد. فقط همراهی که خودت تأیید کنی، بخش مشترک (مرحلهٔ چرخه و حال امروز) را می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود. بدون اینترنت هم می‌توانی ثبت کنی؛ تغییرها بعداً خودکار فرستاده می‌شوند.")
+        QuietInfo("اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید هم برگردد. اگر به همسرت وصل شوی، او همهٔ چیزهایی را که ثبت می‌کنی می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.")
 
-        val premium by vm.isPremium.collectAsState()
         val accountPhone by vm.accountPhone.collectAsState()
-        SettingsGroup("حساب و اشتراک") {
+        SettingsGroup("حساب من") {
             QuietInfo(
                 if (accountPhone.isNullOrBlank())
                     "برای اشتراک سرور وارد شو. ثبت‌نام جدید یک ماه رایگان می‌گیرد. خرید سالانه ۵۸۵ هزار تومان — به‌زودی."
@@ -88,19 +87,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                     "وارد شده‌ای. وضعیت اشتراک از سرور خوانده می‌شود."
             )
             SecondaryButton("حساب کاربری و اشتراک", onClick = onAccount)
-            Spacer(Modifier.height(8.dp))
-            QuietInfo("فعال‌سازی آزمایشی فقط برای تست روی همین گوشی است.")
-            SwitchLine(
-                if (premium) "اشتراک آزمایشی روشن است" else "فعال‌سازی آزمایشی اشتراک",
-                premium,
-                "premium_toggle"
-            ) { vm.setPremium(it) }
         }
 
 
-        SettingsGroup("همراه") {
-            QuietInfo("وضعیت چرخه و حال امروزت را با همسر یا همراهت شریک شو. هر وقت بخواهی قطعش می‌کنی.")
-            SecondaryButton("همراه من", modifier = Modifier.testTag("settings_partner"), onClick = onPartner)
+        SettingsGroup("همسر") {
+            SecondaryButton("اتصال به همسر", modifier = Modifier.testTag("settings_partner"), onClick = onPartner)
         }
 
         SettingsGroup("هدف من") {
@@ -110,7 +101,6 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             SwitchLine("نشان دادن روزهای احتمالی باروری", profile?.fertilityTrackingEnabled == true || profile?.goal == "ttc", "set_fertility") { v ->
                 vm.updateProfile { it.copy(fertilityTrackingEnabled = v, goal = if (!v && it.goal == "ttc") "track_period" else it.goal) }
             }
-            QuietInfo("این روزها فقط تخمینی‌اند و روش جلوگیری نیستند.")
         }
 
         SettingsGroup("چرخه و شرایط من") {
@@ -129,7 +119,6 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             SwitchLine("زایمان اخیر یا شیردهی", profile?.postpartumOrBreastfeeding == true, "set_postpartum") { v -> vm.updateProfile { it.copy(postpartumOrBreastfeeding = v) } }
             SwitchLine("نزدیک یائسگی", profile?.perimenopause == true, "set_peri") { v -> vm.updateProfile { it.copy(perimenopause = v) } }
             SwitchLine("حالت بارداری", profile?.pregnancyMode == true, "set_pregnancy") { v -> vm.updateProfile { it.copy(pregnancyMode = v) } }
-            QuietInfo("وقتی یکی از این‌ها روشن باشد، مرحلهٔ چرخه و تاریخ‌ها را حدس نمی‌زنیم و توضیح کلی را نشان می‌دهیم.")
         }
 
         SettingsGroup("تقویم") {
@@ -163,10 +152,7 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 MahavaIcon(R.drawable.ic_bell); Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("متن اعلان‌ها خصوصی باشد")
-                    QuietInfo("در اعلان، کلمه‌ای دربارهٔ پریود نوشته نمی‌شود.")
-                }
+                Text("متن اعلان‌ها خصوصی باشد", Modifier.weight(1f))
                 Switch(profile?.privateNotifications != false, { v -> vm.updateProfile { it.copy(privateNotifications = v) } }, modifier = Modifier.testTag("set_private_notif"))
             }
             ReminderToggle(vm, "daily_log", "یادآوری روزانه برای ثبت حال", state.reminders, "set_rem_daily") {
@@ -181,7 +167,6 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             ReminderToggle(vm, "sleep", "یادآوری خواب و استراحت", state.reminders, "set_rem_sleep") {
                 if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-            QuietInfo("یادآوری‌ها حدوداً سر وقت می‌آیند، نه دقیقاً در یک ساعت مشخص.")
         }
 
         SettingsGroup("پشتیبان با رمز") {
@@ -191,7 +176,6 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth().testTag("backup_password")
             )
-            QuietInfo("فایل پشتیبان با این گذرواژه رمزگذاری می‌شود. گذرواژه جایی ذخیره نمی‌شود؛ اگر فراموشش کنی، فایل باز نمی‌شود.")
             SecondaryButton("ذخیرهٔ فایل پشتیبان", modifier = Modifier.testTag("backup_save")) {
                 if (password.length >= 6) pick("create", "mahava-backup.mahava", { createBackup.launch("mahava-backup.mahava") }, { doBackup(it) })
                 else status = "گذرواژه باید دست‌کم ۶ حرف باشد."
@@ -203,7 +187,6 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
         }
 
         SettingsGroup("خروجی بدون رمز") {
-            QuietInfo("برای نگه‌داری شخصی یا استفاده در برنامه‌های دیگر. این فایل‌ها رمز ندارند.")
             SecondaryButton("خروجی JSON", modifier = Modifier.testTag("export_json")) { pick("create", "mahava-export.json", { exportJson.launch("mahava-export.json") }, { doJson(it) }) }
             SecondaryButton("خروجی CSV (برای اکسل)", modifier = Modifier.testTag("export_csv")) { pick("create", "mahava-export.csv", { exportCsv.launch("mahava-export.csv") }, { doCsv(it) }) }
         }
@@ -211,11 +194,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
         if (status.isNotBlank()) Text(status, color = MahavaPrimary, modifier = Modifier.padding(vertical = 8.dp).testTag("settings_status"))
 
         SettingsGroup("دربارهٔ برنامه") {
-            QuietInfo("نسخهٔ برنامه: ${com.mahava.app.util.PersianDigits.toPersian(com.mahava.app.BuildConfig.VERSION_NAME)}")
-            QuietInfo("نسخهٔ روش محاسبه: ${state.cycle?.algorithmVersion ?: "-"}")
-            QuietInfo("نسخهٔ مطالب آموزشی: ${com.mahava.app.util.PersianDigits.toPersian(vm.contentVersion())}")
-            QuietInfo(vm.contentStatus())
-            QuietInfo("فونت: وزیرمتن (با مجوز آزاد OFL)، داخل برنامه.")
+            AboutLine("نسخهٔ برنامه: ${com.mahava.app.util.PersianDigits.toPersian(com.mahava.app.BuildConfig.VERSION_NAME)}")
+            AboutLine("نسخهٔ روش محاسبه: ${state.cycle?.algorithmVersion ?: "-"}")
+            AboutLine("نسخهٔ مطالب آموزشی: ${com.mahava.app.util.PersianDigits.toPersian(vm.contentVersion())}")
+            AboutLine(vm.contentStatus())
+            AboutLine("فونت: وزیرمتن (با مجوز آزاد OFL)، داخل برنامه.")
         }
 
         SettingsGroup("پاک کردن") {
@@ -255,6 +238,11 @@ private fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> 
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
     }
+}
+
+@Composable
+private fun AboutLine(text: String) {
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = com.mahava.app.ui.theme.MahavaTextSecondary)
 }
 
 @Composable

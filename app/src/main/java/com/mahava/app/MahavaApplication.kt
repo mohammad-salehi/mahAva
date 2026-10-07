@@ -121,9 +121,7 @@ open class MahavaApplication : Application() {
                 .debounce(2500)
                 .collectLatest {
                     try {
-                        if (prefs.getAccountRole() != "male" && prefs.getPartnerConsent() &&
-                            partnerRepository.isActivelyPaired()
-                        ) {
+                        if (prefs.getAccountRole() != "male" && partnerRepository.isActivelyPaired()) {
                             com.mahava.app.partner.PartnerSync.syncNow(this@MahavaApplication)
                         }
                     } catch (_: Throwable) { }
@@ -132,7 +130,7 @@ open class MahavaApplication : Application() {
     }
 
     /**
-     * Any change to her data (profile, periods, logs, reminders, consent) queues a sync.
+     * Any change to her data (profile, periods, logs, reminders) queues a sync.
      * The job waits for internet, so offline edits go up when the phone is back online.
      */
     @OptIn(kotlinx.coroutines.FlowPreview::class)
@@ -145,11 +143,10 @@ open class MahavaApplication : Application() {
                 repository.observeProfile(),
                 repository.observePeriods(),
                 repository.observeDailyLogs(),
-                repository.observeReminders(),
-                prefs.partnerConsent
-            ) { p, periods, logs, rem, consent ->
+                repository.observeReminders()
+            ) { p, periods, logs, rem ->
                 listOf(p?.updatedAt, periods.size, periods.sumOf { it.updatedAt % 1_000_003 }, logs.size,
-                    logs.sumOf { it.updatedAt % 1_000_003 }, rem.hashCode(), consent).hashCode()
+                    logs.sumOf { it.updatedAt % 1_000_003 }, rem.hashCode()).hashCode()
             }
                 .distinctUntilChanged()
                 .debounce(3000)

@@ -36,11 +36,13 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        com.mahava.app.notice.AppNotices.foreground = true
         viewModelRef?.onAppForegrounded()
     }
 
     override fun onStop() {
         super.onStop()
+        if (!isChangingConfigurations) com.mahava.app.notice.AppNotices.foreground = false
         // Ignore config changes (rotation); only a real trip to the background starts the lock timer.
         if (!isChangingConfigurations) viewModelRef?.onAppBackgrounded()
     }

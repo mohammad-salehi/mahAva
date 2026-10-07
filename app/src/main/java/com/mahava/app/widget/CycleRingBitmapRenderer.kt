@@ -40,7 +40,9 @@ object CycleRingBitmapRenderer {
         val phaseTitleFa: String,
         val daysUntilPeriod: Int?,
         val isLate: Boolean,
-        val periodOngoing: Boolean
+        val periodOngoing: Boolean,
+        /** When set (husband's widget), this one word is the main text inside the ring. */
+        val summaryWord: String? = null
     )
 
     fun render(context: Context, model: RingModel, sizePx: Int): Bitmap {
@@ -149,6 +151,32 @@ object CycleRingBitmapRenderer {
         val regular = ResourcesCompat.getFont(context, R.font.vazirmatn_regular) ?: Typeface.DEFAULT
         val cx = size / 2f
         var y = size * 0.38f
+
+        val word = model.summaryWord
+        if (!word.isNullOrBlank()) {
+            val wordPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = accent
+                textAlign = Paint.Align.CENTER
+                textSize = 30f * density
+                typeface = bold
+                isFakeBoldText = true
+            }
+            val maxWidth = size * 0.6f
+            while (wordPaint.measureText(word) > maxWidth && wordPaint.textSize > 14f * density) {
+                wordPaint.textSize -= 1f * density
+            }
+            canvas.drawText(word, cx, size * 0.52f, wordPaint)
+            if (day != null) {
+                val smallPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = COLOR_TEXT_SECONDARY
+                    textAlign = Paint.Align.CENTER
+                    textSize = 12f * density
+                    typeface = regular
+                }
+                canvas.drawText("روز ${PersianDigits.toPersian(day)}", cx, size * 0.52f + 22f * density, smallPaint)
+            }
+            return
+        }
 
         val dayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_TEXT_PRIMARY

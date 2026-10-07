@@ -49,6 +49,7 @@ fun TodayScreen(
     onScience: () -> Unit = {},
     onSignal: (String, String) -> Unit = { _, _ -> },
     onPartner: () -> Unit = {},
+    onNotifications: () -> Unit = {},
     onMore: () -> Unit = onDailyLog
 ) {
     val state by vm.state.collectAsState()
@@ -75,6 +76,7 @@ fun TodayScreen(
                 Text("امروز", style = MaterialTheme.typography.headlineLarge)
                 Text(j.formatShortFa(), color = MahavaTextSecondary)
             }
+            NotificationBell(vm, onNotifications)
             androidx.compose.material3.IconButton(onClick = onSettings, modifier = Modifier.size(48.dp).testTag("open_settings")) {
                 MahavaIcon(R.drawable.ic_settings, MahavaTextPrimary)
             }
@@ -229,9 +231,9 @@ fun TodayScreen(
             MahavaCard(Modifier.testTag("today_partner_card").clickable { onPartner() }) {
                 Text(
                     when (pairNow?.status) {
-                        "active" -> "💞 ${com.mahava.app.content.PartnerAdvice.name(pairNow.partner?.name)} وضعیتت را می‌بیند"
-                        "pending" -> "💞 یک درخواست اتصال داری"
-                        else -> "💞 همراهت را وصل کن"
+                        "active" -> "💞 همسرت ثبت‌هایت را می‌بیند"
+                        "pending" -> "💞 درخواست اتصال همسر"
+                        else -> "💞 اتصال به همسر"
                     },
                     style = MaterialTheme.typography.titleSmall,
                     color = MahavaPrimary

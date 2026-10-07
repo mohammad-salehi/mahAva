@@ -80,8 +80,14 @@ object DataSyncEngine {
      *   (the phone's copy is only the onboarding answers).
      * - If the server already has data and the phone has nothing but onboarding answers
      *   (no daily logs, no period with an end date), the server copy replaces the phone copy.
+     * - Items without their own timestamp (reminders) are uploaded stamped [now]; the server
+     *   rejects a missing/zero time, which would fail the whole first sync.
      */
-    fun planInitial(local: Map<String, SyncRecord>, server: Map<String, SyncRecord>): SyncPlan {
+    fun planInitial(
+        local: Map<String, SyncRecord>,
+        server: Map<String, SyncRecord>,
+        now: Long = System.currentTimeMillis()
+    ): SyncPlan {
         val serverLive = server.filterValues { !it.deleted }
         val localHasRealData = local.values.any { it.kind == "log" } ||
             local.values.any { it.kind == "period" && it.data?.get("endEpochDay")?.let { e -> !e.isJsonNull } == true }
@@ -97,19 +103,21 @@ object DataSyncEngine {
                 l != null && s == null -> {
                     if (serverWinsAll && (l.kind == "period" || l.kind == "log")) {
                         apply += l.copy(data = null, deleted = true) // drop onboarding-only guesses
-                    } else push += l
+                    } else push += l.stamped(now)
                 }
                 l == null && s != null -> apply += s
                 l != null && s != null -> when {
                     sameContent(l, s) -> same += id
                     l.kind == "profile" || serverWinsAll -> apply += s
                     s.updatedAt >= l.updatedAt -> apply += s
-                    else -> push += l
+                    else -> push += l.stamped(now)
                 }
             }
         }
         return SyncPlan(push, apply, same)
     }
+
+    private fun SyncRecord.stamped(now: Long) = if (updatedAt > 0) this else copy(updatedAt = now)
 
     /**
      * Regular round: push what changed on the phone since the last sync (including deletions),

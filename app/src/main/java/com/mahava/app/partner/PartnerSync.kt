@@ -21,14 +21,17 @@ import com.mahava.app.MainActivity
 import com.mahava.app.MahavaApplication
 import com.mahava.app.R
 import com.mahava.app.content.PartnerAdvice
+import com.mahava.app.notice.AppNotices
+import com.mahava.app.util.PersianDigits
 import com.mahava.app.widget.CycleWidgetUpdater
 import java.util.concurrent.TimeUnit
 
 /**
  * No push service (FCM is unreliable in Iran): WorkManager polls the server every ~15 minutes
  * while a pairing exists, and the phone shows LOCAL notifications.
- * - Woman: uploads her snapshot when it changed; hears about pairing requests / unpairing.
- * - Man: fetches changes + her latest status, refreshes the widget, and gets one daily status note.
+ * - Woman: uploads her snapshot when it changed; pairing news is shown inside the app only.
+ * - Man: fetches changes + her latest status, refreshes the widget, gets system notifications
+ *   (only while the app is closed) and one daily status note.
  */
 object PartnerSync {
     const val CHANNEL_ID = "mahava_partner"
@@ -41,8 +44,8 @@ object PartnerSync {
 
     fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= 26) {
-            val ch = NotificationChannel(CHANNEL_ID, "همراه", NotificationManager.IMPORTANCE_DEFAULT)
-            ch.description = "وضعیت همراه و درخواست‌های اتصال"
+            val ch = NotificationChannel(CHANNEL_ID, "همسر", NotificationManager.IMPORTANCE_DEFAULT)
+            ch.description = "وضعیت همسرت و خبرهای اتصال"
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
         }
     }
@@ -91,6 +94,74 @@ object PartnerSync {
             .build()
         try { NotificationManagerCompat.from(context).notify(id, n) } catch (_: SecurityException) { }
     }
+
+    /**
+     * Handle one poll (from the background worker or while the app is open). Every approval and
+     * alert goes into the in-app notification list (and pops up as a dialog in the app). Only the
+     * husband also gets system notifications, and only while the app is closed.
+     */
+    suspend fun process(app: MahavaApplication, poll: PartnerRepository.Poll) {
+        AppNotices.load(app)
+        val partner = app.partnerRepository
+        val role = poll.status.role.ifBlank { app.prefs.getAccountRole() }
+        val male = role == "male"
+        val active = poll.status.pair?.status == "active"
+        val system = male && !AppNotices.foreground
+        val phone = PersianDigits.toPersian(poll.status.pair?.partner?.phoneMasked.orEmpty())
+        for (e in poll.events) {
+            when (e.kind) {
+                "pair_requested" -> AppNotices.add(app, e.kind, "درخواست اتصال همسر",
+                    "همسرت${if (phone.isNotBlank()) " ($phone)" else ""} می‌خواهد به تو وصل شود.", id = "ev-${e.id}")
+                "pair_approved" -> {
+                    val body = "همسرت اتصال را تأیید کرد. حالا همهٔ چیزهایی را که ثبت می‌کند می‌بینی."
+                    AppNotices.add(app, e.kind, "اتصال برقرار شد", body, popup = true, id = "ev-${e.id}")
+                    if (system) notify(app, 1, "اتصال برقرار شد", body)
+                }
+                "pair_rejected" -> {
+                    val body = "همسرت درخواست اتصال را تأیید نکرد."
+                    AppNotices.add(app, e.kind, "اتصال انجام نشد", body, popup = true, id = "ev-${e.id}")
+                    if (system) notify(app, 1, "اتصال انجام نشد", body)
+                }
+                "unpaired" -> {
+                    partner.clearAfterUnpair()
+                    CycleWidgetUpdater.requestUpdate(app)
+                    val body = if (male) "همسرت اتصال را قطع کرد. دیگر اطلاعاتش را نمی‌بینی."
+                    else "همسرت اتصال را قطع کرد. دیگر اطلاعاتت را نمی‌بیند و اطلاعات مشترک از سرور پاک شد."
+                    AppNotices.add(app, e.kind, "اتصال همسر قطع شد", body, popup = true, id = "ev-${e.id}")
+                    if (system) notify(app, 1, "اتصال همسر قطع شد", body)
+                }
+            }
+        }
+        if (male) {
+            if (active) {
+                val updates = poll.events.filter { it.kind == "update" }
+                val needShare = updates.isNotEmpty() || app.prefs.getPartnerSnapshotJson().isNullOrBlank() || !AppNotices.foreground
+                val share = if (needShare) partner.fetchShare() else null
+                if (updates.isNotEmpty()) {
+                    val changes = updates.flatMap { it.changes.orEmpty() }.toSet()
+                    val line = PartnerAdvice.changeLineFa(changes, share?.snapshot)
+                    val day = app.clock.today().toEpochDay()
+                    AppNotices.add(app, "update", "وضعیت تازهٔ همسرت", line, id = "upd-$day")
+                    if (system) notify(app, 2, "وضعیت تازهٔ همسرت", line)
+                }
+                if (share != null) maybeDaily(app, share, system)
+            }
+            CycleWidgetUpdater.requestUpdate(app)
+        } else if (active) {
+            partner.pushSnapshotIfChanged()
+        }
+    }
+
+    private suspend fun maybeDaily(app: MahavaApplication, share: com.mahava.app.network.PartnerShareDto, system: Boolean) {
+        val snap = share.snapshot ?: return
+        val today = app.clock.today().toEpochDay()
+        val hour = java.time.LocalTime.now(app.clock.zoneId()).hour
+        if (hour < 9 || app.prefs.getPartnerDailyDay() == today) return
+        app.prefs.setPartnerDailyDay(today)
+        val line = PartnerAdvice.dailyLineFa(snap)
+        AppNotices.add(app, "daily", "وضعیت امروز همسرت", line, id = "daily-$today")
+        if (system) notify(app, 3, "وضعیت امروز همسرت", line)
+    }
 }
 
 class PartnerSyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
@@ -100,59 +171,13 @@ class PartnerSyncWorker(appContext: Context, params: WorkerParameters) : Corouti
             PartnerSync.cancel(app)
             return Result.success()
         }
-        val partner = app.partnerRepository
         return try {
-            val poll = partner.pollChanges()
-            val role = poll.status.role.ifBlank { app.prefs.getAccountRole() }
-            val active = poll.status.pair?.status == "active"
-            handleEvents(app, poll, role)
-            if (role == "male") {
-                if (active) {
-                    val share = partner.fetchShare()
-                    val updates = poll.events.filter { it.kind == "update" }
-                    if (updates.isNotEmpty()) {
-                        val changes = updates.flatMap { it.changes.orEmpty() }.toSet()
-                        PartnerSync.notify(app, 2, "وضعیت تازه",
-                            PartnerAdvice.changeLineFa(share?.partnerName, changes, share?.snapshot))
-                    }
-                    maybeDaily(app, share)
-                }
-                CycleWidgetUpdater.requestUpdate(app)
-            } else if (active) {
-                partner.pushSnapshotIfChanged()
-            }
+            val poll = app.partnerRepository.pollChanges()
+            PartnerSync.process(app, poll)
             if (poll.status.pair == null && !PartnerSync.isAwaiting(app)) PartnerSync.cancel(app)
             Result.success()
         } catch (_: Throwable) {
             Result.success() // offline or server busy: try again on the next run
         }
-    }
-
-    private suspend fun handleEvents(app: MahavaApplication, poll: PartnerRepository.Poll, role: String) {
-        val name = PartnerAdvice.name(poll.status.pair?.partner?.name)
-        for (e in poll.events) {
-            when (e.kind) {
-                "pair_requested" -> PartnerSync.notify(app, 1, "درخواست اتصال تازه",
-                    "$name می‌خواهد همراهت شود. برای تأیید، اپ ماه را باز کن.")
-                "pair_approved" -> PartnerSync.notify(app, 1, "اتصال برقرار شد",
-                    "$name درخواستت را تأیید کرد. حالا وضعیتش را می‌بینی.")
-                "pair_rejected" -> PartnerSync.notify(app, 1, "درخواست اتصال", "درخواست اتصال تأیید نشد.")
-                "unpaired" -> {
-                    app.partnerRepository.clearAfterUnpair()
-                    CycleWidgetUpdater.requestUpdate(app)
-                    PartnerSync.notify(app, 1, "اتصال همراه قطع شد",
-                        if (role == "male") "دیگر وضعیت همراهت را نمی‌بینی." else "اطلاعات مشترکت از سرور پاک شد.")
-                }
-            }
-        }
-    }
-
-    private suspend fun maybeDaily(app: MahavaApplication, share: com.mahava.app.network.PartnerShareDto?) {
-        val snap = share?.snapshot ?: return
-        val today = app.clock.today().toEpochDay()
-        val hour = java.time.LocalTime.now(app.clock.zoneId()).hour
-        if (hour < 9 || app.prefs.getPartnerDailyDay() == today) return
-        app.prefs.setPartnerDailyDay(today)
-        PartnerSync.notify(app, 3, "وضعیت امروز", PartnerAdvice.dailyLineFa(share.partnerName, snap))
     }
 }
