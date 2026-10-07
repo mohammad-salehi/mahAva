@@ -41,11 +41,23 @@ private val ColFsh = Color(0xFF5F9C86)
  * Phase items (with a "phase" block) get the richer body-and-hormone sections.
  */
 @Composable
-fun PhaseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit) {
+fun PhaseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit, onAccount: () -> Unit = {}) {
+    val premium by vm.isPremium.collectAsState()
     val state by vm.state.collectAsState()
     val item = vm.contentItem(id)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("detail_screen")) {
         ScreenHeader(item?.phase?.cardTitleFa ?: item?.titleFa ?: "مطلب", onBack = onBack)
+        if (!premium) {
+            Column(Modifier.padding(16.dp)) {
+                PremiumPaywallCard(
+                    vm = vm,
+                    titleFa = "جزئیات و محتوای آموزشی",
+                    benefitFa = "با اشتراک ماه باز می‌شه.",
+                    onOpenAccount = onAccount
+                )
+            }
+            return@Column
+        }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (item == null) {
                 QuietInfo("این مطلب پیدا نشد.")

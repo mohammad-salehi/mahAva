@@ -29,8 +29,9 @@ import com.mahava.app.util.PersianDigits
 import java.time.LocalDate
 
 @Composable
-fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onOpenDay: (LocalDate) -> Unit) {
+fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Unit = {}, onOpenDay: (LocalDate) -> Unit) {
     val state by vm.state.collectAsState()
+    val premium by vm.isPremium.collectAsState()
     val useJalali = state.profile?.calendarType != "gregorian"
     val today = vm.today()
     // Month anchor = first day of the shown Jalali (or Gregorian) month.
@@ -54,7 +55,7 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onOpenDay: (LocalDa
             if (d.isAfter(today)) predictedPeriod += d.toEpochDay()
             d = d.plusDays(1)
         }
-        if (state.cycle?.showFertility == true) {
+        if (premium && state.cycle?.showFertility == true) {
             var f = pred.fertilityEarliest
             while (!f.isAfter(pred.fertilityLatest)) {
                 if (!f.isBefore(today)) predictedFertile += f.toEpochDay()
@@ -114,11 +115,17 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onOpenDay: (LocalDa
                     sel.toEpochDay() in predictedPeriod -> Text("پریود احتمالی (تخمینی)", color = MahavaMenstruation)
                     sel.toEpochDay() in predictedFertile -> Text("روز احتمالی باروری (تخمینی)", color = MahavaFertility)
                 }
-                Text(todayLogLine(selLog).replace("امروز", "این روز").replace("ثبت امروزِ تو", "ثبت این روز"), style = MaterialTheme.typography.bodyMedium)
-                selLog?.note?.takeIf { it.isNotBlank() }?.let { Text("یادداشت: $it", style = MaterialTheme.typography.bodyMedium) }
-                Spacer(Modifier.height(8.dp))
-                if (sel.isAfter(today)) QuietInfo("برای روزهای آینده نمی‌توان چیزی ثبت کرد؛ فقط تخمین‌ها نشان داده می‌شوند.")
-                else SecondaryButton(if (selLog == null) "ثبت برای این روز" else "ویرایش ثبت این روز", modifier = Modifier.testTag("cal_edit_day")) { onOpenDay(sel) }
+                if (premium) {
+                    Text(todayLogLine(selLog).replace("امروز", "این روز").replace("ثبت امروزِ تو", "ثبت این روز"), style = MaterialTheme.typography.bodyMedium)
+                    selLog?.note?.takeIf { it.isNotBlank() }?.let { Text("یادداشت: $it", style = MaterialTheme.typography.bodyMedium) }
+                    Spacer(Modifier.height(8.dp))
+                    if (sel.isAfter(today)) QuietInfo("برای روزهای آینده نمی‌توان چیزی ثبت کرد؛ فقط تخمین‌ها نشان داده می‌شوند.")
+                    else SecondaryButton(if (selLog == null) "ثبت برای این روز" else "ویرایش ثبت این روز", modifier = Modifier.testTag("cal_edit_day")) { onOpenDay(sel) }
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                    QuietInfo("ثبت حال روزانه با اشتراک ماه باز می‌شه. دیدن تقویم و پیش‌بینی پریود رایگان است.")
+                    SecondaryButton("حساب و اشتراک", modifier = Modifier.testTag("cal_account"), onClick = onAccount)
+                }
             }
             SecondaryButton("برگشت به امروز", modifier = Modifier.testTag("cal_today")) { monthAnchor = monthStart(today, useJalali); selected = today }
             QuietInfo("روزهای تخمینی هیچ‌وقت به‌عنوان پریود واقعی ذخیره نمی‌شوند.")

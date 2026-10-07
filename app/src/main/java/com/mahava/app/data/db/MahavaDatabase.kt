@@ -13,7 +13,7 @@ import androidx.room.RoomDatabase
         ReminderPrefEntity::class,
         SecureKvEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class MahavaDatabase : RoomDatabase() {
@@ -31,6 +31,7 @@ abstract class MahavaDatabase : RoomDatabase() {
             } else {
                 Room.databaseBuilder(context, MahavaDatabase::class.java, DB_NAME)
             }
+            // v2→v3 adds daily_logs.foodCravings; destructive fallback already used since v1.
             return builder.fallbackToDestructiveMigration().build()
         }
     }

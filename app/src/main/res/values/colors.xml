@@ -4,4 +4,8 @@
     <color name="mahava_primary">#7962CA</color>
     <color name="mahava_text">#30233E</color>
     <color name="ic_launcher_background">#F1ECFC</color>
+    <color name="widget_text_primary">#30233E</color>
+    <color name="widget_text_secondary">#746B82</color>
+    <color name="widget_accent_purple">#7962CA</color>
+    <color name="widget_accent_pink">#DC7E8F</color>
 </resources>

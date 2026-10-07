@@ -25,13 +25,26 @@ fun BodyHomeScreen(
     onSettings: () -> Unit,
     onCategory: (String) -> Unit,
     onCare: () -> Unit,
-    onPhaseDetail: (String) -> Unit = {}
+    onPhaseDetail: (String) -> Unit = {},
+    onAccount: () -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
+    val premium by vm.isPremium.collectAsState()
     val sel = vm.phaseTodaySelection()
     val ctx = vm.dayContext()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("body_screen")) {
         ScreenHeader("شناخت بدن", onSettings = onSettings)
+        if (!premium) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PremiumPaywallCard(
+                    vm = vm,
+                    titleFa = "شناخت بدن",
+                    benefitFa = "توضیح فاز چرخه، مطالب آموزشی و راهنمای مراقبت با اشتراک ماه باز می‌شه.",
+                    onOpenAccount = onAccount
+                )
+            }
+            return@Column
+        }
         MahavaCard(Modifier.padding(16.dp).testTag("body_phase_card").clickable { onPhaseDetail(sel.item.id) }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -82,7 +95,26 @@ fun BodyHomeScreen(
 }
 
 @Composable
-fun BodyCategoryScreen(vm: AppViewModel, category: String, onBack: () -> Unit, onItem: (String) -> Unit) {
+fun BodyCategoryScreen(
+    vm: AppViewModel,
+    category: String,
+    onBack: () -> Unit,
+    onAccount: () -> Unit = {},
+    onItem: (String) -> Unit
+) {
+    val premium by vm.isPremium.collectAsState()
+    if (!premium) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("category_screen")) {
+            ScreenHeader("شناخت بدن", onBack = onBack)
+            PremiumPaywallCard(
+                vm = vm,
+                titleFa = "مطالب شناخت بدن",
+                benefitFa = "با اشتراک ماه باز می‌شه.",
+                onOpenAccount = onAccount
+            )
+        }
+        return
+    }
     val title = BodyCategories.all.find { it.first == category }?.second ?: category
     val items = vm.bodyItems(category)
     val ill = when (category) {

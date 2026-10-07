@@ -2,18 +2,19 @@
 
 ## پیش‌نیاز
 - Android Studio یا JDK ۱۷+ و Android SDK (compileSdk 35)
-- در این محیط از `JAVA_HOME` مربوط به Android Studio JBR استفاده شد.
+- `JAVA_HOME` = Android Studio JBR
+- `GRADLE_USER_HOME` = `C:\Users\A.R.I\.gradle`
 
 ## ساخت
 ```
-cd C:\Users\A.R.I\Desktop\app\mahava
+cd C:\Users\A.R.I\Desktop\mahava
 set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
-set GRADLE_USER_HOME=C:\Users\A.R.I\Desktop\app\finance-manager\gradle-cache-v730
+set GRADLE_USER_HOME=C:\Users\A.R.I\.gradle
 gradlew.bat :app:assembleDebug --offline
 ```
-APK خروجی: `app\build\outputs\apk\debug\app-debug.apk` و کپی `Mahava-debug.apk` در ریشه پروژه.
+APK: `app\build\outputs\apk\debug\app-debug.apk` و کپی `Mahava-debug.apk` در ریشهٔ پروژه.
 
-## نصب
-`adb install -r Mahava-debug.apk` روی امولاتور یا با تأیید کاربر روی گوشی.
+## امکانات جدید
+هوس خوراکی + امکانات ویژه (بینش روزانه، الگوی علائم، روند چرخه، بررسی آموزشی). جزئیات: `docs/PREMIUM_FA.md`.
 
 اپ کاملاً آفلاین است و مجوز اینترنت ندارد.

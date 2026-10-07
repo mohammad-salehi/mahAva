@@ -20,7 +20,16 @@ import com.mahava.app.ui.theme.MahavaBackground
 import com.mahava.app.ui.theme.MahavaTheme
 
 class MainActivity : FragmentActivity() {
+    companion object {
+        const val EXTRA_OPEN_TODAY = "open_today"
+        const val EXTRA_OPEN_ACCOUNT = "open_account"
+        const val EXTRA_OPEN_LOGIN = "open_login"
+    }
+
     private val deepLinkState = mutableStateOf<android.net.Uri?>(null)
+    private val openTodayState = mutableStateOf(false)
+    private val openAccountState = mutableStateOf(false)
+    private val openLoginState = mutableStateOf(false)
     private var viewModelRef: AppViewModel? = null
 
     override fun onStart() {
@@ -37,7 +46,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        deepLinkState.value = intent?.data
+        consumeIntent(intent)
         setContent {
             MahavaTheme {
                 Surface(Modifier.fillMaxSize(), color = MahavaBackground) {
@@ -45,9 +54,22 @@ class MainActivity : FragmentActivity() {
                     val vm: AppViewModel = viewModel(factory = factory)
                     viewModelRef = vm
                     val deepLink by deepLinkState
+                    val openToday by openTodayState
+                    val openAccount by openAccountState
+                    val openLogin by openLoginState
                     val useJalali = vm.state.collectAsState().value.profile?.calendarType != "gregorian"
                     androidx.compose.runtime.CompositionLocalProvider(com.mahava.app.ui.components.LocalUseJalali provides useJalali) {
-                        MahavaAppRoot(vm = vm, activity = this, deepLink = deepLink)
+                        MahavaAppRoot(
+                            vm = vm,
+                            activity = this,
+                            deepLink = deepLink,
+                            openToday = openToday,
+                            onOpenTodayConsumed = { openTodayState.value = false },
+                            openAccount = openAccount,
+                            onOpenAccountConsumed = { openAccountState.value = false },
+                            openLogin = openLogin,
+                            onOpenLoginConsumed = { openLoginState.value = false }
+                        )
                     }
                 }
             }
@@ -57,6 +79,19 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        deepLinkState.value = intent.data
+        consumeIntent(intent)
+    }
+
+    private fun consumeIntent(intent: Intent?) {
+        deepLinkState.value = intent?.data
+        if (intent?.getBooleanExtra(EXTRA_OPEN_TODAY, false) == true) {
+            openTodayState.value = true
+        }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_ACCOUNT, false) == true) {
+            openAccountState.value = true
+        }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_LOGIN, false) == true) {
+            openLoginState.value = true
+        }
     }
 }

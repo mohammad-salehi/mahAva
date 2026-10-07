@@ -18,6 +18,24 @@ import com.mahava.app.data.repo.MahavaRepository
 import com.mahava.app.pattern.PatternInsight
 import com.mahava.app.reminders.ReminderScheduler
 import com.mahava.app.util.AppClock
+import com.google.gson.Gson
+import com.mahava.app.pattern.PatternAnalyzer
+import com.mahava.app.pattern.SymptomLogPoint
+import com.mahava.app.pattern.PeriodStartPoint
+import com.mahava.app.pattern.PhaseClusterInsight
+import com.mahava.app.pattern.CycleTrendsResult
+import com.mahava.app.pattern.CycleTrendsAnalyzer
+import com.mahava.app.network.MahApiException
+import com.mahava.app.insight.DailyInsightEngine
+import com.mahava.app.insight.DailyInsight
+import com.mahava.app.data.prefs.UserPreferences
+import com.mahava.app.data.auth.AuthRepository
+import com.mahava.app.cycle.CycleSubWindow
+import com.mahava.app.cycle.CyclePhase
+import com.mahava.app.cycle.CycleDayContextResolver
+import com.mahava.app.content.PhaseForecastEngine
+import com.mahava.app.content.PhaseForecast
+import com.mahava.app.checker.CheckerResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -44,11 +62,37 @@ class AppViewModel(
     private val backupManager: BackupManager,
     private val clock: AppClock,
     private val reminderScheduler: ReminderScheduler,
-    private val app: MahavaApplication
+    private val app: MahavaApplication,
+    private val authRepository: AuthRepository = app.authRepository,
+    private val prefs: UserPreferences = app.prefs
 ) : ViewModel() {
 
     private val _message = MutableStateFlow<String?>(null)
     private val _locked = MutableStateFlow(false)
+
+    val isPremium: StateFlow<Boolean> = authRepository.isPremiumEffective
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val isLoggedIn: StateFlow<Boolean> = authRepository.isLoggedIn
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val _forceUpdate = MutableStateFlow<com.mahava.app.network.MahForceUpdateDto?>(null)
+    val forceUpdate: StateFlow<com.mahava.app.network.MahForceUpdateDto?> = _forceUpdate
+
+    private val _inbox = MutableStateFlow<List<com.mahava.app.network.MahInboxItemDto>>(emptyList())
+    val inboxItems: StateFlow<List<com.mahava.app.network.MahInboxItemDto>> = _inbox
+    val accountPhone: StateFlow<String?> = prefs.accountPhone
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val serverHasActiveSubscription: StateFlow<Boolean> = prefs.serverHasActiveSubscription
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val serverPlan: StateFlow<String?> = prefs.serverPlan
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val serverEndsAt: StateFlow<String?> = prefs.serverEndsAt
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val yearlyPriceTomans: StateFlow<Int> = prefs.yearlyPriceTomans
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 585000)
+    private val checkerJson: StateFlow<String?> = prefs.lastCheckerJson
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
 
     private data class Core(val profile: UserProfileEntity?, val periods: List<PeriodEventEntity>, val logs: List<DailyLogEntity>, val cycle: CycleEngineResult, val patterns: List<PatternInsight>)
     private val core = combine(
@@ -76,10 +120,14 @@ class AppViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppUiState())
 
     init {
+        checkForceUpdate()
+
         viewModelScope.launch {
             val p = repo.ensureProfile()
             _locked.value = p.lockEnabled
             reminderScheduler.ensurePeriodic()
+            authRepository.loadApiBaseUrl()
+            refreshAccountFromServer()
         }
     }
 
@@ -96,12 +144,49 @@ class AppViewModel(
 
     /** Called from Activity.onStart: lock again when the app was away longer than the chosen timeout. */
     fun onAppForegrounded() {
-        val p = state.value.profile ?: return
-        val since = backgroundedAt ?: return
+        val p = state.value.profile
+        val since = backgroundedAt
         backgroundedAt = null
-        if (!p.lockEnabled) return
-        val elapsedSec = (android.os.SystemClock.elapsedRealtime() - since) / 1000
-        if (elapsedSec >= p.lockTimeoutSeconds) _locked.value = true
+        if (p != null && since != null && p.lockEnabled) {
+            val elapsedSec = (android.os.SystemClock.elapsedRealtime() - since) / 1000
+            if (elapsedSec >= p.lockTimeoutSeconds) _locked.value = true
+        }
+        // Soft session check so expired tokens don't keep premium features open.
+        viewModelScope.launch {
+            checkForceUpdate()
+            if (authRepository.hasSessionTokens()) {
+                authRepository.verifySessionOrClear()
+                refreshInbox()
+            }
+        }
+    }
+
+    fun checkForceUpdate() = viewModelScope.launch {
+        try {
+            val cfg = app.apiClient.appConfig(com.mahava.app.BuildConfig.VERSION_CODE)
+            val fu = cfg.forceUpdate
+            _forceUpdate.value = if (fu != null && fu.mustUpdate) fu else null
+        } catch (_: Throwable) {
+            // Offline: do not block the app.
+        }
+    }
+
+    fun refreshInbox() = viewModelScope.launch {
+        try {
+            val token = prefs.getAccessToken() ?: return@launch
+            val res = app.apiClient.inbox(token)
+            _inbox.value = res.items
+        } catch (_: Throwable) {
+            /* ignore */
+        }
+    }
+
+    fun dismissInboxItem(id: String) = viewModelScope.launch {
+        try {
+            val token = prefs.getAccessToken() ?: return@launch
+            app.apiClient.dismissInbox(token, id)
+            _inbox.value = _inbox.value.filterNot { it.id == id }
+        } catch (_: Throwable) { }
     }
 
     fun relockIfNeeded() {
@@ -317,6 +402,129 @@ class AppViewModel(
             app.contentResolver.openInputStream(uri)?.use { it.readBytes() }
         } catch (_: Throwable) { null }
     }
+
+    fun setPremium(unlocked: Boolean) = viewModelScope.launch {
+        // Demo unlock only meaningful when already logged in (DEBUG gate in AuthRepository).
+        prefs.setPremium(unlocked)
+        com.mahava.app.widget.CycleWidgetUpdater.requestUpdate(app)
+    }
+
+    /**
+     * Call when entering a premium feature. Verifies tokens; on invalid/expired clears session
+     * so [isPremium] flips false and UI can send user to login.
+     * @return true if session still valid.
+     */
+    fun revalidatePremiumAccess(onNeedLogin: () -> Unit = {}) = viewModelScope.launch {
+        if (!authRepository.hasSessionTokens()) {
+            onNeedLogin()
+            return@launch
+        }
+        val ok = authRepository.verifySessionOrClear()
+        if (!ok) onNeedLogin()
+    }
+
+    suspend fun login(phone: String, password: String): String? {
+        return try {
+            authRepository.login(phone.trim(), password)
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "ورود ناموفق بود."
+        } catch (t: Throwable) {
+            t.message ?: "ورود ناموفق بود."
+        }
+    }
+
+    suspend fun register(phone: String, password: String, name: String?): String? {
+        return try {
+            authRepository.register(phone.trim(), password, name)
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "ثبت‌نام ناموفق بود."
+        } catch (t: Throwable) {
+            t.message ?: "ثبت‌نام ناموفق بود."
+        }
+    }
+
+    suspend fun logoutAccount() {
+        authRepository.logout()
+    }
+
+    suspend fun refreshAccountFromServer(): Boolean {
+        val me = authRepository.fetchMe()
+        val sub = authRepository.refreshSubscription()
+        return me != null || sub != null
+    }
+
+    fun phaseForecast(): PhaseForecast {
+        val s = state.value
+        val cycle = s.cycle
+        val tomorrow = today().plusDays(1)
+        val ctx = if (cycle != null) {
+            CycleDayContextResolver.resolveOn(cycle, tomorrow)
+        } else {
+            com.mahava.app.cycle.CycleDayContext(
+                CycleSubWindow.UNKNOWN, null, null, null, null, ""
+            )
+        }
+        val phaseHint = when (ctx.subWindow) {
+            CycleSubWindow.MENSTRUATION_EARLY, CycleSubWindow.MENSTRUATION_LATE -> CyclePhase.MENSTRUATION
+            CycleSubWindow.FOLLICULAR_EARLY, CycleSubWindow.FOLLICULAR_LATE -> CyclePhase.FOLLICULAR
+            CycleSubWindow.PERI_OVULATORY -> CyclePhase.OVULATION_WINDOW
+            CycleSubWindow.LUTEAL_EARLY, CycleSubWindow.LUTEAL_MID,
+            CycleSubWindow.LUTEAL_LATE_PREMENSTRUAL, CycleSubWindow.LATE_PERIOD -> CyclePhase.LUTEAL
+            CycleSubWindow.UNKNOWN -> cycle?.phase ?: CyclePhase.UNKNOWN
+        }
+        return PhaseForecastEngine.build(ctx.subWindow, phaseHint, s.dailyLogs.takeLast(14))
+    }
+
+    fun dailyInsight(): DailyInsight {
+        val s = state.value
+        return DailyInsightEngine.build(
+            dayContext(),
+            s.cycle,
+            logFor(today()),
+            s.dailyLogs.takeLast(14)
+        )
+    }
+
+    fun phaseClusters(): List<PhaseClusterInsight> {
+        val s = state.value
+        val starts = s.periods.map { PeriodStartPoint(it.startEpochDay) }
+        val symptoms = s.dailyLogs.flatMap { log ->
+            val keys = mutableListOf<String>()
+            log.physicalSymptoms?.split(',')?.filter { it.isNotBlank() }?.let { keys += it }
+            if (log.painScore != null && log.painScore > 0) keys += "pain"
+            log.moods?.split(',')?.filter { it.isNotBlank() }?.forEach { keys += it }
+            log.foodCravings?.split(',')?.filter { it.isNotBlank() }?.forEach { keys += "craving_$it" }
+            keys.map { SymptomLogPoint(log.epochDay, it, log.painScore) }
+        }
+        val typical = s.profile?.typicalCycleLength ?: 28
+        return PatternAnalyzer.analyzePhaseClusters(symptoms, starts, typical)
+    }
+
+    fun cycleTrends(): CycleTrendsResult {
+        val s = state.value
+        return CycleTrendsAnalyzer.analyze(
+            s.periods,
+            s.dailyLogs,
+            s.profile?.typicalCycleLength ?: 28
+        )
+    }
+
+    fun lastCheckerResult(): CheckerResult? {
+        val json = checkerJson.value ?: return null
+        return try {
+            Gson().fromJson(json, CheckerResult::class.java)
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    fun saveCheckerResult(result: CheckerResult) = viewModelScope.launch {
+        prefs.setLastCheckerJson(Gson().toJson(result))
+    }
+
+
 }
 
 class AppViewModelFactory(private val app: MahavaApplication) : ViewModelProvider.Factory {

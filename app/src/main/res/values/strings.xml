@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ماه‌آوا</string>
+    <string name="app_name">ماه</string>
     <string name="nav_today">امروز</string>
     <string name="nav_calendar">تقویم</string>
     <string name="nav_log">ثبت</string>
     <string name="nav_reports">گزارش‌ها</string>
     <string name="nav_body">شناخت بدن</string>
     <string name="notification_channel_reminders">یادآوری‌ها</string>
-    <string name="notification_private_text">یک یادآوری از ماه‌آوا داری</string>
+    <string name="notification_private_text">یک یادآوری از ماه داری</string>
     <string name="notification_daily_text">امروز حالت چطور است؟ چند ثانیه وقت بگذار و ثبتش کن.</string>
     <string name="notification_period_text">پریود بعدی‌ات ممکن است در چند روز آینده شروع شود.</string>
-    <string name="lock_title">باز کردن ماه‌آوا</string>
+    <string name="notification_water_text">یک لیوان آب بنوش؛ بدن امروز به آب کافی نیاز دارد.</string>
+    <string name="notification_sleep_text">وقت استراحت است؛ خواب منظم به چرخه‌ات کمک می‌کند.</string>
+    <string name="lock_title">باز کردن ماه</string>
     <string name="lock_subtitle">با اثر انگشت یا رمز گوشی قفل را باز کن</string>
+    <string name="widget_description">وضعیت چرخه و روزهای مانده تا پریود بعدی</string>
+    <string name="widget_cycle_day_label">روز چرخه</string>
+    <string name="widget_day_of_length">روز %1$s از %2$s</string>
+    <string name="widget_until_label">تا پریود بعدی</string>
+    <string name="widget_status_label">وضعیت</string>
+    <string name="widget_days_until">%1$s روز</string>
+    <string name="widget_days_late">%1$s روز تأخیر</string>
+    <string name="widget_bleeding_now">در حال پریود</string>
+    <string name="widget_no_cycle">اولین پریود را ثبت کن</string>
 </resources>

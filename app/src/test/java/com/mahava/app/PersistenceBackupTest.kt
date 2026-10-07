@@ -101,7 +101,7 @@ class CryptoBackupUnitTest {
     @Test fun aesGcmRoundTripStandalone() {
         // PBKDF2 path does not need AndroidKeyStore
         val crypto = CryptoManager()
-        val plain = "سلام ماه‌آوا".toByteArray(Charsets.UTF_8)
+        val plain = "سلام ماه".toByteArray(Charsets.UTF_8)
         val blob = crypto.encryptBackup("password99".toCharArray(), plain)
         val out = crypto.decryptBackup("password99".toCharArray(), blob)
         assertArrayEquals(plain, out)

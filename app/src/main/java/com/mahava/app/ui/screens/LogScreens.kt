@@ -24,23 +24,62 @@ import com.mahava.app.util.PersianDigits
 import java.time.LocalDate
 
 @Composable
-fun LogHubScreen(vm: AppViewModel, onDaily: () -> Unit, onPeriod: () -> Unit, onLate: () -> Unit = {}, onSettings: () -> Unit) {
+fun LogHubScreen(
+    vm: AppViewModel,
+    onDaily: () -> Unit,
+    onPeriod: () -> Unit,
+    onLate: () -> Unit = {},
+    onSettings: () -> Unit,
+    onAccount: () -> Unit = {}
+) {
     val state by vm.state.collectAsState()
+    val premium by vm.isPremium.collectAsState()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("log_hub")) {
         ScreenHeader("ثبت", onSettings = onSettings)
-        PrimaryButton(if (vm.logFor(vm.today()) == null) "ثبت حال امروز" else "ویرایش حال امروز", modifier = Modifier.testTag("hub_daily"), onClick = onDaily)
+        SecondaryButton(
+            if (state.cycle?.periodOngoing == true) "ثبت پایان پریود" else "ثبت شروع پریود",
+            modifier = Modifier.testTag("hub_period"),
+            onClick = onPeriod
+        )
         Spacer(Modifier.height(12.dp))
-        SecondaryButton(if (state.cycle?.periodOngoing == true) "ثبت پایان پریود" else "ثبت شروع پریود", modifier = Modifier.testTag("hub_period"), onClick = onPeriod)
-        Spacer(Modifier.height(12.dp))
-        SecondaryButton("پریود دیر کرده / ثبت تست بارداری", modifier = Modifier.testTag("hub_late"), onClick = onLate)
-        Spacer(Modifier.height(12.dp))
-        QuietInfo("هر چیزی را که انتخاب نکنی «ثبت نشده» می‌ماند؛ برنامه چیزی را به‌جای تو فرض نمی‌کند.")
-        QuietInfo("برای ثبت یا ویرایش روزهای گذشته، از «تقویم» روی آن روز بزن.")
+        if (premium) {
+            PrimaryButton(
+                if (vm.logFor(vm.today()) == null) "ثبت حال امروز" else "ویرایش حال امروز",
+                modifier = Modifier.testTag("hub_daily"),
+                onClick = onDaily
+            )
+            Spacer(Modifier.height(12.dp))
+            SecondaryButton("پریود دیر کرده / ثبت تست بارداری", modifier = Modifier.testTag("hub_late"), onClick = onLate)
+            Spacer(Modifier.height(12.dp))
+            QuietInfo("هر چیزی را که انتخاب نکنی «ثبت نشده» می‌ماند؛ برنامه چیزی را به‌جای تو فرض نمی‌کند.")
+            QuietInfo("برای ثبت یا ویرایش روزهای گذشته، از «تقویم» روی آن روز بزن.")
+        } else {
+            PremiumPaywallCard(
+                vm = vm,
+                titleFa = "ثبت حال و امکانات بیشتر",
+                benefitFa = "ثبت حال روزانه، هوس خوراکی، علائم و تست بارداری با اشتراک ماه باز می‌شه.",
+                onOpenAccount = onAccount
+            )
+            QuietInfo("بدون اشتراک فقط ثبت شروع و پایان پریود آزاد است.")
+        }
     }
 }
 
 @Composable
-fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit) {
+fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccount: () -> Unit = {}) {
+    val premium by vm.isPremium.collectAsState()
+    if (!premium) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("daily_log_screen")) {
+            ScreenHeader(if (day == vm.today()) "ثبت حال امروز" else "ثبت حال این روز", onBack = onBack)
+            PremiumPaywallCard(
+                vm = vm,
+                titleFa = "ثبت حال روزانه",
+                benefitFa = "ثبت حال، علائم، خواب و هوس خوراکی با اشتراک ماه باز می‌شه.",
+                onOpenAccount = onAccount
+            )
+        }
+        return
+    }
     val existing = remember(day) { vm.logFor(day) }
     var bleeding by remember { mutableStateOf(existing?.bleeding) }
     var mood by remember { mutableStateOf(existing?.moods?.split(',')?.firstOrNull { it.isNotBlank() }) }
@@ -51,6 +90,9 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit) {
     var note by remember { mutableStateOf(existing?.note ?: "") }
     var discharge by remember { mutableStateOf(existing?.discharge) }
     var sleep by remember { mutableStateOf(existing?.sleepQuality) }
+    var cravings by remember {
+        mutableStateOf(existing?.foodCravings?.split(',')?.filter { it.isNotBlank() }?.toSet() ?: emptySet())
+    }
     val isFuture = day.isAfter(vm.today())
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("daily_log_screen")) {
@@ -111,6 +153,11 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit) {
         }
         SectionLabel("خواب دیشب (اختیاری)")
         ChipsFlow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), sleep, "sleep") { sleep = if (sleep == it) null else it }
+        SectionLabel("هوس خوراکی (اختیاری — چند مورد)")
+        QuietInfo("اگر چیزی هوس کردی ثبت کن؛ معنی رایج‌اش را نسبت به مرحلهٔ چرخه‌ات می‌گوییم.")
+        MultiChipsFlow(com.mahava.app.content.FoodCravingKeys.ALL, cravings, "crave") { k ->
+            cravings = if (k in cravings) cravings - k else cravings + k
+        }
         SectionLabel("ترشحات واژن (اختیاری)")
         ChipsFlow(
             listOf("dry" to "خشک", "sticky" to "چسبناک", "creamy" to "کرمی", "watery" to "آبکی", "eggwhite" to "شفاف و کش‌دار"),
@@ -136,6 +183,7 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit) {
                     energy = energy,
                     sleepQuality = sleep,
                     discharge = discharge,
+                    foodCravings = cravings.joinToString(",").ifBlank { null },
                     note = note.ifBlank { null },
                     updatedAt = now
                 )

@@ -1,6 +1,7 @@
 package com.mahava.app.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.mahava.app.R
+import com.mahava.app.content.PhaseScienceBank
 import com.mahava.app.cycle.PredictionKind
 import com.mahava.app.ui.AppViewModel
 import com.mahava.app.ui.components.*
@@ -30,165 +32,190 @@ fun TodayScreen(
     onBody: () -> Unit,
     onLate: () -> Unit,
     onPhaseDetail: (String) -> Unit,
-    onCareDetail: (String) -> Unit
+    onCareDetail: (String) -> Unit,
+    onDailyInsight: () -> Unit = {},
+    onCravings: () -> Unit = {},
+    onPatterns: () -> Unit = {},
+    onTrends: () -> Unit = {},
+    onChecker: () -> Unit = {},
+    onForecast: () -> Unit = {},
+    onCalendar: () -> Unit = {},
+    onAccount: () -> Unit = {},
+    onQuickLog: () -> Unit = onDailyLog,
+    onFoodTips: () -> Unit = {},
+    onFertility: () -> Unit = {},
+    onDoctor: () -> Unit = {},
+    onScience: () -> Unit = {},
+    onMore: () -> Unit = onDailyLog
 ) {
     val state by vm.state.collectAsState()
+    val premium by vm.isPremium.collectAsState()
     val cycle = state.cycle
     val today = vm.today()
     val j = JalaliDate.from(today)
-    val log = vm.logFor(today)
     val phaseSel = vm.phaseTodaySelection()
-    val care = vm.careToday()
     val dayCtx = vm.dayContext()
     val pred = cycle?.prediction as? PredictionKind.Estimate
+    val forecast = vm.phaseForecast()
+    val science = PhaseScienceBank.forContext(dayCtx.subWindow, cycle?.phase)
+    val lengthHint = pred?.medianCycleLength ?: state.profile?.typicalCycleLength
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("today_screen")) {
         if (state.profile?.qaSampleData == true) {
             MahavaCard(Modifier.padding(16.dp)) {
                 Text("دادهٔ نمونه برای آزمایش", color = MahavaMenstruation, style = MaterialTheme.typography.titleMedium)
-                QuietInfo("این اطلاعات ساختگی و فقط برای آزمایش برنامه است، نه سابقهٔ واقعی تو. از تنظیمات می‌توانی همه را پاک کنی.")
+                QuietInfo("این اطلاعات ساختگی و فقط برای آزمایش برنامه است. از تنظیمات می‌توانی همه را پاک کنی.")
             }
         }
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("امروز", style = MaterialTheme.typography.headlineLarge)
                 Text(j.formatShortFa(), color = MahavaTextSecondary)
             }
-            Illustration(R.drawable.ill_daily_woman, Modifier.width(110.dp).height(80.dp))
             androidx.compose.material3.IconButton(onClick = onSettings, modifier = Modifier.size(48.dp).testTag("open_settings")) {
                 MahavaIcon(R.drawable.ic_settings, MahavaTextPrimary)
             }
         }
+
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            CycleRing(
+            PeriodCycleWidget(
                 cycleDay = cycle?.cycleDay,
-                cycleLengthHint = pred?.medianCycleLength,
-                subtitle = dayCtx.subWindow.titleFa
+                cycleLengthHint = lengthHint,
+                phase = cycle?.phase,
+                phaseTitleFa = if (premium) dayCtx.subWindow.titleFa else "پیش‌بینی پریود",
+                daysUntilPeriod = cycle?.daysUntilCentralPeriod,
+                isLate = cycle?.isLate == true
             )
         }
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (cycle?.isLate == true) {
-                MahavaCard(Modifier.testTag("late_card")) {
-                    Text("پریود دیر کرده", style = MaterialTheme.typography.titleLarge, color = MahavaMenstruation)
-                    Text("حدود ${PersianDigits.toPersian(cycle.daysLate ?: 0)} روز از تاریخ تخمینی گذشته. چند روز جابه‌جایی رایج است.")
-                    Spacer(Modifier.height(8.dp))
-                    SecondaryButton("راهنمای تأخیر و تست بارداری", modifier = Modifier.testTag("late_open")) { onLate() }
-                }
-            } else if (pred != null) {
-                MahavaCard(Modifier.testTag("period_estimate_card")) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        MahavaIcon(R.drawable.ic_calendar, MahavaMenstruation)
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            val d = cycle.daysUntilCentralPeriod
-                            Text(
-                                when {
-                                    d == null -> "پریود بعدی (تخمینی)"
-                                    d == 0 -> "پریود ممکن است از همین روزها شروع شود"
-                                    else -> "حدود ${PersianDigits.toPersian(d)} روز تا پریود بعدی"
-                                },
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                "بین ${JalaliDate.from(pred.nextPeriodStartEarliest).formatFa(withYear = false)} تا ${JalaliDate.from(pred.nextPeriodStartLatest).formatFa(withYear = false)}",
-                                color = MahavaTextSecondary
-                            )
-                            QuietInfo(vm.predictionBasisShortFa())
-                        }
+
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Free: next-period prediction
+            when {
+                cycle?.isLate == true -> {
+                    MahavaCard(Modifier.testTag("late_card").clickable {
+                        if (premium) onLate() else onAccount()
+                    }) {
+                        Text("پریود دیر کرده", style = MaterialTheme.typography.titleMedium, color = MahavaMenstruation)
+                        Text("حدود ${PersianDigits.toPersian(cycle.daysLate ?: 0)} روز از تاریخ تخمینی گذشته. چند روز جابه‌جایی رایج است.")
+                        if (premium) Text("راهنما", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                        else Text("با اشتراک ماه باز می‌شه", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
                     }
                 }
-                if (cycle.showFertility) {
-                    MahavaCard(Modifier.testTag("fertility_card")) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            MahavaIcon(R.drawable.ic_leaf, MahavaFertility)
-                            Spacer(Modifier.width(8.dp))
-                            Column {
-                                Text("روزهای احتمالی باروری", style = MaterialTheme.typography.titleMedium)
-                                Text(
-                                    "${JalaliDate.from(pred.fertilityEarliest).formatFa(withYear = false)} تا ${JalaliDate.from(pred.fertilityLatest).formatFa(withYear = false)}",
-                                    color = MahavaTextSecondary
-                                )
-                                QuietInfo("فقط یک تخمین از روی تاریخ‌هاست و روش جلوگیری نیست.")
-                            }
+                pred != null -> {
+                    MahavaCard(Modifier.testTag("period_estimate_card")) {
+                        val d = cycle?.daysUntilCentralPeriod
+                        Text(
+                            when {
+                                d == null -> "پریود بعدی (تخمینی)"
+                                d == 0 -> "پریود ممکن است از همین روزها شروع شود"
+                                else -> "حدود ${PersianDigits.toPersian(d)} روز تا پریود بعدی"
+                            },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (cycle?.cycleDay != null && lengthHint != null) {
+                            QuietInfo("روز ${PersianDigits.toPersian(cycle.cycleDay)} از حدود ${PersianDigits.toPersian(lengthHint)}")
                         }
+                        QuietInfo(vm.predictionBasisShortFa())
                     }
+                }
+                else -> {
+                    MahavaCard(Modifier.testTag("no_estimate_card")) {
+                        Text("پریود بعدی را فعلاً تخمین نمی‌زنیم", style = MaterialTheme.typography.titleMedium)
+                        QuietInfo(cycle?.basisDescriptionFa ?: "با ثبت چند پریود، تخمین روشن‌تر می‌شود.")
+                    }
+                }
+            }
+
+            if (premium) {
+                // Phase science card
+                MahavaCard(Modifier.testTag("phase_science_card").clickable { onScience() }) {
+                    Text("در بدنم چه می‌گذرد؟", style = MaterialTheme.typography.titleMedium)
+                    Text(science.titleFa, color = MahavaPrimary, style = MaterialTheme.typography.titleSmall)
+                    Text(science.bodyFa.let { if (it.length > 140) it.take(140).trimEnd() + "…" else it })
+                    Spacer(Modifier.height(6.dp))
+                    QuietInfo("هورمون‌ها: ${science.hormoneFa.let { if (it.length > 90) it.take(90).trimEnd() + "…" else it }}")
+                    Text("جزئیات علمی", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                }
+
+                // Tomorrow forecast
+                MahavaCard(Modifier.testTag("phase_forecast_card").clickable { onForecast() }) {
+                    Text("فردا ممکنه چی حس کنی", style = MaterialTheme.typography.titleMedium)
+                    QuietInfo(forecast.hormoneSnapshotFa)
+                    forecast.summaryLinesFa.forEach { line ->
+                        Text("• $line", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text("دلیل علمی و جزئیات", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                }
+
+                // 3 care tips
+                MahavaCard(Modifier.testTag("care_tips_card").clickable { onCareDetail(vm.careToday().item.id) }) {
+                    Text("امروز چیکار کنی", style = MaterialTheme.typography.titleMedium)
+                    science.careTipsFa.take(3).forEach { tip ->
+                        Text("• $tip")
+                    }
+                    Text("بیشتر", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+                }
+
+                // Tool shortcuts row
+                Text("ابزارها", style = MaterialTheme.typography.titleMedium)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ToolChip("ثبت سریع", onQuickLog, "tool_quick")
+                    ToolChip("روند و نمودار", onTrends, "tool_trends")
+                    ToolChip("چه بخورم", onFoodTips, "tool_food")
+                    ToolChip("پنجره باروری", onFertility, "tool_fertility")
+                    ToolChip("گزارش پزشک", onDoctor, "tool_doctor")
+                    ToolChip("الگوها", onPatterns, "tool_patterns")
+                    ToolChip("بینش امروز", onDailyInsight, "tool_insight")
                 }
             } else {
-                MahavaCard(Modifier.testTag("no_estimate_card")) {
-                    Text("تاریخ پریود بعدی را فعلاً تخمین نمی‌زنیم", style = MaterialTheme.typography.titleMedium)
-                    QuietInfo(cycle?.basisDescriptionFa ?: "")
-                }
+                PremiumTeaserCard("در بدنم چه می‌گذرد؟", onClick = onAccount)
+                PremiumTeaserCard("فردا ممکنه چی حس کنی", onClick = onAccount)
+                PremiumTeaserCard("نکته‌های مراقبت و ابزارها", onClick = onAccount)
             }
 
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickStat(R.drawable.ic_pain, "درد و ناراحتی", log?.painScore?.let { "${PersianDigits.toPersian(it)} از ۱۰" } ?: if (log?.noSymptoms == true) "ندارم" else "ثبت نشده", Modifier.weight(1f))
-                val mood = log?.moods?.split(',')?.firstOrNull { it.isNotBlank() }
-                QuickStat(moodIcon(mood), "حال روحی", moodFa(mood) ?: "ثبت نشده", Modifier.weight(1f))
-                QuickStat(R.drawable.ic_energy, "سطح انرژی", energyFa(log?.energy), Modifier.weight(1f))
-            }
-            if (log == null) QuietInfo("«ثبت نشده» یعنی هنوز چیزی وارد نکرده‌ای، نه این‌که علامتی نداری.")
-
-            PrimaryButton(if (log == null) "ثبت حال امروز" else "ویرایش حال امروز", modifier = Modifier.testTag("today_log_button"), onClick = onDailyLog)
+            // Free: period start/end
             SecondaryButton(
                 if (cycle?.periodOngoing == true) "ثبت پایان پریود" else "پریودم شروع شد",
                 modifier = Modifier.testTag("today_period_button"),
                 onClick = onPeriod
             )
 
-            // Lower educational card (board-02): what is happening in my body
-            MahavaCard(Modifier.testTag("phase_card").clickable { onPhaseDetail(phaseSel.item.id) }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("در بدنم چه می‌گذرد؟", style = MaterialTheme.typography.titleMedium)
-                        Text(phaseSel.item.phase?.cardTitleFa ?: phaseSel.item.titleFa, color = MahavaPrimary, style = MaterialTheme.typography.titleSmall)
-                        Text(phaseSel.item.summaryFa, style = MaterialTheme.typography.bodyMedium)
-                        phaseSel.restrictionNoteFa?.let { QuietInfo(it) }
-                        if (dayCtx.nearBoundary) QuietInfo("امروز نزدیک مرز دو مرحله است.")
-                        Text("بیشتر بخوان", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Illustration(R.drawable.ill_rest_woman, Modifier.width(96.dp).height(96.dp))
-                }
+            // Free: calendar shortcut
+            SecondaryButton("تقویم", modifier = Modifier.testTag("today_calendar_button"), onClick = onCalendar)
+
+            if (premium) {
+                Text(
+                    "ثبت حال و امکانات بیشتر",
+                    color = MahavaPrimary,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .testTag("today_more_link")
+                        .clickable { onMore() }
+                        .padding(vertical = 4.dp)
+                )
+            } else {
+                QuietInfo("بدون اشتراک فقط ثبت پریود، تقویم و پیش‌بینی پریود بعدی آزاد است.")
+                Text(
+                    "حساب و اشتراک",
+                    color = MahavaPrimary,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .testTag("today_account_link")
+                        .clickable { onAccount() }
+                        .padding(vertical = 4.dp)
+                )
             }
 
-            MahavaCard(Modifier.testTag("care_card").clickable { onCareDetail(care.item.id) }) {
-                Text("پیشنهاد مراقبت برای امروز", style = MaterialTheme.typography.titleMedium)
-                Text(care.item.titleFa, color = MahavaPrimary)
-                care.reasonFa?.let { QuietInfo("$it.") }
-                QuietInfo(care.item.summaryFa)
-            }
-
-            if (state.patterns.isNotEmpty()) {
-                MahavaCard {
-                    Text("الگوی تو", style = MaterialTheme.typography.titleMedium)
-                    state.patterns.take(2).forEach { Text("• ${it.textFa}") }
-                    QuietInfo("فقط از ثبت‌های خودت؛ علت را نشان نمی‌دهد.")
-                }
-            }
             cycle?.limitsDescriptionFa?.takeIf { it.isNotBlank() }?.let { QuietInfo(it) }
             Spacer(Modifier.height(8.dp))
         }
     }
 }
 
-@Composable private fun QuickStat(icon: Int, title: String, value: String, modifier: Modifier) {
-    MahavaCard(modifier.fillMaxHeight()) {
-        MahavaIcon(icon, MahavaPrimary)
-        Spacer(Modifier.height(4.dp))
-        Text(title, color = MahavaTextSecondary, style = MaterialTheme.typography.bodySmall)
-        Text(value, style = MaterialTheme.typography.titleSmall, color = MahavaPrimary)
-    }
-}
-
-fun moodIcon(mood: String?): Int = when (mood) {
-    "happy" -> R.drawable.ic_mood_happy
-    "calm" -> R.drawable.ic_mood_calm
-    "sad" -> R.drawable.ic_mood_sad
-    "anxious" -> R.drawable.ic_mood_anxious
-    "irritable" -> R.drawable.ic_mood_irritable
-    else -> R.drawable.ic_mood_happy
-}
-
-fun energyFa(v: String?) = when (v) {
-    "low" -> "کم"; "medium" -> "متوسط"; "high" -> "زیاد"; else -> "ثبت نشده"
+@Composable
+private fun ToolChip(label: String, onClick: () -> Unit, tag: String) {
+    ChoiceChipPill(label, selected = false, tag = tag, onClick = onClick)
 }

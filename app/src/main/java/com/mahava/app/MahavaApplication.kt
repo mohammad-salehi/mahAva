@@ -11,12 +11,22 @@ import com.mahava.app.data.backup.BackupManager
 import com.mahava.app.data.crypto.CryptoManager
 import com.mahava.app.data.db.MahavaDatabase
 import com.mahava.app.data.prefs.UserPreferences
+import com.mahava.app.data.auth.AuthRepository
+import com.mahava.app.network.MahApiClient
 import com.mahava.app.data.repo.MahavaRepository
 import com.mahava.app.reminders.ReminderScheduler
 import com.mahava.app.util.AppClock
 import com.mahava.app.util.SystemAppClock
+import com.mahava.app.widget.CycleWidgetUpdater
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 open class MahavaApplication : Application() {
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     /**
      * Test hook for the system file picker (SAF). Instrumented tests set this so backup/restore/export
      * can run without the system picker UI. Arguments: (mode "create"|"open", suggested file name).
@@ -35,6 +45,10 @@ open class MahavaApplication : Application() {
     lateinit var backupManager: BackupManager
         private set
     lateinit var prefs: UserPreferences
+        private set
+    lateinit var apiClient: MahApiClient
+        private set
+    lateinit var authRepository: AuthRepository
         private set
     lateinit var reminderScheduler: ReminderScheduler
         private set
@@ -58,8 +72,20 @@ open class MahavaApplication : Application() {
         cryptoManager = CryptoManager()
         backupManager = BackupManager(database, cryptoManager)
         prefs = UserPreferences(this)
+        apiClient = MahApiClient()
+        authRepository = AuthRepository(apiClient, prefs)
         reminderScheduler = ReminderScheduler(this)
         createNotificationChannel()
+        appScope.launch {
+            repository.observeCycleResult().collectLatest {
+                CycleWidgetUpdater.requestUpdate(this@MahavaApplication)
+            }
+        }
+        appScope.launch {
+            authRepository.isPremiumEffective.distinctUntilChanged().collectLatest {
+                CycleWidgetUpdater.requestUpdate(this@MahavaApplication)
+            }
+        }
     }
 
     protected open fun createClock(): AppClock = SystemAppClock()

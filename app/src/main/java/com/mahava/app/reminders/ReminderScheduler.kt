@@ -17,6 +17,7 @@ import androidx.work.WorkerParameters
 import com.mahava.app.MainActivity
 import com.mahava.app.MahavaApplication
 import com.mahava.app.R
+import com.mahava.app.widget.CycleWidgetUpdater
 import java.util.concurrent.TimeUnit
 
 /**
@@ -64,7 +65,6 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         val sp = applicationContext.getSharedPreferences("mahava_reminders", Context.MODE_PRIVATE)
         val pending = mutableListOf<Pair<Int, String>>()
 
-        // Daily log: once per day, after the chosen hour, only if today is not logged yet.
         reminders["daily_log"]?.let { pref ->
             val already = sp.getLong("daily_notified_day", -1L) == today.toEpochDay()
             val logged = app.database.dailyLogDao().getByDay(today.toEpochDay()) != null
@@ -74,7 +74,6 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
                 sp.edit().putLong("daily_notified_day", today.toEpochDay()).apply()
             }
         }
-        // Period: once per predicted cycle, when the estimate is 0–2 days away.
         reminders["period"]?.let {
             val periods = app.database.periodDao().getAll()
             val result = app.repository.computeCycle(profile, periods)
@@ -87,6 +86,23 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
                         else applicationContext.getString(R.string.notification_period_text)
                     sp.edit().putLong("period_notified_central", key).apply()
                 }
+            }
+        }
+        reminders["water"]?.let { pref ->
+            val already = sp.getLong("water_notified_day", -1L) == today.toEpochDay()
+            if (!already && nowHour >= pref.hour) {
+                pending += 1003 to if (private) applicationContext.getString(R.string.notification_private_text)
+                    else applicationContext.getString(R.string.notification_water_text)
+                sp.edit().putLong("water_notified_day", today.toEpochDay()).apply()
+            }
+        }
+        reminders["sleep"]?.let { pref ->
+            val already = sp.getLong("sleep_notified_day", -1L) == today.toEpochDay()
+            val hour = if (pref.hour == 9) 21 else pref.hour
+            if (!already && nowHour >= hour) {
+                pending += 1004 to if (private) applicationContext.getString(R.string.notification_private_text)
+                    else applicationContext.getString(R.string.notification_sleep_text)
+                sp.edit().putLong("sleep_notified_day", today.toEpochDay()).apply()
             }
         }
         if (pending.isEmpty()) return Result.success()
@@ -116,5 +132,6 @@ class BootAndTimeReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val app = context.applicationContext as? MahavaApplication ?: return
         app.reminderScheduler.ensurePeriodic()
+        CycleWidgetUpdater.requestUpdate(context)
     }
 }

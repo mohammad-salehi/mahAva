@@ -18,6 +18,7 @@ android {
         versionName = "1.0.0-debug"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
+        buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
     }
 
     signingConfigs {

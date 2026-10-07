@@ -179,10 +179,10 @@ fun MultiChipsFlow(options: List<Pair<String, String>>, selected: Set<String>, t
 }
 
 /**
- * Date chooser: shows the date (Shamsi or Gregorian, per settings), a "pick from calendar" button
- * that opens a month grid, and quick one-day/one-week steps. Dates after [max] or before [min] are not allowed.
+ * Date chooser: shows the date (Shamsi or Gregorian, per settings) and a large
+ * "pick from calendar" button that opens the Jalali/Gregorian month grid.
+ * Dates after [max] or before [min] are not allowed.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DateStepper(
     date: java.time.LocalDate,
@@ -197,16 +197,15 @@ fun DateStepper(
     Column(Modifier.fillMaxWidth()) {
         Text(
             DatePickerMath.formatFa(date, jalali),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(vertical = 6.dp).testTag("${testTagPrefix}_value")
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(vertical = 8.dp).testTag("${testTagPrefix}_value")
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ChoiceChipPill("انتخاب از تقویم", true, tag = "${testTagPrefix}_pick") { picking.value = true }
-            ChoiceChipPill("یک روز قبل", false, tag = "${testTagPrefix}_m1") { set(date.minusDays(1)) }
-            ChoiceChipPill("یک روز بعد", false, tag = "${testTagPrefix}_p1") { set(date.plusDays(1)) }
-            ChoiceChipPill("یک هفته قبل", false, tag = "${testTagPrefix}_m7") { set(date.minusDays(7)) }
-            ChoiceChipPill("یک هفته بعد", false, tag = "${testTagPrefix}_p7") { set(date.plusDays(7)) }
-        }
+        PrimaryButton(
+            text = "انتخاب از تقویم",
+            modifier = Modifier
+                .testTag("${testTagPrefix}_pick")
+                .heightIn(min = 64.dp)
+        ) { picking.value = true }
     }
     if (picking.value) MonthDatePickerDialog(date, min, max, onPick = { set(it); picking.value = false }, onDismiss = { picking.value = false })
 }

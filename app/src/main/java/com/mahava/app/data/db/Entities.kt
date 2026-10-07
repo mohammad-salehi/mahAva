@@ -82,6 +82,8 @@ data class DailyLogEntity(
     val medicationNote: String? = null,
     val weightKg: Float? = null,
     val clots: String? = null, // none|sometimes|frequent
+    /** CSV of food craving keys: chocolate,sweet,salty,carbs,spicy,dairy,red_meat,caffeine,other */
+    val foodCravings: String? = null,
     val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long

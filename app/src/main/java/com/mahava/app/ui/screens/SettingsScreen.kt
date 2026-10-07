@@ -27,7 +27,7 @@ import com.mahava.app.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAfterDeleteAll: () -> Unit = {}) {
+fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}) {
     val state by vm.state.collectAsState()
     val profile = state.profile
     val scope = rememberCoroutineScope()
@@ -74,9 +74,29 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("settings_screen")) {
         ScreenHeader("تنظیمات و حریم خصوصی", onBack = onBack)
-        Illustration(R.drawable.ill_privacy_shield, Modifier.height(140.dp))
+        Illustration(R.drawable.ill_privacy_shield, Modifier.height(100.dp))
         Text("اطلاعاتت روی همین گوشی می‌ماند", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("ماه‌آوا حساب کاربری ندارد، به اینترنت وصل نمی‌شود و رفتار تو را برای کسی نمی‌فرستد.")
+        QuietInfo("اطلاعات چرخه روی همین گوشی می‌ماند. حساب کاربری فقط برای اشتراک است و داده‌های چرخه‌ات را به سرور نمی‌فرستد.")
+
+        val premium by vm.isPremium.collectAsState()
+        val accountPhone by vm.accountPhone.collectAsState()
+        SettingsGroup("حساب و اشتراک") {
+            QuietInfo(
+                if (accountPhone.isNullOrBlank())
+                    "برای اشتراک سرور وارد شو. ثبت‌نام جدید یک ماه رایگان می‌گیرد. خرید سالانه ۵۸۵ هزار تومان — به‌زودی."
+                else
+                    "وارد شده‌ای. وضعیت اشتراک از سرور خوانده می‌شود."
+            )
+            SecondaryButton("حساب کاربری و اشتراک", onClick = onAccount)
+            Spacer(Modifier.height(8.dp))
+            QuietInfo("فعال‌سازی آزمایشی فقط برای تست روی همین گوشی است.")
+            SwitchLine(
+                if (premium) "اشتراک آزمایشی روشن است" else "فعال‌سازی آزمایشی اشتراک",
+                premium,
+                "premium_toggle"
+            ) { vm.setPremium(it) }
+        }
+
 
         SettingsGroup("هدف من") {
             ChipsFlow(listOf("track_period" to "پیگیری پریود", "body_awareness" to "شناخت بدن", "ttc" to "اقدام برای بارداری"), profile?.goal) { k ->
@@ -150,6 +170,12 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             ReminderToggle(vm, "period", "یادآوری نزدیک شدن پریود", state.reminders, "set_rem_period") {
                 if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+            ReminderToggle(vm, "water", "یادآوری نوشیدن آب", state.reminders, "set_rem_water") {
+                if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            ReminderToggle(vm, "sleep", "یادآوری خواب و استراحت", state.reminders, "set_rem_sleep") {
+                if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
             QuietInfo("یادآوری‌ها حدوداً سر وقت می‌آیند، نه دقیقاً در یک ساعت مشخص.")
         }
 
@@ -179,6 +205,14 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
 
         if (status.isNotBlank()) Text(status, color = MahavaPrimary, modifier = Modifier.padding(vertical = 8.dp).testTag("settings_status"))
 
+        SettingsGroup("دربارهٔ برنامه") {
+            QuietInfo("نسخهٔ برنامه: ${com.mahava.app.util.PersianDigits.toPersian(com.mahava.app.BuildConfig.VERSION_NAME)}")
+            QuietInfo("نسخهٔ روش محاسبه: ${state.cycle?.algorithmVersion ?: "-"}")
+            QuietInfo("نسخهٔ مطالب آموزشی: ${com.mahava.app.util.PersianDigits.toPersian(vm.contentVersion())}")
+            QuietInfo(vm.contentStatus())
+            QuietInfo("فونت: وزیرمتن (با مجوز آزاد OFL)، داخل برنامه.")
+        }
+
         SettingsGroup("پاک کردن") {
             SecondaryButton("پاک کردن همهٔ اطلاعات", modifier = Modifier.testTag("delete_all")) { confirmDelete = true }
         }
@@ -200,23 +234,21 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             )
         }
 
-        SettingsGroup("دربارهٔ برنامه") {
-            QuietInfo("نسخهٔ برنامه: ${com.mahava.app.util.PersianDigits.toPersian(com.mahava.app.BuildConfig.VERSION_NAME)}")
-            QuietInfo("نسخهٔ روش محاسبه: ${state.cycle?.algorithmVersion ?: "-"}")
-            QuietInfo("نسخهٔ مطالب آموزشی: ${com.mahava.app.util.PersianDigits.toPersian(vm.contentVersion())}")
-            QuietInfo(vm.contentStatus())
-            QuietInfo("فونت: وزیرمتن (با مجوز آزاد OFL)، داخل برنامه.")
-        }
         Spacer(Modifier.height(32.dp))
     }
 }
 
 @Composable
 private fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(10.dp))
     MahavaCard {
-        Text(title, style = MaterialTheme.typography.titleMedium, color = MahavaPrimary, modifier = Modifier.padding(bottom = 6.dp))
-        content()
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MahavaPrimary,
+            modifier = Modifier.padding(bottom = 10.dp)
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
     }
 }
 

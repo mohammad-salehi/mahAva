@@ -29,16 +29,61 @@ import com.mahava.app.util.PersianDigits
 import java.time.LocalDate
 
 @Composable
-fun ReportsScreen(vm: AppViewModel, onSettings: () -> Unit, onDoctor: () -> Unit, onLate: () -> Unit) {
+fun ReportsScreen(
+    vm: AppViewModel,
+    onSettings: () -> Unit,
+    onDoctor: () -> Unit,
+    onLate: () -> Unit,
+    onPatterns: () -> Unit = {},
+    onTrends: () -> Unit = {},
+    onChecker: () -> Unit = {},
+    onInsight: () -> Unit = {},
+    onAccount: () -> Unit = {}
+) {
     val state by vm.state.collectAsState()
+    val premium by vm.isPremium.collectAsState()
     val periods = state.periods.sortedBy { it.startEpochDay }
     val lengths = periods.zipWithNext { a, b -> (b.startEpochDay - a.startEpochDay).toInt() }.filter { it in 15..90 }
     val bleedLens = periods.mapNotNull { p ->
         val end = p.endEpochDay ?: return@mapNotNull null
         (end - p.startEpochDay + 1).toInt()
     }
+    val pred = state.cycle?.prediction as? PredictionKind.Estimate
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("reports_screen")) {
         ScreenHeader("گزارش‌های من", onSettings = onSettings)
+        // Free: next period prediction only
+        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("reports_period_pred")) {
+            Text("پیش‌بینی پریود بعدی", style = MaterialTheme.typography.titleMedium)
+            when {
+                state.cycle?.isLate == true ->
+                    Text("پریود حدود ${com.mahava.app.util.PersianDigits.toPersian(state.cycle?.daysLate ?: 0)} روز دیر کرده (تخمینی).")
+                pred != null -> {
+                    val d = state.cycle?.daysUntilCentralPeriod
+                    Text(
+                        when {
+                            d == null -> "تخمین پریود بعدی آماده است."
+                            d == 0 -> "پریود ممکن است از همین روزها شروع شود."
+                            else -> "حدود ${com.mahava.app.util.PersianDigits.toPersian(d)} روز تا پریود بعدی."
+                        }
+                    )
+                    QuietInfo(vm.predictionBasisShortFa())
+                }
+                else -> QuietInfo(state.cycle?.basisDescriptionFa ?: "با ثبت چند پریود، تخمین روشن‌تر می‌شود.")
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        if (!premium) {
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                PremiumPaywallCard(
+                    vm = vm,
+                    titleFa = "گزارش‌ها و الگوها",
+                    benefitFa = "روند چرخه، الگوی علائم، بینش روزانه و گزارش پزشک با اشتراک ماه باز می‌شه.",
+                    onOpenAccount = onAccount
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+            return@Column
+        }
         if (periods.isEmpty() && state.dailyLogs.isEmpty()) {
             MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("reports_empty")) {
                 Text("هنوز چیزی برای گزارش نیست", style = MaterialTheme.typography.titleMedium)
@@ -83,13 +128,28 @@ fun ReportsScreen(vm: AppViewModel, onSettings: () -> Unit, onDoctor: () -> Unit
             }
         }
         Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp)) {
-            Text("الگوی علائم", style = MaterialTheme.typography.titleLarge)
+        MahavaCard(Modifier.padding(horizontal = 16.dp).clickable(onClick = onInsight)) {
+            Text("بینش روزانه", style = MaterialTheme.typography.titleMedium)
+            QuietInfo("خلاصهٔ شخصی امروز بر اساس چرخه و ثبت‌هایت.")
+        }
+        Spacer(Modifier.height(8.dp))
+        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_patterns").clickable(onClick = onPatterns)) {
+            Text("الگوی علائم (ویژه)", style = MaterialTheme.typography.titleLarge)
             if (state.patterns.isEmpty()) QuietInfo("برای دیدن الگو، دست‌کم ۲ چرخه با ثبت علائم لازم است.")
             else {
-                state.patterns.forEach { Text("• ${it.textFa}") }
-                QuietInfo("این الگوها فقط هم‌زمانی را نشان می‌دهند، نه علت را.")
+                state.patterns.take(2).forEach { Text("• ${it.textFa}") }
+                QuietInfo("برای خوشه‌بندی کامل مرحله‌ای، وارد شو.")
             }
+        }
+        Spacer(Modifier.height(8.dp))
+        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_trends").clickable(onClick = onTrends)) {
+            Text("روند چرخه (ویژه)", style = MaterialTheme.typography.titleMedium)
+            QuietInfo("نمودار طول چرخه، مدت خون‌ریزی و علائم پرتکرار.")
+        }
+        Spacer(Modifier.height(8.dp))
+        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_checker").clickable(onClick = onChecker)) {
+            Text("بررسی آموزشی علائم (ویژه)", style = MaterialTheme.typography.titleMedium)
+            QuietInfo("فهرست هم‌پوشانی با تنبلی تخمدان و اندومتریوز — بدون تشخیص.")
         }
         Spacer(Modifier.height(8.dp))
         MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_doctor").clickable(onClick = onDoctor)) {
@@ -108,7 +168,20 @@ private fun bleedFa(v: String?) = bleedingFa(v) ?: "-"
 private fun testFa(v: String?) = when (v) { "positive" -> "مثبت"; "negative" -> "منفی"; "invalid" -> "نامعتبر"; else -> "-" }
 
 @Composable
-fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit) {
+fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit = {}) {
+    val premium by vm.isPremium.collectAsState()
+    if (!premium) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("doctor_screen")) {
+            ScreenHeader("گزارش برای پزشک", onBack = onBack)
+            PremiumPaywallCard(
+                vm = vm,
+                titleFa = "گزارش برای پزشک",
+                benefitFa = "با اشتراک ماه باز می‌شه.",
+                onOpenAccount = onAccount
+            )
+        }
+        return
+    }
     val state by vm.state.collectAsState()
     val ctx = LocalContext.current
     var from by remember { mutableStateOf(vm.today().minusDays(90)) }
@@ -121,7 +194,7 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit) {
 
     fun buildText(): String {
         val sb = StringBuilder()
-        sb.appendLine("گزارش ماه‌آوا برای پزشک")
+        sb.appendLine("گزارش ماه برای پزشک")
         sb.appendLine("بازه: ${JalaliDate.from(from).formatFa()} تا ${JalaliDate.from(to).formatFa()}")
         sb.appendLine("این گزارش از ثبت‌های خود فرد ساخته شده و تشخیص پزشکی نیست.")
         sb.appendLine()
@@ -215,13 +288,20 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-fun LateTestScreen(vm: AppViewModel, onBack: () -> Unit, onLogPeriod: () -> Unit, onOpenItem: (String) -> Unit = {}) {
+fun LateTestScreen(
+    vm: AppViewModel,
+    onBack: () -> Unit,
+    onLogPeriod: () -> Unit,
+    onOpenItem: (String) -> Unit = {},
+    onAccount: () -> Unit = {}
+) {
     val state by vm.state.collectAsState()
+    val premium by vm.isPremium.collectAsState()
     var result by remember { mutableStateOf<String?>(null) }
     var testDate by remember { mutableStateOf(vm.today()) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("late_screen"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         ScreenHeader("پریود دیر کرده و تست بارداری", onBack = onBack)
-        Illustration(R.drawable.ill_test_guide_woman, Modifier.height(140.dp))
+        // Free: period prediction + period logging
         MahavaCard {
             Text("پریود شروع شده ولی ثبت نکرده‌ای؟", style = MaterialTheme.typography.titleMedium)
             val pred = state.cycle?.prediction
@@ -230,6 +310,16 @@ fun LateTestScreen(vm: AppViewModel, onBack: () -> Unit, onLogPeriod: () -> Unit
             } else QuietInfo("برای تو تاریخ تخمینی پریود حساب نشده است.")
             SecondaryButton("ثبت پریود", onClick = onLogPeriod)
         }
+        if (!premium) {
+            PremiumPaywallCard(
+                vm = vm,
+                titleFa = "راهنما و ثبت تست بارداری",
+                benefitFa = "با اشتراک ماه باز می‌شه.",
+                onOpenAccount = onAccount
+            )
+            return@Column
+        }
+        Illustration(R.drawable.ill_test_guide_woman, Modifier.height(140.dp))
         MahavaCard(Modifier.clickable { onOpenItem("pregnancy_test_timing") }) {
             Text("کِی تست بدهم؟", style = MaterialTheme.typography.titleMedium)
             QuietInfo("بیشتر تست‌های خانگی از روز اول عقب افتادن پریود قابل اعتمادترند. اگر نمی‌دانی پریود کی باید می‌آمد، دست‌کم ۲۱ روز بعد از آخرین رابطهٔ بدون محافظت تست بده. (منبع: NHS)")
@@ -266,9 +356,19 @@ fun LateTestScreen(vm: AppViewModel, onBack: () -> Unit, onLogPeriod: () -> Unit
 }
 
 @Composable
-fun CareScreen(vm: AppViewModel, onBack: () -> Unit, onOpenItem: (String) -> Unit = {}) {
+fun CareScreen(vm: AppViewModel, onBack: () -> Unit, onOpenItem: (String) -> Unit = {}, onAccount: () -> Unit = {}) {
+    val premium by vm.isPremium.collectAsState()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("care_screen"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         ScreenHeader("راهنمای مراقبت و علائم هشدار", onBack = onBack)
+        if (!premium) {
+            PremiumPaywallCard(
+                vm = vm,
+                titleFa = "راهنمای مراقبت",
+                benefitFa = "با اشتراک ماه باز می‌شه.",
+                onOpenAccount = onAccount
+            )
+            return@Column
+        }
         Illustration(R.drawable.ill_care_woman, Modifier.height(140.dp))
         MahavaCard(Modifier.clickable { onOpenItem("period_pain_care") }) {
             Text("برای درد خفیف پریود", style = MaterialTheme.typography.titleMedium, color = MahavaFertility)

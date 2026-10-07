@@ -34,6 +34,7 @@ import com.mahava.app.ui.components.PrimaryButton
 import com.mahava.app.ui.components.QuietInfo
 import com.mahava.app.ui.navigation.Routes
 import com.mahava.app.ui.screens.*
+import com.mahava.app.ui.theme.MahavaBackground
 import com.mahava.app.ui.theme.MahavaPrimary
 import com.mahava.app.ui.theme.MahavaSurface
 import com.mahava.app.ui.theme.MahavaTextPrimary
@@ -41,7 +42,17 @@ import com.mahava.app.ui.theme.MahavaTextSecondary
 import java.time.LocalDate
 
 @Composable
-fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: android.net.Uri? = null) {
+fun MahavaAppRoot(
+    vm: AppViewModel,
+    activity: FragmentActivity,
+    deepLink: android.net.Uri? = null,
+    openToday: Boolean = false,
+    onOpenTodayConsumed: () -> Unit = {},
+    openAccount: Boolean = false,
+    onOpenAccountConsumed: () -> Unit = {},
+    openLogin: Boolean = false,
+    onOpenLoginConsumed: () -> Unit = {}
+) {
     val state by vm.state.collectAsState()
     if (!state.ready) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -52,8 +63,40 @@ fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: androi
         return
     }
 
+    val forceUpdate by vm.forceUpdate.collectAsState()
+    if (forceUpdate?.mustUpdate == true) {
+        ForceUpdateScreen(forceUpdate!!)
+        return
+    }
+
     val onboardingDone = state.profile?.onboardingDone == true
+    val loggedIn by vm.isLoggedIn.collectAsState()
     val nav = rememberNavController()
+    val goAccountOrLogin: () -> Unit = {
+        if (loggedIn) nav.navigate(Routes.ACCOUNT) { launchSingleTop = true }
+        else nav.navigate(Routes.LOGIN) { launchSingleTop = true }
+    }
+
+    LaunchedEffect(openToday, state.ready, onboardingDone) {
+        if (openToday && state.ready && onboardingDone) {
+            nav.navigate(Routes.TODAY) { launchSingleTop = true }
+            onOpenTodayConsumed()
+        }
+    }
+
+    LaunchedEffect(openAccount, state.ready, onboardingDone, loggedIn) {
+        if (openAccount && state.ready && onboardingDone) {
+            goAccountOrLogin()
+            onOpenAccountConsumed()
+        }
+    }
+
+    LaunchedEffect(openLogin, state.ready, onboardingDone) {
+        if (openLogin && state.ready && onboardingDone) {
+            nav.navigate(Routes.LOGIN) { launchSingleTop = true }
+            onOpenLoginConsumed()
+        }
+    }
 
     LaunchedEffect(deepLink, state.ready) {
         if (!BuildConfig.DEBUG || !state.ready || deepLink == null) return@LaunchedEffect
@@ -135,11 +178,29 @@ fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: androi
                     onBody = { nav.navigate(Routes.BODY) },
                     onLate = { nav.navigate(Routes.LATE) },
                     onPhaseDetail = { id -> nav.navigate(Routes.phaseDetail(id)) },
-                    onCareDetail = { id -> nav.navigate(Routes.phaseDetail(id)) }
+                    onCareDetail = { id -> nav.navigate(Routes.phaseDetail(id)) },
+                    onDailyInsight = { nav.navigate(Routes.DAILY_INSIGHT) },
+                    onCravings = { nav.navigate(Routes.CRAVING_DETAIL) },
+                    onPatterns = { nav.navigate(Routes.SYMPTOM_PATTERNS) },
+                    onTrends = { nav.navigate(Routes.CYCLE_TRENDS) },
+                    onChecker = { nav.navigate(Routes.SYMPTOM_CHECKER) },
+                    onForecast = { nav.navigate(Routes.PHASE_FORECAST) },
+                    onCalendar = { nav.navigate(Routes.CALENDAR) },
+                    onAccount = { goAccountOrLogin() },
+                    onQuickLog = { nav.navigate(Routes.QUICK_LOG) },
+                    onFoodTips = { nav.navigate(Routes.FOOD_TIPS) },
+                    onFertility = { nav.navigate(Routes.FERTILITY_WINDOW) },
+                    onDoctor = { nav.navigate(Routes.DOCTOR_PDF) },
+                    onScience = { nav.navigate(Routes.PHASE_SCIENCE) },
+                    onMore = { nav.navigate(Routes.LOG_HUB) }
                 )
             }
             composable(Routes.CALENDAR) {
-                CalendarScreen(vm, onSettings = { nav.navigate(Routes.SETTINGS) }) { day ->
+                CalendarScreen(
+                    vm,
+                    onSettings = { nav.navigate(Routes.SETTINGS) },
+                    onAccount = { goAccountOrLogin() }
+                ) { day ->
                     nav.navigate(Routes.dailyLog(day.toEpochDay()))
                 }
             }
@@ -149,7 +210,8 @@ fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: androi
                     onDaily = { nav.navigate(Routes.dailyLog(vm.today().toEpochDay())) },
                     onPeriod = { nav.navigate(Routes.PERIOD_LOG) },
                     onLate = { nav.navigate(Routes.LATE) },
-                    onSettings = { nav.navigate(Routes.SETTINGS) }
+                    onSettings = { nav.navigate(Routes.SETTINGS) },
+                    onAccount = { goAccountOrLogin() }
                 )
             }
             composable(
@@ -158,25 +220,56 @@ fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: androi
             ) { entry ->
                 val dayArg = entry.arguments?.getLong("day") ?: -1L
                 val day = if (dayArg >= 0) LocalDate.ofEpochDay(dayArg) else vm.today()
-                DailyLogScreen(vm, day) { nav.popBackStack() }
+                DailyLogScreen(vm, day, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
             }
-            composable(Routes.PERIOD_LOG) { PeriodLogScreen(vm) { nav.popBackStack() } }
+            composable(Routes.PERIOD_LOG) { PeriodLogScreen(vm, onBack = { nav.popBackStack() }) }
             composable(Routes.REPORTS) {
                 ReportsScreen(
                     vm,
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onDoctor = { nav.navigate(Routes.DOCTOR_PDF) },
-                    onLate = { nav.navigate(Routes.LATE) }
+                    onLate = { nav.navigate(Routes.LATE) },
+                    onPatterns = { nav.navigate(Routes.SYMPTOM_PATTERNS) },
+                    onTrends = { nav.navigate(Routes.CYCLE_TRENDS) },
+                    onChecker = { nav.navigate(Routes.SYMPTOM_CHECKER) },
+                    onInsight = { nav.navigate(Routes.DAILY_INSIGHT) },
+                    onAccount = { goAccountOrLogin() }
                 )
             }
-            composable(Routes.DOCTOR_PDF) { DoctorReportScreen(vm) { nav.popBackStack() } }
+            composable(Routes.DAILY_INSIGHT) {
+                DailyInsightScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.CRAVING_DETAIL) {
+                CravingDetailScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.PHASE_FORECAST) {
+                PhaseForecastScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onCravings = { nav.navigate(Routes.CRAVING_DETAIL) },
+                    onAccount = { goAccountOrLogin() }
+                )
+            }
+            composable(Routes.SYMPTOM_PATTERNS) {
+                SymptomPatternsScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.CYCLE_TRENDS) {
+                CycleTrendsScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.SYMPTOM_CHECKER) {
+                SymptomCheckerScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.DOCTOR_PDF) {
+                DoctorReportScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
             composable(Routes.BODY) {
                 BodyHomeScreen(
                     vm,
                     onSettings = { nav.navigate(Routes.SETTINGS) },
                     onCategory = { nav.navigate(Routes.bodyCat(it)) },
                     onCare = { nav.navigate(Routes.CARE) },
-                    onPhaseDetail = { nav.navigate(Routes.phaseDetail(it)) }
+                    onPhaseDetail = { nav.navigate(Routes.phaseDetail(it)) },
+                    onAccount = { goAccountOrLogin() }
                 )
             }
             composable(
@@ -184,7 +277,11 @@ fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: androi
                 arguments = listOf(navArgument("category") { type = NavType.StringType })
             ) { entry ->
                 val cat = entry.arguments?.getString("category") ?: return@composable
-                BodyCategoryScreen(vm, cat, onBack = { nav.popBackStack() }) { id ->
+                BodyCategoryScreen(
+                    vm, cat,
+                    onBack = { nav.popBackStack() },
+                    onAccount = { goAccountOrLogin() }
+                ) { id ->
                     nav.navigate(Routes.phaseDetail(id))
                 }
             }
@@ -193,33 +290,90 @@ fun MahavaAppRoot(vm: AppViewModel, activity: FragmentActivity, deepLink: androi
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { entry ->
                 val id = entry.arguments?.getString("id") ?: return@composable
-                PhaseDetailScreen(vm, id) { nav.popBackStack() }
+                PhaseDetailScreen(vm, id, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
             }
             composable(
                 Routes.PHASE_DETAIL,
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { entry ->
                 val id = entry.arguments?.getString("id") ?: return@composable
-                PhaseDetailScreen(vm, id) { nav.popBackStack() }
+                PhaseDetailScreen(vm, id, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
             }
             composable(Routes.LATE) {
                 LateTestScreen(
                     vm,
                     onBack = { nav.popBackStack() },
                     onLogPeriod = { nav.navigate(Routes.PERIOD_LOG) },
-                    onOpenItem = { nav.navigate(Routes.phaseDetail(it)) }
+                    onOpenItem = { nav.navigate(Routes.phaseDetail(it)) },
+                    onAccount = { goAccountOrLogin() }
                 )
             }
             composable(Routes.CARE) {
-                CareScreen(vm, onBack = { nav.popBackStack() }, onOpenItem = { nav.navigate(Routes.phaseDetail(it)) })
+                CareScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onOpenItem = { nav.navigate(Routes.phaseDetail(it)) },
+                    onAccount = { goAccountOrLogin() }
+                )
+            }
+            composable(Routes.LOGIN) {
+                LoginScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onGoRegister = { nav.navigate(Routes.REGISTER) { launchSingleTop = true } },
+                    onSuccess = {
+                        nav.navigate(Routes.TODAY) {
+                            popUpTo(nav.graph.findStartDestination().id) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable(Routes.REGISTER) {
+                RegisterScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onGoLogin = { nav.navigate(Routes.LOGIN) { launchSingleTop = true } },
+                    onSuccess = {
+                        nav.navigate(Routes.TODAY) {
+                            popUpTo(nav.graph.findStartDestination().id) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable(Routes.ACCOUNT) {
+                AccountScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onLogin = { nav.navigate(Routes.LOGIN) },
+                    onRegister = { nav.navigate(Routes.REGISTER) }
+                )
+            }
+            composable(Routes.PHASE_SCIENCE) {
+                PhaseScienceScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.QUICK_LOG) {
+                QuickSymptomLogScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.FOOD_TIPS) {
+                PhaseFoodTipsScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.FERTILITY_WINDOW) {
+                FertilityWindowScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
             }
             composable(Routes.SETTINGS) {
-                SettingsScreen(vm, activity, onBack = { nav.popBackStack() }, onAfterDeleteAll = {
-                    nav.navigate(Routes.ONBOARDING) { popUpTo(0) { inclusive = true } }
-                })
+                SettingsScreen(
+                    vm, activity,
+                    onBack = { nav.popBackStack() },
+                    onAccount = { goAccountOrLogin() },
+                    onAfterDeleteAll = {
+                        nav.navigate(Routes.ONBOARDING) { popUpTo(0) { inclusive = true } }
+                    }
+                )
             }
         }
-    }
+        }
 
     state.message?.let { msg ->
         LaunchedEffect(msg) {
@@ -269,4 +423,25 @@ private fun RowScope.NavItem(nav: androidx.navigation.NavHostController, route: 
         label = { Text(label, color = if (selected) MahavaPrimary else MahavaTextSecondary, maxLines = 1) },
         colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFEEE8FB))
     )
+}
+
+@Composable
+private fun ForceUpdateScreen(info: com.mahava.app.network.MahForceUpdateDto) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    Box(Modifier.fillMaxSize().background(MahavaBackground).padding(24.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("به‌روزرسانی لازم است", style = MaterialTheme.typography.headlineLarge, color = MahavaTextPrimary, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(12.dp))
+            QuietInfo(info.messageFa.ifBlank { "نسخهٔ اپ قدیمی است. لطفاً آخرین نسخه را نصب کن." })
+            Spacer(Modifier.height(20.dp))
+            if (info.updateDownloadUrl.isNotBlank()) {
+                PrimaryButton("دانلود آخرین نسخه") {
+                    try {
+                        val i = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(info.updateDownloadUrl))
+                        ctx.startActivity(i)
+                    } catch (_: Throwable) { }
+                }
+            }
+        }
+    }
 }

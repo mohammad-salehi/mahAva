@@ -134,6 +134,75 @@ object CycleDayContextResolver {
         val note = if (c.nearBoundary) "$NOTE_NEAR $NOTE_ESTIMATE" else NOTE_ESTIMATE
         return CycleDayContext(c.subWindow, result.cycleDay, length, result.daysUntilCentralPeriod, relOv, note, c.nearBoundary)
     }
+
+    /**
+     * Same educational windows as [resolve], but for an arbitrary calendar day
+     * (used for «فردا» forecast). Anchors stay on the current engine result.
+     */
+    fun resolveOn(result: CycleEngineResult, day: LocalDate): CycleDayContext {
+        if (day == result.today) return resolve(result)
+        val pred = result.prediction
+        val length = (pred as? PredictionKind.Estimate)?.medianCycleLength
+        val restricted = CycleContentPolicy.forceGeneral(result.restriction)
+        val lastStart = result.lastPeriodStart
+        val cycleDay = lastStart?.let {
+            val d = (day.toEpochDay() - it.toEpochDay() + 1).toInt()
+            if (d < 1) null else d
+        }
+        val daysUntil = when (pred) {
+            is PredictionKind.Estimate ->
+                (pred.nextPeriodStartCentral.toEpochDay() - day.toEpochDay()).toInt()
+            else -> null
+        }
+
+        val bleedDay: Int? = if (
+            result.periodOngoing &&
+            lastStart != null &&
+            !day.isBefore(lastStart) &&
+            (!restricted || CycleContentPolicy.bleedingContentAllowed(result.restriction))
+        ) {
+            (day.toEpochDay() - lastStart.toEpochDay() + 1).toInt().takeIf { it >= 1 }
+        } else null
+
+        if (bleedDay != null) {
+            val c = SubWindowMath.classify(
+                day, lastStart ?: day, day.plusDays(1), day, day, bleedDay
+            )
+            return CycleDayContext(
+                c.subWindow, cycleDay, length, daysUntil, null,
+                NOTE_BLEED, nearBoundary = false, fromLoggedBleeding = true
+            )
+        }
+        if (restricted) {
+            return CycleDayContext(CycleSubWindow.UNKNOWN, cycleDay, length, daysUntil, null, "")
+        }
+        if (pred is PredictionKind.Estimate && lastStart != null) {
+            val isLate = !day.isBefore(pred.nextPeriodStartCentral)
+            if (isLate) {
+                return CycleDayContext(
+                    CycleSubWindow.LATE_PERIOD, cycleDay, length, null, null,
+                    "پریود از تاریخ تخمینی گذشته است. چند روز جابه‌جایی رایج است."
+                )
+            }
+            val ovCentral = pred.ovulationEarliest.plusDays(
+                (pred.ovulationLatest.toEpochDay() - pred.ovulationEarliest.toEpochDay()) / 2
+            )
+            val relOv = (day.toEpochDay() - ovCentral.toEpochDay()).toInt()
+            val c = SubWindowMath.classify(
+                day, lastStart, pred.nextPeriodStartCentral,
+                pred.ovulationEarliest, pred.ovulationLatest, null
+            )
+            val note = if (c.nearBoundary) "$NOTE_NEAR $NOTE_ESTIMATE" else NOTE_ESTIMATE
+            return CycleDayContext(c.subWindow, cycleDay, length, daysUntil, relOv, note, c.nearBoundary)
+        }
+        if (result.isLate && daysUntil == null) {
+            return CycleDayContext(
+                CycleSubWindow.LATE_PERIOD, cycleDay, length, null, null,
+                "پریود از تاریخ تخمینی گذشته است. چند روز جابه‌جایی رایج است."
+            )
+        }
+        return CycleDayContext(CycleSubWindow.UNKNOWN, cycleDay, length, daysUntil, null, "")
+    }
 }
 
 object CycleContentPolicy {

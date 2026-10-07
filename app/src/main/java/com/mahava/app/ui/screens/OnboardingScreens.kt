@@ -112,11 +112,11 @@ private fun WelcomeGoalStep(goal: String, onGoal: (String) -> Unit, onNext: () -
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MahavaIcon(R.drawable.ic_lock)
                 Spacer(Modifier.width(8.dp))
-                Text("اطلاعاتت فقط روی همین گوشی می‌ماند. حساب کاربری لازم نیست و برنامه به اینترنت وصل نمی‌شود.", style = MaterialTheme.typography.bodyMedium)
+                Text("داده‌های پریود و چرخه‌ات فقط روی همین گوشی می‌ماند و به سرور فرستاده نمی‌شود. اگر برای اشتراک حساب بسازی، فقط همان حساب است — اطلاعات سلامتت روی دستگاهت می‌ماند.", style = MaterialTheme.typography.bodyMedium)
             }
         }
         Spacer(Modifier.height(16.dp))
-        SectionLabel("بیشتر برای چه می‌خواهی از ماه‌آوا استفاده کنی؟")
+        SectionLabel("بیشتر برای چه می‌خواهی از ماه استفاده کنی؟")
         GoalRow("track_period", goal, "پیگیری پریود", R.drawable.ic_droplet, MahavaMenstruation, onGoal)
         GoalRow("body_awareness", goal, "شناخت بهتر بدنم", R.drawable.ic_leaf, MahavaFertility, onGoal)
         GoalRow("ttc", goal, "اقدام برای بارداری", R.drawable.ic_heart, MahavaMenstruation, onGoal)
@@ -167,12 +167,10 @@ private fun CycleInfoStep(
             }
             if (lastStart == null) {
                 var picking by remember { mutableStateOf(false) }
-                PrimaryButton("انتخاب تاریخ از تقویم", modifier = Modifier.testTag("onb_pick_date")) { picking = true }
-                QuietInfo("یا یکی از این‌ها:")
-                FlowChips(
-                    listOf("امروز" to today, "دیروز" to today.minusDays(1), "یک هفته پیش" to today.minusDays(7), "دو هفته پیش" to today.minusDays(14)),
-                    onLast
-                )
+                PrimaryButton(
+                    "انتخاب تاریخ از تقویم",
+                    modifier = Modifier.testTag("onb_pick_date").heightIn(min = 64.dp)
+                ) { picking = true }
                 if (picking) MonthDatePickerDialog(today, today.minusDays(365), today, onPick = { onLast(it); picking = false }, onDismiss = { picking = false })
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onLastUnknown(!lastUnknown) }) {
@@ -205,13 +203,6 @@ private fun CycleInfoStep(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun FlowChips(options: List<Pair<String, LocalDate>>, onPick: (LocalDate) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 6.dp)) {
-        options.forEachIndexed { i, (label, d) -> ChoiceChipPill(label, false, tag = "onb_quick_$i") { onPick(d) } }
-    }
-}
 
 /** Shows "not chosen" until the user taps; the first tap starts from [start]. */
 @Composable
