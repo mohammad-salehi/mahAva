@@ -108,8 +108,53 @@ class MahApiClient(
         request("PUT", "/api/mah/partner/share", mapOf("snapshot" to snapshot), token)
     }
 
-    suspend fun partnerGetShare(token: String): PartnerShareDto =
-        gson.fromJson(request("GET", "/api/mah/partner/share", null, token), PartnerShareDto::class.java)
+    suspend fun partnerGetShare(token: String): PartnerShareDto {
+        val raw = request("GET", "/api/mah/partner/share", null, token)
+        return parsePartnerShare(raw)
+    }
+
+    /** Lenient parse: a bad `updatedAt` / log field must not wipe the whole share. */
+    internal fun parsePartnerShare(raw: String): PartnerShareDto {
+        val root = try {
+            gson.fromJson(raw, JsonObject::class.java)
+        } catch (_: Throwable) {
+            throw MahApiException(500, "پاسخ سرور قابل خواندن نیست")
+        } ?: throw MahApiException(500, "پاسخ سرور خالی است")
+        val snapEl = root.get("snapshot")
+        val snapshot = if (snapEl != null && snapEl.isJsonObject) {
+            try {
+                // Gson can choke on today.log:null when the field type is JsonObject.
+                val obj = snapEl.asJsonObject.deepCopy()
+                obj.get("today")?.takeIf { it.isJsonObject }?.asJsonObject?.let { today ->
+                    val log = today.get("log")
+                    if (log == null || log.isJsonNull || !log.isJsonObject) today.remove("log")
+                }
+                gson.fromJson(obj, PartnerSnapshotDto::class.java)
+            } catch (_: Throwable) {
+                null
+            }
+        } else null
+        fun arr(name: String): List<JsonObject>? {
+            val a = root.get(name) ?: return null
+            if (!a.isJsonArray) return null
+            return a.asJsonArray.mapNotNull { el -> if (el != null && el.isJsonObject) el.asJsonObject else null }
+        }
+        val updated = root.get("updatedAt")?.let { el ->
+            when {
+                el.isJsonNull -> null
+                el.isJsonPrimitive -> el.asJsonPrimitive.asString
+                else -> null
+            }
+        }
+        return PartnerShareDto(
+            ok = root.get("ok")?.takeIf { it.isJsonPrimitive }?.asBoolean ?: true,
+            snapshot = snapshot,
+            logs = arr("logs"),
+            periods = arr("periods"),
+            updatedAt = updated,
+            version = root.get("version")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asInt ?: 0
+        )
+    }
 
     suspend fun partnerChanges(token: String, sinceMs: Long): PartnerChangesDto =
         gson.fromJson(request("GET", "/api/mah/partner/changes?since=$sinceMs", null, token), PartnerChangesDto::class.java)

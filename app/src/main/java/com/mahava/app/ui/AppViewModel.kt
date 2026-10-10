@@ -148,7 +148,34 @@ class AppViewModel(
             reminderScheduler.ensurePeriodic()
             authRepository.loadApiBaseUrl()
             refreshAccountFromServer()
-            if (authRepository.hasSessionTokens()) partnerRefresh()
+            if (authRepository.hasSessionTokens()) {
+                // Woman's durable data lives on the server — restore cache on cold start.
+                if (prefs.getAccountRole() != "male") {
+                    restoreFromServer()
+                    com.mahava.app.sync.DataSync.ensurePeriodic(app)
+                }
+                partnerRefresh()
+            }
+        }
+    }
+
+    /**
+     * Room is only an offline cache. After any change to the woman's data, push to the server
+     * (source of truth). Queues a WorkManager job if the await fails / is offline.
+     */
+    private suspend fun pushWomanDataToServer(await: Boolean = true) {
+        if (prefs.getAccountRole() == "male") return
+        if (!authRepository.hasSessionTokens()) return
+        com.mahava.app.sync.DataSync.ensurePeriodic(app)
+        if (!await) {
+            com.mahava.app.sync.DataSync.syncNow(app)
+            return
+        }
+        val outcome = kotlinx.coroutines.withTimeoutOrNull(20_000) { app.dataSync.sync() }
+        if (outcome !is com.mahava.app.sync.SyncOutcome.Ok &&
+            outcome !is com.mahava.app.sync.SyncOutcome.Skipped
+        ) {
+            com.mahava.app.sync.DataSync.syncNow(app)
         }
     }
 
@@ -179,7 +206,10 @@ class AppViewModel(
                 authRepository.verifySessionOrClear()
                 refreshInbox()
                 partnerRefresh()
-                if (prefs.getAccountRole() != "male") com.mahava.app.sync.DataSync.syncNow(app)
+                if (prefs.getAccountRole() != "male") {
+                    // Pull latest from server, then flush any offline edits.
+                    restoreFromServer()
+                }
             }
         }
     }
@@ -299,22 +329,28 @@ class AppViewModel(
     fun today(): LocalDate = clock.today()
 
     /**
-     * Saves onboarding in one coroutine so profile and periods are written in order.
-     * [lastStart] null = user does not remember. [ongoing] = bleeding has not ended yet.
-     * Earlier starts in [history] are saved with an unknown end (never a fabricated end date).
+     * Saves onboarding once (profile + periods) and pushes to the server so the next login
+     * never asks again. Returns an error line, or null on success.
      */
-    fun saveOnboarding(profile: UserProfileEntity, lastStart: LocalDate?, ongoing: Boolean, history: List<LocalDate>) = viewModelScope.launch {
-        repo.saveProfile(profile.copy(onboardingDone = true, lastPeriodStartEpochDay = lastStart?.toEpochDay()))
-        try {
+    suspend fun saveOnboarding(
+        profile: UserProfileEntity,
+        lastStart: LocalDate?,
+        ongoing: Boolean,
+        history: List<LocalDate>
+    ): String? {
+        return try {
+            repo.saveProfile(profile.copy(onboardingDone = true, lastPeriodStartEpochDay = lastStart?.toEpochDay()))
             history.filter { lastStart == null || it.isBefore(lastStart) }.distinct().sorted().forEach { d ->
                 repo.upsertPeriod(PeriodEventEntity(startEpochDay = d.toEpochDay(), endEpochDay = null, stillOngoing = false, createdAt = 0, updatedAt = 0))
             }
             if (lastStart != null) {
                 repo.upsertPeriod(PeriodEventEntity(startEpochDay = lastStart.toEpochDay(), endEpochDay = null, stillOngoing = ongoing, createdAt = 0, updatedAt = 0))
             }
-            _message.value = "آماده‌ای! اطلاعاتت ذخیره شد."
+            pushWomanDataToServer(await = true)
+            _message.value = "آماده‌ای! اطلاعاتت روی سرور ذخیره شد."
+            null
         } catch (t: Throwable) {
-            _message.value = periodErrorFa(t.message)
+            periodErrorFa(t.message)
         }
     }
 
@@ -355,6 +391,7 @@ class AppViewModel(
     fun updateProfile(transform: (UserProfileEntity) -> UserProfileEntity) = viewModelScope.launch {
         val cur = repo.ensureProfile()
         repo.saveProfile(transform(cur))
+        pushWomanDataToServer(await = true)
     }
 
     fun savePeriod(start: LocalDate, end: LocalDate?, ongoing: Boolean, note: String? = null, existingId: Long = 0) =
@@ -372,6 +409,7 @@ class AppViewModel(
                         updatedAt = clock.nowMillis()
                     )
                 )
+                pushWomanDataToServer(await = true)
                 _message.value = if (!ongoing && end != null) "پایان پریود ذخیره شد" else "پریود ذخیره شد"
             } catch (t: Throwable) {
                 _message.value = periodErrorFa(t.message)
@@ -380,11 +418,13 @@ class AppViewModel(
 
     fun deletePeriod(id: Long) = viewModelScope.launch {
         repo.deletePeriod(id)
+        pushWomanDataToServer(await = true)
         _message.value = "پریود حذف شد"
     }
 
     fun saveDailyLog(log: DailyLogEntity) = viewModelScope.launch {
         repo.upsertDailyLog(log)
+        pushWomanDataToServer(await = true)
         _message.value = "ذخیره شد"
     }
 
@@ -405,6 +445,8 @@ class AppViewModel(
                 updatedAt = now
             ))
         }
+        // Frequent taps: queue push (debounced WorkManager + observer also cover this).
+        pushWomanDataToServer(await = false)
     }
 
     fun logFor(day: LocalDate): DailyLogEntity? =
@@ -413,15 +455,24 @@ class AppViewModel(
     fun saveReminder(pref: ReminderPrefEntity) = viewModelScope.launch {
         repo.saveReminder(pref)
         reminderScheduler.ensurePeriodic()
+        pushWomanDataToServer(await = true)
     }
 
     fun deleteAll() = viewModelScope.launch {
-        repo.deleteAllData()
+        // Wipe server first — woman's data must not remain only on this phone.
+        if (prefs.getAccountRole() != "male" && authRepository.hasSessionTokens()) {
+            try {
+                kotlinx.coroutines.withTimeoutOrNull(15_000) { app.dataSync.sync() }
+                authRepository.withToken { app.apiClient.dataWipe(it) }
+            } catch (_: Throwable) {
+                // Still clear the phone; retries may apply if wipe failed.
+            }
+        }
+        app.dataSync.clearLocalCache()
         reminderScheduler.cancelAll()
         repo.ensureProfile()
         _locked.value = false
-        // The sync job sends the deletions to the server too (queued until online).
-        _message.value = if (authRepository.hasSessionTokens()) "همهٔ اطلاعات پاک شد؛ از سرور هم پاک می‌شود." else "همهٔ اطلاعات پاک شد"
+        _message.value = if (authRepository.hasSessionTokens()) "همهٔ اطلاعات از این گوشی و سرور پاک شد." else "همهٔ اطلاعات پاک شد"
     }
 
     suspend fun exportBackup(password: CharArray): ByteArray =
@@ -554,14 +605,43 @@ class AppViewModel(
     }
 
     /**
-     * Where to go after login/register: the husband goes to his home; a woman answers the
-     * cycle questions once (only if nothing came back from the server), then Today.
+     * Where to go after login/register.
+     * - Husband → partner home (no cycle onboarding).
+     * - Just registered → onboarding once.
+     * - Login → restore profile from server first; onboarding only if the server has none.
      */
-    suspend fun homeRouteAfterAuth(): String {
+    suspend fun homeRouteAfterAuth(justRegistered: Boolean = false): String {
         if (prefs.getAccountRole() == "male") return com.mahava.app.ui.navigation.Routes.PARTNER_HOME
+        if (justRegistered) return com.mahava.app.ui.navigation.Routes.ONBOARDING
+
+        // Login path: pull server profile before deciding. Never re-ask if she already finished.
+        var outcome = app.dataSync.sync()
+        if (outcome is com.mahava.app.sync.SyncOutcome.Failed) {
+            outcome = app.dataSync.sync()
+        }
         val profile = repo.ensureProfile()
-        return if (profile.onboardingDone) com.mahava.app.ui.navigation.Routes.TODAY
-        else com.mahava.app.ui.navigation.Routes.ONBOARDING
+        if (profile.onboardingDone) return com.mahava.app.ui.navigation.Routes.TODAY
+
+        return when (outcome) {
+            is com.mahava.app.sync.SyncOutcome.Ok,
+            is com.mahava.app.sync.SyncOutcome.Skipped ->
+                // Server really has no completed onboarding (abandoned signup, etc.).
+                com.mahava.app.ui.navigation.Routes.ONBOARDING
+            is com.mahava.app.sync.SyncOutcome.Failed -> {
+                // Offline: do not show the form again (it could overwrite server data later).
+                _message.value = "آنلاین شو تا اطلاعات چرخه‌ات از سرور برگردد."
+                com.mahava.app.sync.DataSync.syncNow(app)
+                com.mahava.app.ui.navigation.Routes.TODAY
+            }
+        }
+    }
+
+    /** Cold start with a saved session: restore profile so onboarding is not shown by mistake. */
+    suspend fun restoreSessionProfileIfNeeded() {
+        if (prefs.getAccountRole() == "male") return
+        if (!authRepository.hasSessionTokens()) return
+        if (repo.ensureProfile().onboardingDone) return
+        restoreFromServer()
     }
 
     suspend fun refreshAccountFromServer(): Boolean {
@@ -666,14 +746,33 @@ class AppViewModel(
         t.message ?: "خطایی پیش آمد. دوباره تلاش کن."
     }
 
-    fun partnerRefresh() = viewModelScope.launch {
-        partnerCall {
-            val st = partnerRepo.refreshStatus()
-            if (st.pair != null) com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
-            if (st.pair?.status == "active") {
-                if (st.role == "male") partnerRepo.fetchShare() else partnerRepo.pushSnapshotIfChanged()
+    /** Refresh pairing status + (for husband) her shared snapshot. Returns an error message or null. */
+    suspend fun partnerRefresh(): String? = partnerCall {
+        val st = partnerRepo.refreshStatus()
+        if (st.role.isNotBlank()) prefs.setAccountRole(st.role)
+        if (st.pair != null) com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
+        if (st.pair?.status == "active") {
+            val male = st.pair?.myRole == "male" ||
+                st.role == "male" ||
+                prefs.getAccountRole() == "male"
+            if (male) {
+                val share = partnerRepo.fetchShare()
+                if (share?.snapshot == null && share?.periods.isNullOrEmpty()) {
+                    throw com.mahava.app.network.MahApiException(
+                        502,
+                        "هنوز چیزی از همسرت نرسیده. اگه اون پریودش رو ثبت کرده، یک‌بار اپش رو باز کنه تا همگام بشه؛ بعد اینجا به‌روزرسانی بزن."
+                    )
+                }
+            } else {
+                // Make sure her periods/profile are on the server, then push the cycle snapshot.
+                try { app.dataSync.sync() } catch (_: Throwable) { }
+                partnerRepo.pushSnapshotIfChanged(force = true)
             }
         }
+    }
+
+    fun partnerRefreshAsync() {
+        viewModelScope.launch { partnerRefresh() }
     }
 
     suspend fun partnerSetRole(role: String): String? = partnerCall { partnerRepo.setRole(role) }

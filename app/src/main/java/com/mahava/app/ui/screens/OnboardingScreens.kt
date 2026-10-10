@@ -24,6 +24,7 @@ import com.mahava.app.ui.theme.*
 import com.mahava.app.util.JalaliDate
 import com.mahava.app.util.PersianDigits
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 
 /**
@@ -34,6 +35,7 @@ import java.time.LocalDate
 @Composable
 fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
     val today = vm.today()
+    val scope = rememberCoroutineScope()
     var lastStart by remember { mutableStateOf<LocalDate?>(null) }
     var lastUnknown by remember { mutableStateOf(false) }
     var ongoing by remember { mutableStateOf<Boolean?>(null) }
@@ -41,6 +43,8 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
     var bleedLen by remember { mutableStateOf<Int?>(null) }
     var cycleUnknown by remember { mutableStateOf(false) }
     var bleedUnknown by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize().background(MahavaBackground).testTag("onboarding")) {
         CycleInfoStep(
@@ -52,7 +56,12 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
             bleedLen = bleedLen, onBleed = { bleedLen = it; bleedUnknown = false },
             cycleUnknown = cycleUnknown, onCycleUnknown = { cycleUnknown = it; if (it) cycleLen = null },
             bleedUnknown = bleedUnknown, onBleedUnknown = { bleedUnknown = it; if (it) bleedLen = null },
+            busy = busy,
+            error = error,
             onNext = {
+                if (busy) return@CycleInfoStep
+                busy = true
+                error = null
                 val now = System.currentTimeMillis()
                 val profile = UserProfileEntity(
                     onboardingDone = true,
@@ -65,8 +74,12 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
                     createdAt = now,
                     updatedAt = now
                 )
-                vm.saveOnboarding(profile, lastStart, ongoing == true, emptyList())
-                onFinished()
+                scope.launch {
+                    val err = vm.saveOnboarding(profile, lastStart, ongoing == true, emptyList())
+                    busy = false
+                    if (err != null) error = err
+                    else onFinished()
+                }
             },
             onBack = null
         )
@@ -83,6 +96,8 @@ private fun CycleInfoStep(
     bleedLen: Int?, onBleed: (Int) -> Unit,
     cycleUnknown: Boolean, onCycleUnknown: (Boolean) -> Unit,
     bleedUnknown: Boolean, onBleedUnknown: (Boolean) -> Unit,
+    busy: Boolean = false,
+    error: String? = null,
     onNext: () -> Unit, onBack: (() -> Unit)?
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
@@ -129,8 +144,14 @@ private fun CycleInfoStep(
         }
         val ready = (lastStart != null || lastUnknown) && (cycleLen != null || cycleUnknown) && (bleedLen != null || bleedUnknown)
         if (!ready) QuietInfo("برای ادامه، به هر سؤال جواب بده یا «نمی‌دانم» را بزن.")
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Spacer(Modifier.height(16.dp))
-        PrimaryButton("ورود به برنامه", enabled = ready, modifier = Modifier.testTag("onb_enter"), onClick = onNext)
+        PrimaryButton(
+            if (busy) "در حال ذخیره…" else "ورود به برنامه",
+            enabled = ready && !busy,
+            modifier = Modifier.testTag("onb_enter"),
+            onClick = onNext
+        )
     }
 }
 

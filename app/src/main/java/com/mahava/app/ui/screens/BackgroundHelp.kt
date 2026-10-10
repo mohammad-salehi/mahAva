@@ -43,11 +43,13 @@ object BackgroundHelp {
 }
 
 /**
- * Husband's side while paired: his system notifications (her updates while the app is closed)
- * need the permission. Asked once automatically; the card offers one more in-app request.
+ * Asks once automatically for POST_NOTIFICATIONS; the card offers one more in-app request.
+ * [reasonFa] explains why (morning tips for women, partner updates for husbands).
  */
 @Composable
-fun NotificationPermissionCard() {
+fun NotificationPermissionCard(
+    reasonFa: String = "برای این‌که وقتی برنامه بسته است هم از ثبت‌های همسرت خبردار شی، اجازهٔ اعلان بده."
+) {
     if (Build.VERSION.SDK_INT < 33) return
     val context = LocalContext.current
     var canNotify by remember { mutableStateOf(BackgroundHelp.canNotify(context)) }
@@ -64,8 +66,8 @@ fun NotificationPermissionCard() {
     // Android stops showing the request after it was declined twice; then the card goes away.
     if (canNotify || asks >= 2) return
     MahavaCard(Modifier.testTag("notif_permission_card")) {
-        Text("اعلان‌ها خاموش است", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
-        Text("برای این‌که وقتی برنامه بسته است هم از ثبت‌های همسرت خبردار شوی، اجازهٔ اعلان بده.", style = MaterialTheme.typography.bodyMedium)
+        Text("اعلان‌ها خاموشه", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
+        Text(reasonFa, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(8.dp))
         PrimaryButton("اجازهٔ اعلان", modifier = Modifier.testTag("notif_permission_btn")) {
             BackgroundHelp.countAsk(context); asks += 1

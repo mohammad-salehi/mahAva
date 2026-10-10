@@ -56,22 +56,42 @@ class ReminderScheduler(private val context: Context) {
 class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext as MahavaApplication
-        val reminders = app.database.reminderDao().getAll().filter { it.enabled }.associateBy { it.id }
-        if (reminders.isEmpty() || !app.reminderScheduler.canPostNotifications()) return Result.success()
+        if (!app.reminderScheduler.canPostNotifications()) return Result.success()
         val profile = app.database.profileDao().get() ?: return Result.success()
         if (!profile.onboardingDone) return Result.success()
+        // Husband accounts don't get cycle tips / women's reminders.
+        if (app.prefs.getAccountRole() == "male") return Result.success()
+        val reminders = app.database.reminderDao().getAll().filter { it.enabled }.associateBy { it.id }
         val private = profile.privateNotifications
         val today = app.clock.today()
         val nowHour = java.time.LocalTime.now(app.clock.zoneId()).hour
         val sp = applicationContext.getSharedPreferences("mahava_reminders", Context.MODE_PRIVATE)
-        val pending = mutableListOf<Pair<Int, String>>()
+        val pending = mutableListOf<Triple<Int, String, String>>() // id, title, text
+
+        // Morning science tip: every day around 8 for women, based on today's phase.
+        run {
+            val already = sp.getLong("morning_tip_day", -1L) == today.toEpochDay()
+            if (!already && nowHour >= 8) {
+                val periods = app.database.periodDao().getAll()
+                val cycle = app.repository.computeCycle(profile, periods)
+                val tip = com.mahava.app.content.MorningTip.forCycle(cycle, today)
+                val title = if (private) applicationContext.getString(R.string.app_name) else tip.title
+                val text = if (private) applicationContext.getString(R.string.notification_private_text) else tip.body
+                pending += Triple(1005, title, text)
+                sp.edit().putLong("morning_tip_day", today.toEpochDay()).apply()
+            }
+        }
 
         reminders["daily_log"]?.let { pref ->
             val already = sp.getLong("daily_notified_day", -1L) == today.toEpochDay()
             val logged = app.database.dailyLogDao().getByDay(today.toEpochDay()) != null
             if (!already && !logged && nowHour >= pref.hour) {
-                pending += 1001 to if (private) applicationContext.getString(R.string.notification_private_text)
+                pending += Triple(
+                    1001,
+                    applicationContext.getString(R.string.app_name),
+                    if (private) applicationContext.getString(R.string.notification_private_text)
                     else applicationContext.getString(R.string.notification_daily_text)
+                )
                 sp.edit().putLong("daily_notified_day", today.toEpochDay()).apply()
             }
         }
@@ -83,8 +103,12 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             if (est != null && days != null && days in 0..2 && !result.periodOngoing) {
                 val key = est.nextPeriodStartCentral.toEpochDay()
                 if (sp.getLong("period_notified_central", -1L) != key) {
-                    pending += 1002 to if (private) applicationContext.getString(R.string.notification_private_text)
+                    pending += Triple(
+                        1002,
+                        applicationContext.getString(R.string.app_name),
+                        if (private) applicationContext.getString(R.string.notification_private_text)
                         else applicationContext.getString(R.string.notification_period_text)
+                    )
                     sp.edit().putLong("period_notified_central", key).apply()
                 }
             }
@@ -92,8 +116,12 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         reminders["water"]?.let { pref ->
             val already = sp.getLong("water_notified_day", -1L) == today.toEpochDay()
             if (!already && nowHour >= pref.hour) {
-                pending += 1003 to if (private) applicationContext.getString(R.string.notification_private_text)
+                pending += Triple(
+                    1003,
+                    applicationContext.getString(R.string.app_name),
+                    if (private) applicationContext.getString(R.string.notification_private_text)
                     else applicationContext.getString(R.string.notification_water_text)
+                )
                 sp.edit().putLong("water_notified_day", today.toEpochDay()).apply()
             }
         }
@@ -101,8 +129,12 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             val already = sp.getLong("sleep_notified_day", -1L) == today.toEpochDay()
             val hour = if (pref.hour == 9) 21 else pref.hour
             if (!already && nowHour >= hour) {
-                pending += 1004 to if (private) applicationContext.getString(R.string.notification_private_text)
+                pending += Triple(
+                    1004,
+                    applicationContext.getString(R.string.app_name),
+                    if (private) applicationContext.getString(R.string.notification_private_text)
                     else applicationContext.getString(R.string.notification_sleep_text)
+                )
                 sp.edit().putLong("sleep_notified_day", today.toEpochDay()).apply()
             }
         }
@@ -112,11 +144,12 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             applicationContext, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        pending.forEach { (id, text) ->
+        pending.forEach { (id, title, text) ->
             val notif = NotificationCompat.Builder(applicationContext, ReminderScheduler.CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_bell)
-                .setContentTitle(applicationContext.getString(R.string.app_name))
+                .setContentTitle(title)
                 .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setContentIntent(pi)
                 .setAutoCancel(true)

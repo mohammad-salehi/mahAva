@@ -135,8 +135,9 @@ object PartnerSync {
         if (male) {
             if (active) {
                 val updates = poll.events.filter { it.kind == "update" }
-                val needShare = updates.isNotEmpty() || app.prefs.getPartnerSnapshotJson().isNullOrBlank() || !AppNotices.foreground
-                val share = if (needShare) partner.fetchShare() else null
+                // Always refresh share while paired. Swallow errors here — the home screen
+                // surfaces them when the user opens / retries.
+                val share = try { partner.fetchShare() } catch (_: Throwable) { null }
                 if (updates.isNotEmpty()) {
                     val changes = updates.flatMap { it.changes.orEmpty() }.toSet()
                     val line = PartnerAdvice.changeLineFa(changes, share?.snapshot)

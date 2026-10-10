@@ -40,7 +40,7 @@ fun LoginScreen(
     ) {
         ScreenHeader("ورود", onBack = onBack)
         Text("با شماره موبایل وارد شو", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان می‌گیرد. اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید هم برگردد. اگر به همسرت وصل شوی، او همهٔ چیزهایی را که ثبت می‌کنی می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.")
+        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان می‌گیره. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شه و با گوشی جدید برمی‌گرده. اگه به همسرت وصل شی، اون چیزایی که ثبت می‌کنی رو می‌بینه.")
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = phone,
@@ -96,7 +96,7 @@ fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, 
     ) {
         ScreenHeader("ثبت‌نام", onBack = onBack)
         Text("ساخت حساب ماه", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("با ثبت‌نام، یک ماه اشتراک رایگان فعال می‌شود. اطلاعاتت روی سرور امن ماه ذخیره می‌شود تا گم نشود و با گوشی جدید هم برگردد. اگر به همسرت وصل شوی، او همهٔ چیزهایی را که ثبت می‌کنی می‌بیند. با حذف حساب، همهٔ اطلاعاتت پاک می‌شود.")
+        QuietInfo("با ثبت‌نام، یک ماه اشتراک رایگان فعال می‌شه. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شه و با گوشی جدید برمی‌گرده. اگه به همسرت وصل شی، اون چیزایی که ثبت می‌کنی رو می‌بینه.")
         Spacer(Modifier.height(12.dp))
         Text("این حساب برای کیست؟", style = MaterialTheme.typography.titleSmall)
         Spacer(Modifier.height(6.dp))
@@ -250,21 +250,17 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                SecondaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
+                PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
                         if (vm.logoutAccount(force = false) == "pending") confirmLogout = true
-                        else status = "خارج شدی. اطلاعاتت روی سرور امن می‌ماند و با ورود دوباره برمی‌گردد."
+                        else status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
                     }
                 }
-            }
-            if (role != "male") {
-                Spacer(Modifier.height(12.dp))
-                DataSyncCard(vm)
             }
             Spacer(Modifier.height(12.dp))
             MahavaCard {
                 Text("حذف حساب", style = MaterialTheme.typography.titleMedium)
-                QuietInfo("با حذف حساب، همهٔ اطلاعاتت از سرور هم پاک می‌شود و اتصال به همسر قطع می‌شود. این کار برگشت ندارد.")
+                QuietInfo("با حذف حساب، همهٔ اطلاعاتت از سرور هم پاک می‌شه و اتصال به همسر قطع می‌شه. این کار برگشت نداره.")
                 Spacer(Modifier.height(8.dp))
                 SecondaryButton("حذف حساب و همهٔ اطلاعات", modifier = Modifier.testTag("delete_account_btn")) { askDelete = true }
             }
@@ -273,7 +269,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { confirmLogout = false },
                 title = { Text("بعضی تغییرها هنوز به سرور نرسیده") },
-                text = { Text("الان اینترنت نیست یا سرور در دسترس نیست. اگر خارج شوی، تغییرهای اخیرِ همین گوشی پاک می‌شوند. بهتر است اول به اینترنت وصل شوی.") },
+                text = { Text("الان اینترنت نیست یا سرور در دسترس نیست. اگه خارج شی، تغییرهای اخیرِ همین گوشی پاک می‌شن. بهتره اول به اینترنت وصل شی.") },
                 confirmButton = {
                     TextButton(onClick = {
                         confirmLogout = false

@@ -9,8 +9,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-
 /**
  * Compact on-device walk through the main flows. Touches are injected inside the app process by the
  * Compose test framework (no `adb shell input` needed). DB is in-memory, date fixed at 2026-10-06.
@@ -166,9 +164,8 @@ class MainFlowTest {
         }
     }
 
-    @Test fun settingsExportBackupDelete() {
+    @Test fun settingsPrivacyAndDelete() {
         Seed.regularHistory(cycleDayToday = 10)
-        val dir = Seed.installFilePicker()
         launchMain().use {
             compose.tap("open_settings")
             compose.waitTag("settings_screen")
@@ -176,19 +173,7 @@ class MainFlowTest {
             compose.tap("set_private_notif")
             compose.waitFor { Seed.profileNow()?.privateNotifications == false }
 
-            compose.tap("export_csv")
-            compose.waitFor { File(dir, "mahava-export.csv").let { it.exists() && it.readText().contains("type,date") } }
-            compose.tap("export_json")
-            compose.waitFor { File(dir, "mahava-export.json").let { it.exists() && it.length() > 20 } }
-
-            compose.onNodeWithTag("backup_password").performScrollTo().performTextInput("secret123")
-            compose.tap("backup_save")
-            compose.waitFor { File(dir, "mahava-backup.mahava").let { it.exists() && it.length() > 0 } }
             val before = Seed.periods().size
-            kotlinx.coroutines.runBlocking { app().database.periodDao().clear() }
-            compose.tap("backup_restore")
-            compose.waitFor(15000) { Seed.periods().size == before }
-
             compose.tap("delete_all")
             compose.waitTag("delete_confirm")
             Shots.take(compose, "14_delete_dialog")

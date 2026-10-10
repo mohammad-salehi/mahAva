@@ -84,9 +84,9 @@ fun MahavaAppRoot(
     // Cycle questions come only after login and only for a woman's account; the husband skips them.
     val setupDone = isPartnerAccount || onboardingDone
     val rootScope = rememberCoroutineScope()
-    val goHomeAfterAuth: () -> Unit = {
+    val goHomeAfterAuth: (justRegistered: Boolean) -> Unit = { justRegistered ->
         rootScope.launch {
-            val target = vm.homeRouteAfterAuth()
+            val target = vm.homeRouteAfterAuth(justRegistered = justRegistered)
             nav.navigate(target) {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
@@ -99,6 +99,24 @@ fun MahavaAppRoot(
 
     // A male (partner) account never sees the cycle-owner home; send it to the partner home.
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+
+    // Saved session: restore server profile before deciding onboarding vs today.
+    LaunchedEffect(loggedIn, isPartnerAccount, state.ready) {
+        if (!state.ready || !loggedIn || isPartnerAccount) return@LaunchedEffect
+        if (state.profile?.onboardingDone == true) return@LaunchedEffect
+        vm.restoreSessionProfileIfNeeded()
+    }
+
+    // If sync finishes while the onboarding screen is open, leave it (login must not re-ask).
+    LaunchedEffect(onboardingDone, loggedIn, currentRoute) {
+        if (loggedIn && onboardingDone && currentRoute == Routes.ONBOARDING) {
+            nav.navigate(Routes.TODAY) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     LaunchedEffect(isPartnerAccount, currentRoute) {
         if (isPartnerAccount && currentRoute in Routes.womanMain) {
             nav.navigate(Routes.PARTNER_HOME) {
@@ -383,7 +401,12 @@ fun MahavaAppRoot(
                 PartnerHubScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
             }
             composable(Routes.PARTNER_HOME) {
-                PartnerHomeScreen(vm, onAccount = { goAccountOrLogin() }, onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } })
+                PartnerHomeScreen(
+                    vm,
+                    onSettings = { nav.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                    onAccount = { goAccountOrLogin() },
+                    onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } }
+                )
             }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(vm, onBack = { nav.popBackStack() }, onOpenPartner = goPartner)
@@ -403,7 +426,7 @@ fun MahavaAppRoot(
                     onBack = if (loggedIn) ({ nav.popBackStack() }) else null,
                     onGoRegister = { nav.navigate(Routes.REGISTER) { launchSingleTop = true } },
                     onForgotPassword = { nav.navigate(Routes.PASSWORD_RECOVERY) { launchSingleTop = true } },
-                    onSuccess = { goHomeAfterAuth() }
+                    onSuccess = { goHomeAfterAuth(false) }
                 )
             }
             composable(Routes.REGISTER) {
@@ -411,7 +434,7 @@ fun MahavaAppRoot(
                     vm,
                     onBack = { nav.popBackStack() },
                     onGoLogin = { nav.navigate(Routes.LOGIN) { launchSingleTop = true } },
-                    onSuccess = { goHomeAfterAuth() }
+                    onSuccess = { goHomeAfterAuth(true) }
                 )
             }
             composable(Routes.PASSWORD_RECOVERY) {
@@ -488,8 +511,8 @@ private fun LockScreen(onUnlock: () -> Unit) {
     ) {
         Illustration(R.drawable.ill_privacy_shield, Modifier.height(160.dp))
         Spacer(Modifier.height(16.dp))
-        Text("ماه‌آوا قفل است", style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center)
-        QuietInfo("برای دیدن اطلاعاتت، با اثر انگشت یا رمز گوشی قفل را باز کن.")
+        Text("ماه قفل است", style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center)
+        QuietInfo("برای دیدن اطلاعاتت، با اثر انگشت یا رمز گوشی قفل رو باز کن.")
         Spacer(Modifier.height(16.dp))
         PrimaryButton("باز کردن قفل", onClick = onUnlock)
     }

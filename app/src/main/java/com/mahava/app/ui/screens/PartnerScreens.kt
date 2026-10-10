@@ -192,7 +192,12 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
 
 /** Husband's home: enter her code, wait for her approval, then see everything she logs. */
 @Composable
-fun PartnerHomeScreen(vm: AppViewModel, onAccount: () -> Unit, onNotifications: () -> Unit = {}) {
+fun PartnerHomeScreen(
+    vm: AppViewModel,
+    onSettings: () -> Unit,
+    onAccount: () -> Unit = onSettings,
+    onNotifications: () -> Unit = {}
+) {
     val status by vm.partnerStatus.collectAsState()
     val share by vm.partnerShare.collectAsState()
     val premium by vm.isPremium.collectAsState()
@@ -201,15 +206,20 @@ fun PartnerHomeScreen(vm: AppViewModel, onAccount: () -> Unit, onNotifications: 
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(Unit) { vm.partnerRefresh() }
-
+    LaunchedEffect(Unit) {
+        error = vm.partnerRefresh()
+    }
     val pair = status?.pair
+    // Re-fetch when the pair flips to active (e.g. she approved while he stayed on this screen).
+    LaunchedEffect(pair?.status) {
+        if (pair?.status == "active") error = vm.partnerRefresh()
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("partner_home_screen")) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("همسرم", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
             NotificationBell(vm, onNotifications)
-            androidx.compose.material3.IconButton(onClick = onAccount, modifier = Modifier.size(48.dp).testTag("partner_open_account")) {
+            androidx.compose.material3.IconButton(onClick = onSettings, modifier = Modifier.size(48.dp).testTag("partner_open_settings")) {
                 com.mahava.app.ui.components.MahavaIcon(com.mahava.app.R.drawable.ic_settings, MahavaTextPrimary)
             }
         }
@@ -218,7 +228,7 @@ fun PartnerHomeScreen(vm: AppViewModel, onAccount: () -> Unit, onNotifications: 
             when {
                 pair == null -> MahavaCard(Modifier.testTag("partner_redeem_card")) {
                     CardTitle("کد همسرت را بزن")
-                    QuietInfo("همسرت در اپ ماه، از «اتصال به همسر» یک کد ۶ حرفی می‌سازد.")
+                    QuietInfo("همسرت توی اپ ماه، از «اتصال به همسر» یه کد ۶ حرفی می‌سازه.")
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = codeInput,
@@ -242,19 +252,35 @@ fun PartnerHomeScreen(vm: AppViewModel, onAccount: () -> Unit, onNotifications: 
                         Spacer(Modifier.width(10.dp))
                         CardTitle("منتظر تأیید همسرت")
                     }
-                    QuietInfo("وقتی تأیید کند، همین‌جا باز می‌شود.")
+                    QuietInfo("وقتی تأیید کنه، همین‌جا باز می‌شه.")
                 }
 
                 else -> {
-                    val snap = share?.snapshot
+                    val periods = share?.periods.orEmpty()
+                    val snap = com.mahava.app.partner.PartnerCycleEnrich.enrich(
+                        share?.snapshot, periods, vm.today().toEpochDay()
+                    )
                     if (snap == null) {
-                        MahavaCard { Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = MahavaPrimary)
-                            Spacer(Modifier.width(10.dp))
-                            CardTitle("در حال گرفتن اطلاعات همسرت…")
-                        } }
+                        MahavaCard(Modifier.testTag("partner_share_loading")) {
+                            CardTitle("هنوز وضعیت چرخه‌اش معلوم نیست")
+                            QuietInfo(
+                                error
+                                    ?: "به محض اینکه همسرت یه پریود ثبت کنه و اپش آنلاین باشه، روز چرخه و راهنمای امروزش همین‌جا میاد."
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            PrimaryButton(if (busy) "صبر کن…" else "به‌روزرسانی",
+                                enabled = !busy,
+                                modifier = Modifier.testTag("partner_share_retry")) {
+                                busy = true; error = null; info = null
+                                scope.launch {
+                                    val err = vm.partnerRefresh()
+                                    busy = false
+                                    if (err != null) error = err
+                                }
+                            }
+                        }
                     } else {
-                        PartnerDashboard(vm, snap, share?.logs.orEmpty(), share?.periods.orEmpty(), share?.updatedAt, premium, onAccount)
+                        PartnerDashboard(vm, snap, share?.logs.orEmpty(), periods, share?.updatedAt, premium, onAccount)
                     }
                 }
             }
@@ -281,11 +307,46 @@ private fun PartnerDashboard(
     val group = if (snap.generalOnly) "general" else snap.phaseGroup
     val (accent, soft) = phaseColors(group)
     val todayEpoch = vm.today().toEpochDay()
-    val todayLog = snap.today?.log?.takeIf { snap.today?.epochDay == todayEpoch }
+    val todayLog = snap.today?.log
+        ?.takeIf { it.isJsonObject && snap.today?.epochDay == todayEpoch }
+        ?.asJsonObject
         ?: logs.firstOrNull { PartnerLogFormat.epochDay(it) == todayEpoch }
     val todayLines = PartnerLogFormat.lines(todayLog)
 
-    // Hero
+    // Always-visible cycle summary (even with no daily log) — same basics her Today screen shows.
+    MahavaCard(Modifier.testTag("partner_cycle_summary")) {
+        CardTitle("وضعیت امروز همسرت")
+        Text(advice.headlineFa, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
+        if (advice.statusFa.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(advice.statusFa, color = accent, style = MaterialTheme.typography.bodyLarge)
+        }
+        snap.cycleDay?.let { day ->
+            val len = snap.cycleLength
+            Spacer(Modifier.height(6.dp))
+            Text(
+                if (len != null) "روز ${PersianDigits.toPersian(day)} از حدود ${PersianDigits.toPersian(len)}"
+                else "روز ${PersianDigits.toPersian(day)} چرخه",
+                style = MaterialTheme.typography.titleSmall,
+                color = MahavaPrimary,
+                modifier = Modifier.testTag("partner_cycle_day")
+            )
+        }
+        if (!snap.periodOngoing && !snap.isLate) {
+            snap.daysUntilPeriod?.let { d ->
+                QuietInfo(
+                    when {
+                        d <= 0 -> "پریود بعدی ممکنه همین روزا شروع بشه."
+                        else -> "حدود ${PersianDigits.toPersian(d)} روز تا پریود بعدی."
+                    }
+                )
+            }
+        }
+        if (snap.isLate) QuietInfo("پریودش حدود ${PersianDigits.toPersian(snap.daysLate ?: 0)} روز دیر کرده.")
+        if (todayLines.isEmpty()) QuietInfo("امروز هنوز چیزی ثبت نکرده؛ همین وضعیت کلی چرخه‌شه.")
+    }
+
+    // Hero ring
     Surface(shape = RoundedCornerShape(24.dp), color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
         Column(
             Modifier.background(Brush.verticalGradient(listOf(soft, MahavaSurface))).padding(18.dp),

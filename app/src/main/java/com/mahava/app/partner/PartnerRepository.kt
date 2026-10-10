@@ -142,15 +142,33 @@ class PartnerRepository(
         return true
     }
 
-    /** Man's side: latest shared status. */
+    /**
+     * Man's side: latest shared status.
+     * Even without today's log, enriches cycle day / phase from her period history
+     * so the husband always sees the same basic status her app would show.
+     * Throws [com.mahava.app.network.MahApiException] / IO errors so the UI can show them;
+     * only 409 (not paired) clears the cache and returns null.
+     */
     suspend fun fetchShare(): PartnerShareDto? {
         return try {
             val s = auth.withToken { api.partnerGetShare(it) }
-            prefs.setPartnerSnapshotJson(gson.toJson(s))
-            s
+            val todayEpoch = clock.today().toEpochDay()
+            val enriched = PartnerCycleEnrich.enrich(s.snapshot, s.periods.orEmpty(), todayEpoch)
+            val out = s.copy(snapshot = enriched)
+            if (out.snapshot != null || !out.periods.isNullOrEmpty()) {
+                val slim = out.copy(
+                    logs = out.logs?.take(30),
+                    periods = out.periods?.take(24)
+                )
+                prefs.setPartnerSnapshotJson(gson.toJson(slim))
+            }
+            out
         } catch (e: com.mahava.app.network.MahApiException) {
-            if (e.status == 409) prefs.setPartnerSnapshotJson(null)
-            null
+            if (e.status == 409) {
+                prefs.setPartnerSnapshotJson(null)
+                return null
+            }
+            throw e
         }
     }
 

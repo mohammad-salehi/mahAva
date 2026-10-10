@@ -149,10 +149,11 @@ open class MahavaApplication : Application() {
                     logs.sumOf { it.updatedAt % 1_000_003 }, rem.hashCode()).hashCode()
             }
                 .distinctUntilChanged()
-                .debounce(3000)
+                .debounce(800)
                 .collectLatest {
                     try {
                         if (authRepository.hasSessionTokens() && prefs.getAccountRole() != "male") {
+                            // Server is the durable store; Room is only a cache.
                             com.mahava.app.sync.DataSync.syncNow(this@MahavaApplication)
                         }
                     } catch (_: Throwable) { }

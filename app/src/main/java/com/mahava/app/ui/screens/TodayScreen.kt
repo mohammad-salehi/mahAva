@@ -68,7 +68,7 @@ fun TodayScreen(
         if (state.profile?.qaSampleData == true) {
             MahavaCard(Modifier.padding(16.dp)) {
                 Text("دادهٔ نمونه برای آزمایش", color = MahavaMenstruation, style = MaterialTheme.typography.titleMedium)
-                QuietInfo("این اطلاعات ساختگی و فقط برای آزمایش برنامه است. از تنظیمات می‌توانی همه را پاک کنی.")
+                QuietInfo("این اطلاعات ساختگیه و فقط برای آزمایش برنامه‌ست. از تنظیمات می‌تونی همه رو پاک کنی.")
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -94,6 +94,9 @@ fun TodayScreen(
         }
 
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            NotificationPermissionCard(
+                reasonFa = "هر صبح یه توصیهٔ کوتاه بر اساس مرحلهٔ چرخه‌ات برات می‌فرستیم. برای این کار اجازهٔ اعلان لازم داریم."
+            )
             // Free: next-period prediction
             when {
                 cycle?.isLate == true -> {
@@ -101,7 +104,7 @@ fun TodayScreen(
                         if (premium) onLate() else onAccount()
                     }) {
                         Text("پریود دیر کرده", style = MaterialTheme.typography.titleMedium, color = MahavaMenstruation)
-                        Text("حدود ${PersianDigits.toPersian(cycle.daysLate ?: 0)} روز از تاریخ تخمینی گذشته. چند روز جابه‌جایی رایج است.")
+                        Text("حدود ${PersianDigits.toPersian(cycle.daysLate ?: 0)} روز از تاریخ تخمینی گذشته. چند روز جابه‌جایی رایجه.")
                         if (premium) Text("راهنما", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
                         else Text("با اشتراک ماه باز می‌شه", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
                     }

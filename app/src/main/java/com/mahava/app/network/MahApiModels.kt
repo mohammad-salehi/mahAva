@@ -98,7 +98,7 @@ data class PartnerTodayDto(
     val cravings: List<String>? = null,
     val painScore: Int? = null,
     /** Her full daily log for today (every field she recorded), null when nothing logged. */
-    val log: com.google.gson.JsonObject? = null
+    val log: com.google.gson.JsonElement? = null
 )
 
 /** The woman's status (cycle fields) plus today's full log. */
