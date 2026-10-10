@@ -7,11 +7,21 @@
 .DS_Store
 captures/
 *.apk
+*.aab
 *.ap_
 *.dex
+
+# Release signing under signing/ + keystore.properties is tracked (Play updates).
+# Other ad-hoc keystores elsewhere stay ignored.
+*.jks
+*.keystore
+!/signing/*.jks
+!/signing/*.keystore
+!keystore.properties
 
 # Local scratch, build caches and outputs (never commit)
 /_scratch/
 /.kotlin/
 /out/
 *.init.gradle
+/release-out/
