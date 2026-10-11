@@ -7,8 +7,10 @@ import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import com.mahava.app.data.auth.AuthRepository
 import com.mahava.app.data.db.DailyLogEntity
+import com.mahava.app.data.db.HealthAlertEntity
 import com.mahava.app.data.db.MahavaDatabase
 import com.mahava.app.data.db.PeriodEventEntity
+import com.mahava.app.data.db.PregnancyEntity
 import com.mahava.app.data.db.ReminderPrefEntity
 import com.mahava.app.data.db.UserProfileEntity
 import com.mahava.app.data.prefs.UserPreferences
@@ -117,6 +119,24 @@ class DataSyncRepository(
             val r = SyncRecord("reminder", e.id, o, 0L)
             out[r.id] = r
         }
+        db.pregnancyDao().getAll().forEach { e ->
+            val o = gson.toJsonTree(e).asJsonObject
+            o.remove("id")
+            o.remove("updatedAt")
+            // Stable keys so push/pull never split one pregnancy across "active" vs numeric ids.
+            val key = if (e.status == "active") "main" else "ended_${e.id.coerceAtLeast(1)}"
+            val r = SyncRecord("pregnancy", key, o, e.updatedAt.coerceAtLeast(1L))
+            out[r.id] = r
+        }
+        db.healthAlertDao().getAll().forEach { e ->
+            val o = gson.toJsonTree(e).asJsonObject
+            o.remove("updatedAt")
+            // Server key: alphanumeric only (UUID hyphens → underscore).
+            val key = e.id.replace('-', '_').take(64)
+            if (!o.has("id")) o.addProperty("id", e.id)
+            val r = SyncRecord("alert", key, o, e.updatedAt.coerceAtLeast(e.createdAt.coerceAtLeast(1L)))
+            out[r.id] = r
+        }
         out
     }
 
@@ -169,6 +189,57 @@ class DataSyncRepository(
                 val base = gson.toJsonTree(ReminderPrefEntity(id = r.key)).asJsonObject
                 val o = withDefaults(base, r.data).apply { addProperty("id", r.key) }
                 db.reminderDao().upsert(gson.fromJson(o, ReminderPrefEntity::class.java))
+            }
+            "pregnancy" -> {
+                val endedId = r.key.removePrefix("ended_").toLongOrNull()
+                val existing = when {
+                    r.key == "main" || r.key == "active" ->
+                        db.pregnancyDao().getActive() ?: db.pregnancyDao().getAll().firstOrNull()
+                    endedId != null -> db.pregnancyDao().getById(endedId)
+                    else -> db.pregnancyDao().getById(r.key.toLongOrNull() ?: return)
+                }
+                if (r.deleted || r.data == null) {
+                    existing?.let { db.pregnancyDao().delete(it.id) }
+                } else {
+                    val base = gson.toJsonTree(
+                        PregnancyEntity(
+                            estimatedDueEpochDay = r.data.get("estimatedDueEpochDay")?.asLong ?: 0L,
+                            createdAt = r.updatedAt,
+                            updatedAt = r.updatedAt
+                        )
+                    ).asJsonObject
+                    val e = gson.fromJson(withDefaults(base, r.data), PregnancyEntity::class.java)
+                    db.pregnancyDao().upsert(
+                        e.copy(id = existing?.id ?: endedId ?: 0L, updatedAt = r.updatedAt)
+                    )
+                }
+            }
+            "alert" -> {
+                val dataId = r.data?.get("id")?.asString?.takeIf { it.isNotBlank() }
+                    ?: r.key.replace('_', '-')
+                if (r.deleted || r.data == null) {
+                    db.healthAlertDao().delete(dataId)
+                    db.healthAlertDao().delete(r.key)
+                } else {
+                    val base = gson.toJsonTree(
+                        HealthAlertEntity(
+                            id = dataId,
+                            ruleId = "",
+                            ruleVersion = 1,
+                            severity = "info",
+                            titleFa = "",
+                            plainLanguageExplanationFa = "",
+                            recommendedActionFa = "",
+                            observedDates = "",
+                            evidenceReferences = "",
+                            deduplicationKey = dataId,
+                            createdAt = r.updatedAt,
+                            updatedAt = r.updatedAt
+                        )
+                    ).asJsonObject
+                    val e = gson.fromJson(withDefaults(base, r.data), HealthAlertEntity::class.java)
+                    db.healthAlertDao().upsert(e.copy(id = dataId, updatedAt = r.updatedAt))
+                }
             }
             "settings" -> { } // nothing app-side yet (the old partner-consent switch is gone)
         }
@@ -354,6 +425,8 @@ class DataSyncRepository(
             db.periodDao().clear()
             db.dailyLogDao().clear()
             db.reminderDao().clear()
+            db.pregnancyDao().clear()
+            db.healthAlertDao().clear()
         }
         resetAll()
     }

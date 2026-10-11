@@ -38,7 +38,17 @@ object Routes {
     /** In-app notification list. */
     const val NOTIFICATIONS = "notifications"
 
+    const val PREGNANCY = "pregnancy"
+    const val PREGNANCY_SETUP = "pregnancy_setup"
+    const val HEALTH_ANALYTICS = "health_analytics"
+    const val HEALTH_INSIGHTS = "health_insights"
+    const val HEALTH_INSIGHT = "health_insight/{id}"
+    const val ASSISTANT = "assistant"
+    const val ALERT_DETAIL = "alert/{id}"
+
     fun dailyLog(day: Long) = "daily_log?day=$day"
+    fun healthInsight(id: String) = "health_insight/$id"
+    fun alertDetail(id: String) = "alert/$id"
     fun bodyCat(cat: String) = "body_cat/$cat"
     fun bodyItem(id: String) = "body_item/$id"
     fun phaseDetail(id: String) = "phase/$id"

@@ -90,6 +90,14 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
     var note by remember { mutableStateOf(existing?.note ?: "") }
     var discharge by remember { mutableStateOf(existing?.discharge) }
     var sleep by remember { mutableStateOf(existing?.sleepQuality) }
+    var sleepMinutes by remember {
+        mutableIntStateOf(
+            existing?.sleepMinutes
+                ?: existing?.sleepHours?.let { (it * 60).toInt() }
+                ?: -1
+        )
+    }
+    var waterMl by remember { mutableIntStateOf(existing?.waterIntakeMl ?: -1) }
     var cravings by remember {
         mutableStateOf(existing?.foodCravings?.split(',')?.filter { it.isNotBlank() }?.toSet() ?: emptySet())
     }
@@ -153,6 +161,30 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
         }
         SectionLabel("خواب دیشب (اختیاری)")
         ChipsFlow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), sleep, "sleep") { sleep = if (sleep == it) null else it }
+        SectionLabel("مدت خواب (دقیقه — اختیاری؛ خالی = ثبت‌نشده)")
+        Slider(
+            value = if (sleepMinutes < 0) 0f else sleepMinutes.toFloat().coerceIn(0f, 720f),
+            onValueChange = { sleepMinutes = it.toInt() },
+            valueRange = 0f..720f,
+            steps = 23,
+            modifier = Modifier.testTag("sleep_minutes_slider")
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (sleepMinutes < 0) "ثبت نشده" else "${PersianDigits.toPersian(sleepMinutes)} دقیقه", Modifier.weight(1f))
+            if (sleepMinutes >= 0) TextButton(onClick = { sleepMinutes = -1 }) { Text("پاک کردن") }
+        }
+        SectionLabel("آب امروز (میلی‌لیتر — اختیاری؛ خالی = ثبت‌نشده، نه صفر)")
+        Slider(
+            value = if (waterMl < 0) 0f else waterMl.toFloat().coerceIn(0f, 4000f),
+            onValueChange = { waterMl = it.toInt() },
+            valueRange = 0f..4000f,
+            steps = 15,
+            modifier = Modifier.testTag("water_ml_slider")
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (waterMl < 0) "ثبت نشده" else "${PersianDigits.toPersian(waterMl)} ml", Modifier.weight(1f))
+            if (waterMl >= 0) TextButton(onClick = { waterMl = -1 }) { Text("پاک کردن") }
+        }
         SectionLabel("هوس خوراکی (اختیاری — چند مورد)")
         QuietInfo("اگر چیزی هوس کردی ثبت کن؛ معنی رایج‌اش را نسبت به مرحلهٔ چرخه‌ات می‌گوییم.")
         MultiChipsFlow(com.mahava.app.content.FoodCravingKeys.ALL, cravings, "crave") { k ->
@@ -182,6 +214,9 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
                     moods = mood,
                     energy = energy,
                     sleepQuality = sleep,
+                    sleepMinutes = sleepMinutes.takeIf { it >= 0 },
+                    sleepHours = sleepMinutes.takeIf { it >= 0 }?.let { it / 60f },
+                    waterIntakeMl = waterMl.takeIf { it >= 0 },
                     discharge = discharge,
                     foodCravings = cravings.joinToString(",").ifBlank { null },
                     note = note.ifBlank { null },

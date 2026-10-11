@@ -1,5 +1,15 @@
 package com.mahava.app.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -8,11 +18,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.mahava.app.R
@@ -23,6 +38,7 @@ import com.mahava.app.ui.components.*
 import com.mahava.app.ui.theme.*
 import com.mahava.app.util.JalaliDate
 import com.mahava.app.util.PersianDigits
+import kotlinx.coroutines.delay
 
 @Composable
 fun TodayScreen(
@@ -50,7 +66,13 @@ fun TodayScreen(
     onSignal: (String, String) -> Unit = { _, _ -> },
     onPartner: () -> Unit = {},
     onNotifications: () -> Unit = {},
-    onMore: () -> Unit = onDailyLog
+    onMore: () -> Unit = onDailyLog,
+    onHealthAnalytics: () -> Unit = onTrends,
+    onPregnancy: () -> Unit = {},
+    onPregnancySetup: () -> Unit = {},
+    onHealthInsight: (String) -> Unit = {},
+    onAssistant: () -> Unit = {},
+    onHealthFeed: () -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
     val premium by vm.isPremium.collectAsState()
@@ -63,17 +85,42 @@ fun TodayScreen(
     val forecast = vm.phaseForecast()
     val science = PhaseScienceBank.forContext(dayCtx.subWindow, cycle?.phase)
     val lengthHint = pred?.medianCycleLength ?: state.profile?.typicalCycleLength
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(40)
+        entered = true
+    }
+    val ringPulse = rememberInfiniteTransition(label = "ringPulse")
+    val pulseScale by ringPulse.animateFloat(
+        initialValue = 0.98f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("today_screen")) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(MahavaBackground, MahavaPrimarySoft.copy(alpha = 0.55f), MahavaBackgroundBottom)
+                )
+            )
+            .verticalScroll(rememberScrollState())
+            .testTag("today_screen")
+    ) {
         if (state.profile?.qaSampleData == true) {
-            MahavaCard(Modifier.padding(16.dp)) {
+            MahavaCard(Modifier.padding(16.dp), accent = MahavaMenstruation) {
                 Text("دادهٔ نمونه برای آزمایش", color = MahavaMenstruation, style = MaterialTheme.typography.titleMedium)
                 QuietInfo("این اطلاعات ساختگیه و فقط برای آزمایش برنامه‌ست. از تنظیمات می‌تونی همه رو پاک کنی.")
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("امروز", style = MaterialTheme.typography.headlineLarge)
+                Text("امروز", style = MaterialTheme.typography.headlineLarge, color = MahavaPrimaryDeep)
                 Text(j.formatShortFa(), color = MahavaTextSecondary)
             }
             NotificationBell(vm, onNotifications)
@@ -82,7 +129,12 @@ fun TodayScreen(
             }
         }
 
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .scale(pulseScale),
+            contentAlignment = Alignment.Center
+        ) {
             PeriodCycleWidget(
                 cycleDay = cycle?.cycleDay,
                 cycleLengthHint = lengthHint,
@@ -93,7 +145,24 @@ fun TodayScreen(
             )
         }
 
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        AnimatedVisibility(
+            visible = entered,
+            enter = fadeIn(tween(450)) + slideInVertically(tween(450)) { it / 8 }
+        ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            HealthMiniDashboard(
+                vm = vm,
+                onAnalytics = onHealthAnalytics,
+                onPregnancy = onPregnancy,
+                onPregnancySetup = onPregnancySetup,
+                onInsight = onHealthInsight,
+                onAssistant = onAssistant,
+                onDailyLog = onDailyLog
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SecondaryButton("محتوای علمی", modifier = Modifier.weight(1f), onClick = onHealthFeed)
+                SecondaryButton("دستیار", modifier = Modifier.weight(1f), onClick = onAssistant)
+            }
             NotificationPermissionCard(
                 reasonFa = "هر صبح یه توصیهٔ کوتاه بر اساس مرحلهٔ چرخه‌ات برات می‌فرستیم. برای این کار اجازهٔ اعلان لازم داریم."
             )
@@ -245,6 +314,7 @@ fun TodayScreen(
 
             cycle?.limitsDescriptionFa?.takeIf { it.isNotBlank() }?.let { QuietInfo(it) }
             Spacer(Modifier.height(8.dp))
+        }
         }
     }
 }

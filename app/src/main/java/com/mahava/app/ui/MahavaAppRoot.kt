@@ -281,7 +281,13 @@ fun MahavaAppRoot(
                     onSignal = { kind, key -> nav.navigate(Routes.signalDetail(kind, key)) },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
                     onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                    onMore = { nav.navigate(Routes.LOG_HUB) }
+                    onMore = { nav.navigate(Routes.LOG_HUB) },
+                    onHealthAnalytics = { nav.navigate(Routes.HEALTH_ANALYTICS) },
+                    onPregnancy = { nav.navigate(Routes.PREGNANCY) },
+                    onPregnancySetup = { nav.navigate(Routes.PREGNANCY_SETUP) },
+                    onHealthInsight = { id -> nav.navigate(Routes.healthInsight(id)) },
+                    onAssistant = { nav.navigate(Routes.ASSISTANT) },
+                    onHealthFeed = { nav.navigate(Routes.HEALTH_INSIGHTS) }
                 )
             }
             composable(Routes.CALENDAR) {
@@ -322,7 +328,8 @@ fun MahavaAppRoot(
                     onTrends = { nav.navigate(Routes.CYCLE_TRENDS) },
                     onChecker = { nav.navigate(Routes.SYMPTOM_CHECKER) },
                     onInsight = { nav.navigate(Routes.DAILY_INSIGHT) },
-                    onAccount = { goAccountOrLogin() }
+                    onAccount = { goAccountOrLogin() },
+                    onHealthAnalytics = { nav.navigate(Routes.HEALTH_ANALYTICS) }
                 )
             }
             composable(Routes.DAILY_INSIGHT) {
@@ -473,6 +480,57 @@ fun MahavaAppRoot(
             }
             composable(Routes.FERTILITY_WINDOW) {
                 FertilityWindowScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+            }
+            composable(Routes.PREGNANCY) {
+                PregnancyPage(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onSetup = { nav.navigate(Routes.PREGNANCY_SETUP) },
+                    onDailyLog = { nav.navigate(Routes.dailyLog(vm.today().toEpochDay())) },
+                    onInsight = { id -> nav.navigate(Routes.healthInsight(id)) }
+                )
+            }
+            composable(Routes.PREGNANCY_SETUP) {
+                PregnancySetupPage(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onDone = {
+                        nav.navigate(Routes.PREGNANCY) {
+                            popUpTo(Routes.PREGNANCY_SETUP) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(Routes.HEALTH_ANALYTICS) {
+                HealthAnalyticsPage(vm, onBack = { nav.popBackStack() })
+            }
+            composable(Routes.HEALTH_INSIGHTS) {
+                HealthFeedPage(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onOpen = { id -> nav.navigate(Routes.healthInsight(id)) }
+                )
+            }
+            composable(
+                route = Routes.HEALTH_INSIGHT,
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { entry ->
+                val id = entry.arguments?.getString("id").orEmpty()
+                HealthInsightDetailPage(vm, id, onBack = { nav.popBackStack() })
+            }
+            composable(Routes.ASSISTANT) {
+                SmartAssistantPage(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onAlert = { id -> nav.navigate(Routes.alertDetail(id)) }
+                )
+            }
+            composable(
+                route = Routes.ALERT_DETAIL,
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { entry ->
+                val id = entry.arguments?.getString("id").orEmpty()
+                AlertDetailPage(vm, id, onBack = { nav.popBackStack() })
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(

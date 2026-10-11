@@ -43,6 +43,8 @@ open class MahavaApplication : Application() {
         private set
     lateinit var contentRepository: ContentRepository
         private set
+    lateinit var scientificContent: com.mahava.app.health.ScientificContentService
+        private set
     lateinit var backupManager: BackupManager
         private set
     lateinit var prefs: UserPreferences
@@ -75,6 +77,7 @@ open class MahavaApplication : Application() {
         database = createDatabase()
         repository = MahavaRepository(database, clock)
         contentRepository = ContentRepository(this)
+        scientificContent = com.mahava.app.health.ScientificContentService(this, contentRepository)
         cryptoManager = CryptoManager()
         backupManager = BackupManager(database, cryptoManager)
         prefs = UserPreferences(this)
@@ -139,17 +142,26 @@ open class MahavaApplication : Application() {
             try { scheduleBackgroundWork(this@MahavaApplication) } catch (_: Throwable) { }
         }
         appScope.launch {
-            kotlinx.coroutines.flow.combine(
+            val coreTick = kotlinx.coroutines.flow.combine(
                 repository.observeProfile(),
                 repository.observePeriods(),
                 repository.observeDailyLogs(),
                 repository.observeReminders()
             ) { p, periods, logs, rem ->
-                listOf(p?.updatedAt, periods.size, periods.sumOf { it.updatedAt % 1_000_003 }, logs.size,
-                    logs.sumOf { it.updatedAt % 1_000_003 }, rem.hashCode()).hashCode()
+                listOf(
+                    p?.updatedAt, periods.size, logs.size, rem.size,
+                    periods.hashCode(), logs.hashCode(), rem.hashCode()
+                ).hashCode()
             }
+            val healthTick = kotlinx.coroutines.flow.combine(
+                repository.observePregnancies(),
+                repository.observeHealthAlerts()
+            ) { pregs, alerts ->
+                listOf(pregs.size, alerts.size, pregs.hashCode(), alerts.hashCode()).hashCode()
+            }
+            kotlinx.coroutines.flow.combine(coreTick, healthTick) { a, b -> 31 * a + b }
                 .distinctUntilChanged()
-                .debounce(800)
+                .debounce(350)
                 .collectLatest {
                     try {
                         if (authRepository.hasSessionTokens() && prefs.getAccountRole() != "male") {

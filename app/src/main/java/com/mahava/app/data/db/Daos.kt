@@ -81,3 +81,57 @@ interface ReminderPrefDao {
     @Query("DELETE FROM reminder_prefs")
     suspend fun clear()
 }
+
+@Dao
+interface PregnancyDao {
+    @Query("SELECT * FROM pregnancies WHERE status = 'active' ORDER BY updatedAt DESC LIMIT 1")
+    fun observeActive(): Flow<PregnancyEntity?>
+
+    @Query("SELECT * FROM pregnancies WHERE status = 'active' ORDER BY updatedAt DESC LIMIT 1")
+    suspend fun getActive(): PregnancyEntity?
+
+    @Query("SELECT * FROM pregnancies ORDER BY updatedAt DESC")
+    fun observeAll(): Flow<List<PregnancyEntity>>
+
+    @Query("SELECT * FROM pregnancies ORDER BY updatedAt DESC")
+    suspend fun getAll(): List<PregnancyEntity>
+
+    @Query("SELECT * FROM pregnancies WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): PregnancyEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: PregnancyEntity): Long
+
+    @Query("DELETE FROM pregnancies WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM pregnancies")
+    suspend fun clear()
+}
+
+@Dao
+interface HealthAlertDao {
+    @Query("SELECT * FROM health_alerts ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<HealthAlertEntity>>
+
+    @Query("SELECT * FROM health_alerts WHERE status != 'dismissed' ORDER BY createdAt DESC")
+    fun observeActive(): Flow<List<HealthAlertEntity>>
+
+    @Query("SELECT * FROM health_alerts ORDER BY createdAt DESC")
+    suspend fun getAll(): List<HealthAlertEntity>
+
+    @Query("SELECT * FROM health_alerts WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): HealthAlertEntity?
+
+    @Query("SELECT * FROM health_alerts WHERE deduplicationKey = :key LIMIT 1")
+    suspend fun getByDedupe(key: String): HealthAlertEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: HealthAlertEntity)
+
+    @Query("DELETE FROM health_alerts WHERE id = :id")
+    suspend fun delete(id: String)
+
+    @Query("DELETE FROM health_alerts")
+    suspend fun clear()
+}

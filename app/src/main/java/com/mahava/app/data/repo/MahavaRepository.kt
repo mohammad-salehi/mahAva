@@ -4,8 +4,10 @@ import com.mahava.app.cycle.CycleEngine
 import com.mahava.app.cycle.CycleEngineResult
 import com.mahava.app.cycle.PeriodInterval
 import com.mahava.app.data.db.DailyLogEntity
+import com.mahava.app.data.db.HealthAlertEntity
 import com.mahava.app.data.db.MahavaDatabase
 import com.mahava.app.data.db.PeriodEventEntity
+import com.mahava.app.data.db.PregnancyEntity
 import com.mahava.app.data.db.ReminderPrefEntity
 import com.mahava.app.data.db.UserProfileEntity
 import com.mahava.app.pattern.PatternAnalyzer
@@ -27,6 +29,9 @@ class MahavaRepository(
     fun observePeriods(): Flow<List<PeriodEventEntity>> = db.periodDao().observeAll()
     fun observeDailyLogs(): Flow<List<DailyLogEntity>> = db.dailyLogDao().observeAll()
     fun observeReminders(): Flow<List<ReminderPrefEntity>> = db.reminderDao().observeAll()
+    fun observeActivePregnancy(): Flow<PregnancyEntity?> = db.pregnancyDao().observeActive()
+    fun observePregnancies(): Flow<List<PregnancyEntity>> = db.pregnancyDao().observeAll()
+    fun observeHealthAlerts(): Flow<List<HealthAlertEntity>> = db.healthAlertDao().observeAll()
 
     fun observeCycleResult(): Flow<CycleEngineResult> =
         combine(observeProfile(), observePeriods()) { profile, periods ->
@@ -123,11 +128,39 @@ class MahavaRepository(
 
     suspend fun saveReminder(pref: ReminderPrefEntity) = db.reminderDao().upsert(pref)
 
+    suspend fun getActivePregnancy(): PregnancyEntity? = db.pregnancyDao().getActive()
+
+    suspend fun upsertPregnancy(entity: PregnancyEntity): Long {
+        val now = clock.nowMillis()
+        val withTs = if (entity.id == 0L) {
+            entity.copy(createdAt = now, updatedAt = now, revision = 1)
+        } else {
+            entity.copy(updatedAt = now, revision = entity.revision + 1)
+        }
+        return db.pregnancyDao().upsert(withTs)
+    }
+
+    suspend fun endPregnancy(id: Long, reason: String?) {
+        val cur = db.pregnancyDao().getById(id) ?: return
+        val now = clock.nowMillis()
+        db.pregnancyDao().upsert(
+            cur.copy(status = "ended", endedAt = now, endReason = reason, updatedAt = now, revision = cur.revision + 1)
+        )
+    }
+
+    suspend fun upsertHealthAlert(entity: HealthAlertEntity) = db.healthAlertDao().upsert(entity)
+
+    suspend fun getHealthAlert(id: String) = db.healthAlertDao().getById(id)
+
+    suspend fun getHealthAlertByDedupe(key: String) = db.healthAlertDao().getByDedupe(key)
+
     suspend fun deleteAllData() {
         db.profileDao().clear()
         db.periodDao().clear()
         db.dailyLogDao().clear()
         db.reminderDao().clear()
+        db.pregnancyDao().clear()
+        db.healthAlertDao().clear()
     }
 
     suspend fun exportJson(): String {

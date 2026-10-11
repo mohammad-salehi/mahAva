@@ -38,7 +38,8 @@ fun ReportsScreen(
     onTrends: () -> Unit = {},
     onChecker: () -> Unit = {},
     onInsight: () -> Unit = {},
-    onAccount: () -> Unit = {}
+    onAccount: () -> Unit = {},
+    onHealthAnalytics: () -> Unit = onTrends
 ) {
     val state by vm.state.collectAsState()
     val premium by vm.isPremium.collectAsState()
@@ -140,6 +141,11 @@ fun ReportsScreen(
                 state.patterns.take(2).forEach { Text("• ${it.textFa}") }
                 QuietInfo("برای خوشه‌بندی کامل مرحله‌ای، وارد شو.")
             }
+        }
+        Spacer(Modifier.height(8.dp))
+        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_health_analytics").clickable(onClick = onHealthAnalytics)) {
+            Text("تحلیل کامل سلامت", style = MaterialTheme.typography.titleMedium)
+            QuietInfo("طول چرخه، خون‌ریزی، درد، خواب و آب — جدا از خلاصهٔ خانه.")
         }
         Spacer(Modifier.height(8.dp))
         MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_trends").clickable(onClick = onTrends)) {

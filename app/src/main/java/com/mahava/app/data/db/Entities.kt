@@ -84,9 +84,66 @@ data class DailyLogEntity(
     val clots: String? = null, // none|sometimes|frequent
     /** CSV of food craving keys: chocolate,sweet,salty,carbs,spicy,dairy,red_meat,caffeine,other */
     val foodCravings: String? = null,
+    /** Water intake in millilitres; null = not logged (not the same as 0). */
+    val waterIntakeMl: Int? = null,
+    /** Sleep duration in minutes; null = not logged. Prefer this over sleepHours when both set. */
+    val sleepMinutes: Int? = null,
+    /**
+     * Optional severity per physical symptom: "bloating:2,headache:3" (1–3).
+     * Codes without severity still appear in physicalSymptoms.
+     */
+    val physicalSymptomSeverities: String? = null,
     val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long
+)
+
+@Entity(
+    tableName = "pregnancies",
+    indices = [Index(value = ["status"], unique = false)]
+)
+data class PregnancyEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** active | ended */
+    val status: String = "active",
+    val lmpEpochDay: Long? = null,
+    val estimatedDueEpochDay: Long,
+    /** lmp | clinician_edd */
+    val datingMethod: String = "lmp",
+    val clinicianConfirmed: Boolean = false,
+    val timezone: String = "Asia/Tehran",
+    val endedAt: Long? = null,
+    val endReason: String? = null,
+    val schemaVersion: Int = 1,
+    val revision: Int = 1,
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0
+)
+
+@Entity(
+    tableName = "health_alerts",
+    indices = [Index(value = ["deduplicationKey"], unique = true)]
+)
+data class HealthAlertEntity(
+    @PrimaryKey val id: String,
+    val ruleId: String,
+    val ruleVersion: Int,
+    /** info | attention | urgent_guidance */
+    val severity: String,
+    val titleFa: String,
+    val plainLanguageExplanationFa: String,
+    val recommendedActionFa: String,
+    /** CSV of YYYY-MM-DD */
+    val observedDates: String,
+    /** CSV of science source ids */
+    val evidenceReferences: String,
+    val deduplicationKey: String,
+    /** active | read | dismissed */
+    val status: String = "active",
+    val createdAt: Long,
+    val updatedAt: Long = 0,
+    val schemaVersion: Int = 1,
+    val revision: Int = 1
 )
 
 @Entity(tableName = "reminder_prefs")

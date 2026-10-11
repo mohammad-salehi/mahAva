@@ -11,9 +11,11 @@ import androidx.room.RoomDatabase
         PeriodEventEntity::class,
         DailyLogEntity::class,
         ReminderPrefEntity::class,
-        SecureKvEntity::class
+        SecureKvEntity::class,
+        PregnancyEntity::class,
+        HealthAlertEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class MahavaDatabase : RoomDatabase() {
@@ -21,6 +23,8 @@ abstract class MahavaDatabase : RoomDatabase() {
     abstract fun periodDao(): PeriodEventDao
     abstract fun dailyLogDao(): DailyLogDao
     abstract fun reminderDao(): ReminderPrefDao
+    abstract fun pregnancyDao(): PregnancyDao
+    abstract fun healthAlertDao(): HealthAlertDao
 
     companion object {
         const val DB_NAME = "mahava.db"
@@ -31,7 +35,7 @@ abstract class MahavaDatabase : RoomDatabase() {
             } else {
                 Room.databaseBuilder(context, MahavaDatabase::class.java, DB_NAME)
             }
-            // v2→v3 adds daily_logs.foodCravings; destructive fallback already used since v1.
+            // v3→v4: pregnancy + health_alerts + log water/sleep/severity fields
             return builder.fallbackToDestructiveMigration().build()
         }
     }

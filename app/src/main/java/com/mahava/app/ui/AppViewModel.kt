@@ -56,7 +56,8 @@ data class AppUiState(
     val patterns: List<PatternInsight> = emptyList(),
     val reminders: List<ReminderPrefEntity> = emptyList(),
     val message: String? = null,
-    val locked: Boolean = false
+    val locked: Boolean = false,
+    val health: com.mahava.app.health.HealthUiSnapshot? = null
 )
 
 class AppViewModel(
@@ -113,6 +114,8 @@ class AppViewModel(
     val dataSyncStatus: StateFlow<com.mahava.app.sync.DataSyncStatus> = app.dataSync.status
 
 
+    private val _analyticsRangeMonths = MutableStateFlow(6)
+
     private data class Core(val profile: UserProfileEntity?, val periods: List<PeriodEventEntity>, val logs: List<DailyLogEntity>, val cycle: CycleEngineResult, val patterns: List<PatternInsight>)
     private val core = combine(
         repo.observeProfile(),
@@ -124,7 +127,31 @@ class AppViewModel(
         Core(profile, periods, logs, cycle, patterns)
     }
 
-    val state: StateFlow<AppUiState> = combine(core, repo.observeReminders(), _message, _locked) { c, reminders, message, locked ->
+    private data class HealthCore(
+        val pregnancy: com.mahava.app.data.db.PregnancyEntity?,
+        val alerts: List<com.mahava.app.data.db.HealthAlertEntity>,
+        val rangeMonths: Int
+    )
+
+    private val healthCore = combine(
+        repo.observeActivePregnancy(),
+        repo.observeHealthAlerts(),
+        _analyticsRangeMonths
+    ) { pregnancy, alerts, range -> HealthCore(pregnancy, alerts, range) }
+
+    val state: StateFlow<AppUiState> = combine(core, repo.observeReminders(), healthCore, _message, _locked) { c, reminders, h, message, locked ->
+        val health = com.mahava.app.health.HealthStore.snapshot(
+            profile = c.profile,
+            periods = c.periods,
+            logs = c.logs,
+            cycle = c.cycle,
+            pregnancy = h.pregnancy,
+            persistedAlerts = h.alerts,
+            today = clock.today(),
+            nowMillis = clock.nowMillis(),
+            content = app.scientificContent,
+            analyticsRangeMonths = h.rangeMonths
+        )
         AppUiState(
             ready = true,
             profile = c.profile,
@@ -134,9 +161,87 @@ class AppViewModel(
             patterns = c.patterns,
             reminders = reminders,
             message = message,
-            locked = locked
+            locked = locked,
+            health = health
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppUiState())
+
+    private val alertPersistMutex = Mutex()
+    private suspend fun persistNewAlerts(alerts: List<com.mahava.app.health.models.HealthAlert>) {
+        var added = false
+        alertPersistMutex.withLock {
+            alerts.forEach { a ->
+                if (repo.getHealthAlertByDedupe(a.deduplicationKey) == null) {
+                    repo.upsertHealthAlert(com.mahava.app.health.HealthStore.toEntity(a))
+                    added = true
+                }
+            }
+        }
+        if (added) pushWomanDataToServer(await = false)
+    }
+
+    fun setAnalyticsRangeMonths(months: Int) {
+        _analyticsRangeMonths.value = months.coerceIn(1, 24)
+    }
+
+    fun savePregnancySetup(
+        datingMethod: String,
+        lmp: LocalDate?,
+        clinicianEdd: LocalDate?,
+        clinicianConfirmed: Boolean
+    ) = viewModelScope.launch {
+        try {
+            val entity = com.mahava.app.health.PregnancyService.buildEntity(
+                datingMethod = datingMethod,
+                lmp = lmp,
+                clinicianEdd = clinicianEdd,
+                clinicianConfirmed = clinicianConfirmed,
+                existingId = repo.getActivePregnancy()?.id ?: 0L,
+                nowMillis = clock.nowMillis()
+            )
+            // End any other active rows first.
+            repo.getActivePregnancy()?.let { cur ->
+                if (cur.id != 0L && cur.id != entity.id) repo.endPregnancy(cur.id, "replaced")
+            }
+            repo.upsertPregnancy(entity)
+            val profile = repo.ensureProfile()
+            repo.saveProfile(profile.copy(pregnancyMode = true, fertilityTrackingEnabled = false))
+            pushWomanDataToServer(await = true)
+            _message.value = "حالت بارداری ذخیره شد"
+        } catch (t: Throwable) {
+            _message.value = when (t.message) {
+                "lmp_required" -> "تاریخ آخرین پریود را وارد کن."
+                "clinician_edd_required" -> "تاریخ تخمینی زایمان پزشک را وارد کن."
+                else -> "ذخیره نشد. تاریخ‌ها را بررسی کن."
+            }
+        }
+    }
+
+    fun endPregnancyMode(reason: String? = null) = viewModelScope.launch {
+        repo.getActivePregnancy()?.let { repo.endPregnancy(it.id, reason) }
+        val profile = repo.ensureProfile()
+        repo.saveProfile(profile.copy(pregnancyMode = false))
+        pushWomanDataToServer(await = true)
+        _message.value = "حالت بارداری پایان یافت"
+    }
+
+    fun markAlertRead(id: String) = viewModelScope.launch {
+        val cur = repo.getHealthAlert(id) ?: return@launch
+        repo.upsertHealthAlert(cur.copy(status = "read", updatedAt = clock.nowMillis()))
+        pushWomanDataToServer(await = false)
+    }
+
+    fun dismissAlert(id: String) = viewModelScope.launch {
+        val cur = repo.getHealthAlert(id) ?: return@launch
+        repo.upsertHealthAlert(cur.copy(status = "dismissed", updatedAt = clock.nowMillis()))
+        pushWomanDataToServer(await = false)
+    }
+
+    fun healthInsight(id: String) = app.scientificContent.insightById(id)
+    fun fetalWeek(week: Int) = app.scientificContent.fetalWeek(week)
+    fun pregnancyMilestones() = app.scientificContent.milestones()
+    fun healthFeed() = app.scientificContent.feed()
+    fun scienceSource(id: String) = app.scientificContent.sourceById(id)
 
     init {
         com.mahava.app.notice.AppNotices.load(app)
@@ -155,6 +260,12 @@ class AppViewModel(
                     com.mahava.app.sync.DataSync.ensurePeriodic(app)
                 }
                 partnerRefresh()
+            }
+        }
+        viewModelScope.launch {
+            state.collect { s ->
+                val alerts = s.health?.activeAlerts ?: return@collect
+                persistNewAlerts(alerts)
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.mahava.app.ui.components
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -27,15 +29,31 @@ import androidx.compose.ui.unit.sp
 import com.mahava.app.ui.theme.*
 
 @Composable
-fun MahavaCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun MahavaCard(
+    modifier: Modifier = Modifier,
+    accent: Color = MahavaPrimary,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         color = MahavaSurface,
-        shadowElevation = 1.dp,
+        shadowElevation = 3.dp,
         tonalElevation = 0.dp
     ) {
-        Column(Modifier.padding(16.dp), content = content)
+        Column(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(accent, MahavaAccentPeach, MahavaAccentSky.copy(alpha = 0.85f))
+                        )
+                    )
+            )
+            Column(Modifier.padding(16.dp), content = content)
+        }
     }
 }
 
@@ -45,8 +63,9 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MahavaPrimary, contentColor = Color.White)
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MahavaPrimary, contentColor = Color.White),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium.copy(color = Color.White))
     }
@@ -57,8 +76,12 @@ fun SecondaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> 
     OutlinedButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = MahavaPrimary)
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.5.dp, MahavaPrimary.copy(alpha = 0.55f)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MahavaPrimaryDeep,
+            containerColor = MahavaPrimarySoft.copy(alpha = 0.45f)
+        )
     ) { Text(text) }
 }
 
