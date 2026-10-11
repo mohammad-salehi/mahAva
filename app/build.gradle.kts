@@ -22,8 +22,8 @@ android {
         applicationId = "com.mahava.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 100
-        versionName = "1.0.3"
+        versionCode = 101
+        versionName = "1.0.4"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
