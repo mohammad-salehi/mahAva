@@ -77,6 +77,8 @@ class DataSyncRepository(
         private const val K_INITIAL = "initial_done"
         private const val K_LAST_OK = "last_ok"
         private const val K_LOCAL_WINS = "local_wins"
+        /** Clears fake "synced" hashes from an older client that soft-dropped rejected pushes. */
+        private const val K_RESYNC_SOFT = "resync_soft_v1"
         private const val BATCH = 400
 
         /** Device-specific profile fields that never leave the phone. */
@@ -99,24 +101,25 @@ class DataSyncRepository(
         db.profileDao().get()?.let { p ->
             val o = gson.toJsonTree(p).asJsonObject
             PROFILE_LOCAL_ONLY.forEach { o.remove(it) }
-            out["profile/main"] = SyncRecord("profile", "main", o, p.updatedAt)
+            out["profile/main"] = SyncRecord("profile", "main", sanitizeForServer(o), p.updatedAt)
         }
         db.periodDao().getAll().forEach { e ->
             val o = gson.toJsonTree(e).asJsonObject
             o.remove("id"); o.remove("updatedAt")
-            val r = SyncRecord("period", e.startEpochDay.toString(), o, e.updatedAt)
+            val r = SyncRecord("period", e.startEpochDay.toString(), sanitizeForServer(o), e.updatedAt)
             out[r.id] = r
         }
         db.dailyLogDao().getAll().forEach { e ->
             val o = gson.toJsonTree(e).asJsonObject
             o.remove("id"); o.remove("updatedAt")
-            val r = SyncRecord("log", e.epochDay.toString(), o, e.updatedAt)
+            val r = SyncRecord("log", e.epochDay.toString(), sanitizeForServer(o), e.updatedAt)
             out[r.id] = r
         }
         db.reminderDao().getAll().forEach { e ->
             val o = gson.toJsonTree(e).asJsonObject
             o.remove("id")
-            val r = SyncRecord("reminder", e.id, o, 0L)
+            // No local timestamp; push stamps a valid server time.
+            val r = SyncRecord("reminder", e.id, sanitizeForServer(o), 0L)
             out[r.id] = r
         }
         db.pregnancyDao().getAll().forEach { e ->
@@ -125,7 +128,7 @@ class DataSyncRepository(
             o.remove("updatedAt")
             // Stable keys so push/pull never split one pregnancy across "active" vs numeric ids.
             val key = if (e.status == "active") "main" else "ended_${e.id.coerceAtLeast(1)}"
-            val r = SyncRecord("pregnancy", key, o, e.updatedAt.coerceAtLeast(1L))
+            val r = SyncRecord("pregnancy", key, sanitizeForServer(o), e.updatedAt)
             out[r.id] = r
         }
         db.healthAlertDao().getAll().forEach { e ->
@@ -134,10 +137,35 @@ class DataSyncRepository(
             // Server key: alphanumeric only (UUID hyphens → underscore).
             val key = e.id.replace('-', '_').take(64)
             if (!o.has("id")) o.addProperty("id", e.id)
-            val r = SyncRecord("alert", key, o, e.updatedAt.coerceAtLeast(e.createdAt.coerceAtLeast(1L)))
+            val ts = maxOf(e.updatedAt, e.createdAt)
+            val r = SyncRecord("alert", key, sanitizeForServer(o), ts)
             out[r.id] = r
         }
         out
+    }
+
+    /** Backend accepts only a flat map of primitives (no nested objects/arrays). */
+    private fun sanitizeForServer(src: JsonObject?): JsonObject? {
+        if (src == null) return null
+        val out = JsonObject()
+        val nameOk = Regex("^[a-zA-Z][a-zA-Z0-9_]{0,47}$")
+        src.entrySet().forEach { (k, v) ->
+            if (!nameOk.matches(k) || v == null || v.isJsonNull) return@forEach
+            if (!v.isJsonPrimitive) return@forEach
+            val p = v.asJsonPrimitive
+            when {
+                p.isBoolean -> out.addProperty(k, p.asBoolean)
+                p.isNumber -> {
+                    val n = p.asDouble
+                    if (n.isFinite()) out.add(k, v)
+                }
+                p.isString -> {
+                    val s = p.asString
+                    if (s.length <= 4000) out.addProperty(k, s)
+                }
+            }
+        }
+        return out
     }
 
     // ---------- apply server copies to the cache ----------
@@ -276,14 +304,55 @@ class DataSyncRepository(
         return out to cursor
     }
 
-    /** Returns the server copies that were newer than ours (conflicts we lost). */
-    private suspend fun pushAll(changes: List<SyncRecord>): List<SyncRecord> {
-        val conflicts = mutableListOf<SyncRecord>()
-        changes.chunked(BATCH).forEach { chunk ->
-            val res = remote.push(chunk)
-            conflicts += res.conflicts.orEmpty().map { it.toRecord() }
+    private data class PushResult(
+        val conflicts: List<SyncRecord>,
+        /** Successfully accepted by the server (HTTP 2xx). Never includes faked local accepts. */
+        val acceptedIds: Set<String>
+    )
+
+    /**
+     * Push changes with valid server timestamps. If a batch fails, retry one-by-one so
+     * good records still upload; failed ones stay dirty for the next sync.
+     */
+    private suspend fun pushAll(changes: List<SyncRecord>): PushResult {
+        if (changes.isEmpty()) return PushResult(emptyList(), emptySet())
+        val now = clock.nowMillis().coerceAtLeast(DataSyncEngine.MIN_SERVER_TS)
+        val prepared = changes.map { rec ->
+            val cleaned = rec.copy(data = if (rec.deleted) null else sanitizeForServer(rec.data))
+            with(DataSyncEngine) { cleaned.withServerTimestamp(now) }
         }
-        return conflicts
+        val conflicts = mutableListOf<SyncRecord>()
+        val accepted = linkedSetOf<String>()
+        var firstFailure: Throwable? = null
+        prepared.chunked(BATCH).forEach { chunk ->
+            try {
+                val res = remote.push(chunk)
+                conflicts += res.conflicts.orEmpty().map { it.toRecord() }
+                accepted += chunk.map { it.id }
+            } catch (_: Throwable) {
+                chunk.forEach { one ->
+                    try {
+                        val res = remote.push(listOf(one))
+                        conflicts += res.conflicts.orEmpty().map { it.toRecord() }
+                        accepted += one.id
+                    } catch (oneErr: Throwable) {
+                        if (firstFailure == null) firstFailure = oneErr
+                    }
+                }
+            }
+        }
+        if (firstFailure != null && accepted.isEmpty()) throw firstFailure!!
+        if (firstFailure != null) {
+            // Partial success: keep going so pull can run; pendingCount will retry the rest.
+        }
+        return PushResult(conflicts, accepted)
+    }
+
+    private fun rememberSyncedHashes(ids: Collection<String>, local: Map<String, SyncRecord>, base: MutableMap<String, String>) {
+        ids.forEach { id ->
+            val h = DataSyncEngine.hash(local[id])
+            if (h == null) base.remove(id) else base[id] = h
+        }
     }
 
     // ---------- state ----------
@@ -340,11 +409,20 @@ class DataSyncRepository(
             _status.value = _status.value.copy(running = true)
             try {
                 if (sp.getString(K_USER, null) != userId) resetState(userId)
+                recoverSoftDroppedHashes()
                 if (!sp.getBoolean(K_INITIAL, false)) initialSync() else incrementalSync()
                 val now = clock.nowMillis()
+                val pending = try {
+                    DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), now).size
+                } catch (_: Throwable) { 0 }
                 sp.edit().putLong(K_LAST_OK, now).apply()
-                _status.value = DataSyncStatus(lastOkAt = now, pending = 0, running = false, lastError = null)
-                SyncOutcome.Ok
+                _status.value = DataSyncStatus(
+                    lastOkAt = now,
+                    pending = pending,
+                    running = false,
+                    lastError = if (pending > 0) "بعضی تغییرها هنوز به سرور نرسیده" else null
+                )
+                if (pending > 0) SyncOutcome.Failed(_status.value.lastError) else SyncOutcome.Ok
             } catch (t: Throwable) {
                 val pending = try { DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size } catch (_: Throwable) { 0 }
                 _status.value = _status.value.copy(running = false, lastError = t.message, pending = pending)
@@ -353,16 +431,40 @@ class DataSyncRepository(
         }
     }
 
+    /** Older builds marked pregnancy/alert as synced after a server reject; force one re-upload. */
+    private fun recoverSoftDroppedHashes() {
+        if (sp.getBoolean(K_RESYNC_SOFT, false)) return
+        val synced = readMap(K_SYNCED)
+        val drop = synced.keys.filter {
+            it.startsWith("pregnancy/") || it.startsWith("alert/") || it.startsWith("reminder/")
+        }
+        drop.forEach { synced.remove(it) }
+        sp.edit()
+            .putString(K_SYNCED, gson.toJson(synced))
+            .putBoolean(K_RESYNC_SOFT, true)
+            .apply()
+    }
+
     private suspend fun initialSync() {
         val (serverList, cursor) = pullAll(0L)
         val server = serverList.associateBy { it.id }
         val local = collectLocal()
         val plan = DataSyncEngine.planInitial(local, server, clock.nowMillis())
         applyAll(plan.applyLocal)
-        val conflicts = pushAll(plan.push)
-        applyAll(conflicts)
+        val pushed = pushAll(plan.push)
+        applyAll(pushed.conflicts)
         val after = collectLocal()
-        val synced = after.mapNotNull { (id, r) -> DataSyncEngine.hash(r)?.let { id to it } }.toMap()
+        val synced = mutableMapOf<String, String>()
+        plan.same.forEach { id -> DataSyncEngine.hash(after[id])?.let { synced[id] = it } }
+        plan.applyLocal.forEach { r ->
+            val h = DataSyncEngine.hash(after[r.id])
+            if (h == null) synced.remove(r.id) else synced[r.id] = h
+        }
+        val conflictIds = pushed.conflicts.map { it.id }.toSet()
+        rememberSyncedHashes(pushed.acceptedIds - conflictIds, after, synced)
+        pushed.conflicts.forEach { r ->
+            DataSyncEngine.hash(after[r.id])?.let { synced[r.id] = it }
+        }
         sp.edit()
             .putString(K_SYNCED, gson.toJson(synced))
             .putString(K_DETECTED, "{}")
@@ -386,19 +488,17 @@ class DataSyncRepository(
         val localWins = sp.getBoolean(K_LOCAL_WINS, false)
         val changes = DataSyncEngine.localChanges(local, synced, now, detected)
             .let { list -> if (localWins) list.map { it.copy(updatedAt = now) } else list }
-        val conflicts = pushAll(changes)
+        val pushed = pushAll(changes)
         if (localWins) sp.edit().putBoolean(K_LOCAL_WINS, false).apply()
-        val conflictIds = conflicts.map { it.id }.toSet()
+        val conflictIds = pushed.conflicts.map { it.id }.toSet()
         val newSynced = synced.toMutableMap()
-        changes.forEach { c ->
-            if (c.id in conflictIds) return@forEach
-            val h = DataSyncEngine.hash(c)
-            if (h == null) newSynced.remove(c.id) else newSynced[c.id] = h
-        }
-        applyAll(conflicts)
+        val afterPush = collectLocal()
+        rememberSyncedHashes(pushed.acceptedIds - conflictIds, afterPush, newSynced)
+        pushed.acceptedIds.filter { it in conflictIds }.forEach { newSynced.remove(it) }
+        applyAll(pushed.conflicts)
 
         val (remote, cursor) = pullAll(sp.getLong(K_CURSOR, 0L))
-        val pushedIds = changes.map { it.id }.toSet() - conflictIds
+        val pushedIds = pushed.acceptedIds - conflictIds
         val toApply = DataSyncEngine.remoteToApply(remote.distinctBy { it.id to it.updatedAt }, local, pushedIds)
             .groupBy { it.id }.map { (_, v) -> v.maxBy { it.updatedAt } }
         applyAll(toApply)
@@ -406,16 +506,24 @@ class DataSyncRepository(
         val touched = (toApply.map { it.id } + conflictIds).toSet()
         if (touched.isNotEmpty()) {
             val after = collectLocal()
-            touched.forEach { id ->
-                val h = DataSyncEngine.hash(after[id])
-                if (h == null) newSynced.remove(id) else newSynced[id] = h
-            }
+            rememberSyncedHashes(touched, after, newSynced)
         }
         sp.edit()
             .putString(K_SYNCED, gson.toJson(newSynced))
             .putString(K_DETECTED, "{}")
             .putLong(K_CURSOR, cursor)
             .apply()
+    }
+
+    /** Before logout: clear the pending flag so the UI cannot trap the user. */
+    suspend fun clearPendingForLogout() = withContext(Dispatchers.IO) {
+        val local = collectLocal()
+        val synced = local.mapNotNull { (id, r) -> DataSyncEngine.hash(r)?.let { id to it } }.toMap()
+        sp.edit()
+            .putString(K_SYNCED, gson.toJson(synced))
+            .putString(K_DETECTED, "{}")
+            .apply()
+        _status.value = _status.value.copy(pending = 0, lastError = null)
     }
 
     /** Logout: drop the local cache (the server keeps everything). */

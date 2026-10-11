@@ -28,6 +28,12 @@ import kotlinx.coroutines.launch
 
 open class MahavaApplication : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    override fun onTerminate() {
+        // Emulated processes call onTerminate; stop collectors before their database is disposed.
+        appScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        super.onTerminate()
+    }
     /**
      * Test hook for the system file picker (SAF). Instrumented tests set this so backup/restore/export
      * can run without the system picker UI. Arguments: (mode "create"|"open", suggested file name).

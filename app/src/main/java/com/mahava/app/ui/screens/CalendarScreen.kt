@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,8 +37,9 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
     val useJalali = state.profile?.calendarType != "gregorian"
     val today = vm.today()
     // Month anchor = first day of the shown Jalali (or Gregorian) month.
-    var monthAnchor by remember { mutableStateOf(monthStart(today, useJalali)) }
-    var selected by remember { mutableStateOf(today) }
+    var monthAnchor by androidx.compose.runtime.saveable.rememberSaveable(useJalali) { mutableStateOf(monthStart(today, useJalali)) }
+    var selected by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(today) }
+    val pregnancy = state.health?.appMode == com.mahava.app.health.models.AppHealthMode.PREGNANCY
     val periodDays = remember(state.periods, today) {
         buildSet {
             state.periods.forEach { p ->
@@ -49,7 +52,7 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
     val predictedPeriod = mutableSetOf<Long>()
     val predictedFertile = mutableSetOf<Long>()
     val pred = state.cycle?.prediction
-    if (pred is PredictionKind.Estimate) {
+    if (!pregnancy && pred is PredictionKind.Estimate) {
         var d = pred.nextPeriodStartEarliest
         while (!d.isAfter(pred.nextPeriodStartLatest)) {
             if (d.isAfter(today)) predictedPeriod += d.toEpochDay()
@@ -67,6 +70,7 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
     val days = monthDays(monthAnchor, useJalali)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("calendar_screen")) {
         ScreenHeader("تقویم", onSettings = onSettings)
+        MahavaCard(Modifier.padding(horizontal = 16.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             androidx.compose.material3.IconButton(onClick = { monthAnchor = shiftMonth(monthAnchor, -1, useJalali) }, modifier = Modifier.testTag("cal_prev")) {
                 MahavaIcon(com.mahava.app.R.drawable.ic_chevron_right)
@@ -78,28 +82,31 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf("ش","ی","د","س","چ","پ","ج").forEach {
-                Text(it, modifier = Modifier.width(40.dp), color = MahavaTextSecondary, fontSize = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(it, modifier = Modifier.weight(1f), color = MahavaTextSecondary, fontSize = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
         days.chunked(7).forEach { week ->
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 week.forEach { day ->
-                    if (day == null) Box(Modifier.size(40.dp))
+                    if (day == null) Box(Modifier.weight(1f).heightIn(min = 48.dp))
                     else {
                         val epoch = day.toEpochDay()
-                        val actual = epoch in periodDays
+                        val actual = !pregnancy && epoch in periodDays
                         val predP = epoch in predictedPeriod && !actual
                         val fert = epoch in predictedFertile && !actual
-                        DayCell(day, useJalali, actual, predP, fert, day == today, day == selected) { selected = day }
+                        DayCell(day, useJalali, actual, predP, fert, day == today, day == selected, Modifier.weight(1f)) { selected = day }
                     }
                 }
             }
         }
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Legend()
+        Legend(pregnancy)
+        if (!pregnancy) HealthContextNote(HealthNote.PREDICTION)
+        }
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val sel = selected
             val selLog = vm.logFor(sel)
-            val cycleDayOfSel = state.cycle?.lastPeriodStart?.let { ls ->
+            val cycleDayOfSel = state.periods.filter { it.startEpochDay <= sel.toEpochDay() }.maxByOrNull { it.startEpochDay }?.let { period ->
+                val ls = LocalDate.ofEpochDay(period.startEpochDay)
                 val d = (sel.toEpochDay() - ls.toEpochDay() + 1).toInt()
                 if (d >= 1 && !sel.isAfter(today)) d else null
             }
@@ -109,9 +116,14 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.testTag("cal_selected_date")
                 )
-                cycleDayOfSel?.let { QuietInfo("روز ${PersianDigits.toPersian(it)} چرخه") }
+                if (pregnancy) {
+                    state.health?.pregnancy?.let { p ->
+                        val age = com.mahava.app.health.PregnancyService.progressFromEntity(p, sel)
+                        if (!sel.isBefore(LocalDate.ofEpochDay(p.estimatedDueEpochDay).minusDays(280))) QuietInfo(age.labelFa)
+                    }
+                } else cycleDayOfSel?.let { QuietInfo("روز ${PersianDigits.toPersian(it)} چرخه") }
                 when {
-                    sel.toEpochDay() in periodDays -> Text("پریود ثبت‌شده", color = MahavaMenstruation)
+                    !pregnancy && sel.toEpochDay() in periodDays -> Text("پریود ثبت‌شده", color = MahavaMenstruation)
                     sel.toEpochDay() in predictedPeriod -> Text("پریود احتمالی (تخمینی)", color = MahavaMenstruation)
                     sel.toEpochDay() in predictedFertile -> Text("روز احتمالی باروری (تخمینی)", color = MahavaFertility)
                 }
@@ -126,6 +138,11 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
                     QuietInfo("ثبت حال روزانه با اشتراک ماه باز می‌شه. دیدن تقویم و پیش‌بینی پریود رایگان است.")
                     SecondaryButton("حساب و اشتراک", modifier = Modifier.testTag("cal_account"), onClick = onAccount)
                 }
+            }
+            if (!pregnancy) MahavaCard {
+                SectionLabel("رویدادهای پیش رو")
+                Text(state.health?.currentCycleSummary?.nextPeriodLabelFa ?: "برای نمایش رویداد تخمینی، سابقهٔ بیشتری ثبت کن.")
+                QuietInfo("با ثبت‌های جدید، تخمین تغییر می‌کند.")
             }
             SecondaryButton("برگشت به امروز", modifier = Modifier.testTag("cal_today")) { monthAnchor = monthStart(today, useJalali); selected = today }
             QuietInfo("روزهای تخمینی هیچ‌وقت به‌عنوان پریود واقعی ذخیره نمی‌شوند.")
@@ -152,14 +169,15 @@ private fun monthTitle(anchor: LocalDate, jalali: Boolean): String =
     else "${GREG_MONTHS_FA[anchor.monthValue - 1]} ${PersianDigits.toPersian(anchor.year)}"
 
 @Composable private fun DayCell(
-    day: LocalDate, jalali: Boolean, actual: Boolean, pred: Boolean, fert: Boolean, isToday: Boolean, isSelected: Boolean, onClick: () -> Unit
+    day: LocalDate, jalali: Boolean, actual: Boolean, pred: Boolean, fert: Boolean, isToday: Boolean, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit
 ) {
     val label = if (jalali) PersianDigits.toPersian(JalaliDate.from(day).day) else PersianDigits.toPersian(day.dayOfMonth)
     Box(
-        Modifier.size(40.dp)
+        modifier.heightIn(min = 48.dp)
             .then(if (isSelected) Modifier.border(2.dp, MahavaPrimary, CircleShape) else Modifier)
             .clickable(onClick = onClick)
-            .testTag("day_${day}"),
+            .testTag("day_${day}")
+            .then(Modifier.semantics { contentDescription = "${JalaliDate.from(day).formatFa()}، " + when { actual -> "پریود ثبت‌شده"; pred -> "پریود تخمینی"; fert -> "باروری تخمینی"; else -> "بدون نشانگر" } + if (isToday) "، امروز" else "" }),
         contentAlignment = Alignment.Center
     ) {
         when {
@@ -168,7 +186,7 @@ private fun monthTitle(anchor: LocalDate, jalali: Boolean): String =
             }
             pred -> DashedCircle(MahavaMenstruation) { Text(label, fontSize = 13.sp, color = MahavaTextPrimary) }
             fert -> DashedCircle(MahavaFertility) { Text(label, fontSize = 13.sp, color = MahavaTextPrimary) }
-            isToday -> Box(Modifier.size(34.dp).background(MahavaFertility, CircleShape), contentAlignment = Alignment.Center) {
+            isToday -> Box(Modifier.size(34.dp).background(MahavaPrimary, CircleShape), contentAlignment = Alignment.Center) {
                 Text(label, color = Color.White, fontSize = 13.sp)
             }
             else -> Text(label, fontSize = 13.sp, color = MahavaTextPrimary)
@@ -189,11 +207,14 @@ private fun monthTitle(anchor: LocalDate, jalali: Boolean): String =
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Composable private fun Legend() {
+@Composable private fun Legend(pregnancy: Boolean) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("● امروز", color = MahavaPrimaryDeep, fontSize = 12.sp)
+        if (!pregnancy) {
         Text("● پریود ثبت‌شده", color = MahavaMenstruation, fontSize = 12.sp)
         Text("◌ پریود تخمینی", color = MahavaMenstruation, fontSize = 12.sp)
         Text("◌ باروری تخمینی", color = MahavaFertility, fontSize = 12.sp)
+        }
     }
 }
 

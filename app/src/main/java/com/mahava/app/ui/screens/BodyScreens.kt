@@ -6,7 +6,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,68 +29,83 @@ fun BodyHomeScreen(
     onCategory: (String) -> Unit,
     onCare: () -> Unit,
     onPhaseDetail: (String) -> Unit = {},
-    onAccount: () -> Unit = {}
+    onAccount: () -> Unit = {},
+    onHealthInsight: (String) -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
     val premium by vm.isPremium.collectAsState()
     val sel = vm.phaseTodaySelection()
-    val ctx = vm.dayContext()
+    var query by rememberSaveable { mutableStateOf("") }
+    var pregnancyTopic by rememberSaveable { mutableStateOf(state.profile?.pregnancyMode == true) }
+    val week = state.health?.pregnancyProgress?.contentWeek?.coerceIn(1,42) ?: 4
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("body_screen")) {
         ScreenHeader("شناخت بدن", onSettings = onSettings)
-        if (!premium) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PremiumPaywallCard(
-                    vm = vm,
-                    titleFa = "شناخت بدن",
-                    benefitFa = "توضیح فاز چرخه، مطالب آموزشی و راهنمای مراقبت با اشتراک ماه باز می‌شه.",
-                    onOpenAccount = onAccount
-                )
-            }
-            return@Column
-        }
-        MahavaCard(Modifier.padding(16.dp).testTag("body_phase_card").clickable { onPhaseDetail(sel.item.id) }) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("امروز در بدنت", color = MahavaTextSecondary)
-                    Text(ctx.subWindow.titleFa, style = MaterialTheme.typography.titleLarge)
-                    QuietInfo(sel.item.summaryFa)
-                    Text("بیشتر بخوان", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth().testTag("body_search"), placeholder = { Text("دنبال چه موضوعی هستی؟") }, leadingIcon = { MahavaIcon(R.drawable.design_search) }, shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp), singleLine = true)
+            MahavaCard(Modifier.testTag("body_phase_card").clickable { if (pregnancyTopic) onHealthInsight("preg_week_$week") else onPhaseDetail(sel.item.id) }, containerColor = MahavaMenstruationSoft.copy(alpha = 0.7f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        QuietInfo("متناسب با موضوع مطالعهٔ تو")
+                        Text(if (pregnancyTopic) "همراه بارداری" else "چرخه و تغییرات بدن", style = MaterialTheme.typography.headlineLarge)
+                        Text("توضیح ساده با منابع علمی")
+                        Text("بیشتر بخوان ‹", color = MahavaPrimaryDeep)
+                    }
+                    Illustration(if (pregnancyTopic) R.drawable.design_mother else R.drawable.design_uterus_botanical, Modifier.width(120.dp).height(125.dp))
                 }
-                Illustration(R.drawable.ill_uterus_education, Modifier.width(100.dp).height(80.dp))
             }
-        }
-        val cats = listOf(
-            BodyCategories.PERIOD_PAIN to (R.drawable.ic_droplet to "پریود و درد"),
-            BodyCategories.CYCLE_HORMONES to (R.drawable.ic_uterus to "چرخه و هورمون‌ها"),
-            BodyCategories.SLEEP_MOOD to (R.drawable.ic_moon to "خواب و حال روحی"),
-            BodyCategories.FERTILITY_DISCHARGE to (R.drawable.ic_leaf to "باروری و ترشحات"),
-            BodyCategories.DIGESTION_SKIN to (R.drawable.ic_heart to "گوارش و پوست"),
-            BodyCategories.PATTERN_CARE to (R.drawable.ic_book to "الگو و مراقبت")
-        )
-        val hidden = state.profile?.hiddenBodyCategories?.split(',')?.toSet() ?: emptySet()
-        val visible = cats.filter { it.first !in hidden }
-        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            visible.chunked(2).forEach { row ->
-                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { (id, pair) ->
-                        MahavaCard(Modifier.weight(1f).fillMaxHeight().testTag("cat_$id").clickable { onCategory(id) }) {
-                            MahavaIcon(pair.first)
-                            Spacer(Modifier.height(8.dp))
-                            Text(pair.second, style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ChoiceChipPill("چرخه", !pregnancyTopic) { pregnancyTopic = false }
+                ChoiceChipPill("بارداری", pregnancyTopic) { pregnancyTopic = true }
+            }
+            QuietInfo("انتخاب موضوع مطالعه، وضعیت سلامت ثبت‌شده‌ات را تغییر نمی‌دهد.")
+            if (query.isNotBlank()) {
+                val results = vm.healthFeed().filter { (it.titleFa + it.summaryFa).contains(query.trim(), ignoreCase = true) }
+                if (results.isEmpty()) QuietInfo("مطلبی پیدا نشد؛ عبارت کوتاه‌تری امتحان کن.")
+                results.forEach { item -> HealthInsightCard(item) { onHealthInsight(item.id) } }
+            } else {
+                SectionLabel("موضوع‌ها")
+                if (pregnancyTopic) {
+                    listOf("رشد هفته‌به‌هفته" to "preg_week_$week", "تغییرات بدن مادر" to "preg_mother_$week", "تغذیه و فعالیت" to "preg_nutrition", "مراقبت‌ها و مراجعه‌ها" to "preg_care", "سلامت روان" to "preg_mental", "راهنمای پدر" to "preg_father_$week", "آمادگی تولد" to "preg_birth", "علائم هشدار" to "preg_warning").chunked(2).forEach { row ->
+                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            row.forEach { (label,id) ->
+                                MahavaCard(Modifier.weight(1f).fillMaxHeight().clickable { onHealthInsight(id) }, containerColor = MahavaPrimarySoft.copy(alpha = 0.45f)) {
+                                    MahavaIcon(R.drawable.design_sprout)
+                                    Spacer(Modifier.height(8.dp)); Text(label, style = MaterialTheme.typography.titleMedium)
+                                }
+                            }
                         }
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
-                }
-            }
-            MahavaCard(Modifier.testTag("care_guide_card").clickable(onClick = onCare)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MahavaIcon(R.drawable.ic_note)
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text("راهنمای مراقبت و علائم هشدار", style = MaterialTheme.typography.titleMedium)
-                        QuietInfo("کی مراقبت در خانه کافی است و کی باید بررسی شوی.")
+                } else {
+                    val cats = listOf(
+                        Triple(BodyCategories.CYCLE_HORMONES, R.drawable.design_cycle, "چرخه و هورمون‌ها"),
+                        Triple(BodyCategories.PERIOD_PAIN, R.drawable.design_droplet, "پریود و درد"),
+                        Triple(BodyCategories.SLEEP_MOOD, R.drawable.design_moon, "خواب و حال روحی"),
+                        Triple(BodyCategories.FERTILITY_DISCHARGE, R.drawable.design_sprout, "باروری و ترشحات"),
+                        Triple(BodyCategories.DIGESTION_SKIN, R.drawable.design_heart, "پوست و گوارش"),
+                        Triple(BodyCategories.PATTERN_CARE, R.drawable.design_leaf, "تغذیه و حرکت")
+                    )
+                    val colors = listOf(MahavaPrimarySoft, MahavaMenstruationSoft, androidx.compose.ui.graphics.Color(0xFFFFF0E7), androidx.compose.ui.graphics.Color(0xFFEAF4EF))
+                    cats.chunked(2).forEachIndexed { i,row ->
+                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            row.forEachIndexed { j,(id,icon,label) ->
+                                MahavaCard(Modifier.weight(1f).fillMaxHeight().testTag("cat_$id").clickable { onCategory(id) }, containerColor = colors[(i*2+j)%colors.size].copy(alpha = 0.6f)) {
+                                    MahavaIcon(icon)
+                                    Spacer(Modifier.height(8.dp)); Text(label, style = MaterialTheme.typography.titleMedium)
+                                }
+                            }
+                        }
                     }
                 }
+                SectionLabel("پیشنهاد برای تو")
+                MahavaCard(Modifier.clickable { if (pregnancyTopic) onHealthInsight("preg_mother_$week") else onCategory(BodyCategories.PATTERN_CARE) }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) { SectionLabel("ثبت علائم چه کمکی می‌کند؟"); QuietInfo("آشنایی با الگوی خودت، از روی ثبت‌های واقعی") }
+                        Illustration(R.drawable.design_woman_botanical, Modifier.width(100.dp).height(85.dp))
+                    }
+                }
+            }
+            MahavaCard(Modifier.testTag("care_guide_card").clickable { if (pregnancyTopic) onHealthInsight("preg_warning") else onCare() }) {
+                CompanionAction("علائم هشدار و زمان مراجعه", "چه زمانی بهتر است بررسی شوی؟", R.drawable.design_warning) { if (pregnancyTopic) onHealthInsight("preg_warning") else onCare() }
             }
             Spacer(Modifier.height(16.dp))
         }

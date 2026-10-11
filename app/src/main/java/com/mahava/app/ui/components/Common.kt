@@ -32,28 +32,18 @@ import com.mahava.app.ui.theme.*
 fun MahavaCard(
     modifier: Modifier = Modifier,
     accent: Color = MahavaPrimary,
+    containerColor: Color = MahavaSurface,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        color = MahavaSurface,
-        shadowElevation = 3.dp,
+        color = containerColor,
+        border = BorderStroke(1.dp, MahavaBorder.copy(alpha = 0.65f)),
+        shadowElevation = 0.5.dp,
         tonalElevation = 0.dp
     ) {
-        Column(Modifier.fillMaxWidth()) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(accent, MahavaAccentPeach, MahavaAccentSky.copy(alpha = 0.85f))
-                        )
-                    )
-            )
-            Column(Modifier.padding(16.dp), content = content)
-        }
+        Column(Modifier.padding(16.dp), content = content)
     }
 }
 
@@ -62,9 +52,9 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
         shape = RoundedCornerShape(18.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MahavaPrimary, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = MahavaPrimaryDeep, contentColor = Color.White),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium.copy(color = Color.White))
@@ -75,9 +65,9 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
 fun SecondaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.5.dp, MahavaPrimary.copy(alpha = 0.55f)),
+        border = BorderStroke(1.dp, MahavaBorder),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = MahavaPrimaryDeep,
             containerColor = MahavaPrimarySoft.copy(alpha = 0.45f)
@@ -133,13 +123,14 @@ fun ChoiceChipPill(
     tag: String? = null,
     onClick: () -> Unit
 ) {
-    val bg = if (selected) selectedColor else MahavaPrimarySoft
-    val fg = if (selected) Color.White else MahavaTextPrimary
+    val bg = if (selected) MahavaPrimarySoft else MahavaBackground
+    val fg = if (selected) MahavaPrimaryDeep else MahavaTextPrimary
     Box(
         modifier = Modifier
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(bg)
+            .border(1.dp, if (selected) selectedColor else MahavaBorder, RoundedCornerShape(12.dp))
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (tag != null) Modifier.testTag(tag) else Modifier)
             .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -217,18 +208,12 @@ fun DateStepper(
     val jalali = LocalUseJalali.current
     val picking = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     fun set(d: java.time.LocalDate) { onChange(if (d.isAfter(max)) max else if (d.isBefore(min)) min else d) }
-    Column(Modifier.fillMaxWidth()) {
-        Text(
-            DatePickerMath.formatFa(date, jalali),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(vertical = 8.dp).testTag("${testTagPrefix}_value")
-        )
-        PrimaryButton(
-            text = "انتخاب از تقویم",
-            modifier = Modifier
-                .testTag("${testTagPrefix}_pick")
-                .heightIn(min = 64.dp)
-        ) { picking.value = true }
+    OutlinedButton(onClick = { picking.value = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("${testTagPrefix}_pick"),
+        shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, MahavaBorder)) {
+        MahavaIcon(com.mahava.app.R.drawable.design_calendar, MahavaPrimaryDeep)
+        Spacer(Modifier.width(10.dp))
+        Text(DatePickerMath.formatFa(date, jalali), modifier = Modifier.weight(1f).testTag("${testTagPrefix}_value"))
+        MahavaIcon(com.mahava.app.R.drawable.design_chevron_left, MahavaTextSecondary)
     }
     if (picking.value) MonthDatePickerDialog(date, min, max, onPick = { set(it); picking.value = false }, onDismiss = { picking.value = false })
 }

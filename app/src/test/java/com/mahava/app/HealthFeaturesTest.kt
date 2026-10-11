@@ -131,7 +131,7 @@ class HealthFeaturesTest {
         assertEquals(12 * 7 + 3, p.gestationalAgeDays)
         assertEquals(12, p.completedWeeks)
         assertEquals(3, p.daysIntoWeek)
-        assertEquals(13, p.contentWeek)
+        assertEquals(12, p.contentWeek)
         // After week 40: real age shown, progress capped
         val late = PregnancyService.progress(edd, edd.plusDays(14))
         assertTrue(late.gestationalAgeDays > 280)
@@ -161,7 +161,7 @@ class HealthFeaturesTest {
             HealthMockFixtures.profile(pregnancyMode = true),
             periods, logs, HealthMockFixtures.FIXED_TODAY, pregnancyActive = true, HealthMockFixtures.NOW_MS
         )
-        assertTrue(alerts.isEmpty())
+        assertTrue(alerts.none { it.ruleId.startsWith("cycle_") || it.ruleId.startsWith("bleed_") })
     }
 
     @Test

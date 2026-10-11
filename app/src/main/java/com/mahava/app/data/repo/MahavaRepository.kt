@@ -25,6 +25,9 @@ class MahavaRepository(
     private val clock: AppClock,
     private val engine: CycleEngine = CycleEngine()
 ) {
+    private val calendarDay = kotlinx.coroutines.flow.MutableStateFlow(clock.today())
+    fun refreshCalendarDay() { calendarDay.value = clock.today() }
+
     fun observeProfile(): Flow<UserProfileEntity?> = db.profileDao().observe()
     fun observePeriods(): Flow<List<PeriodEventEntity>> = db.periodDao().observeAll()
     fun observeDailyLogs(): Flow<List<DailyLogEntity>> = db.dailyLogDao().observeAll()
@@ -34,7 +37,7 @@ class MahavaRepository(
     fun observeHealthAlerts(): Flow<List<HealthAlertEntity>> = db.healthAlertDao().observeAll()
 
     fun observeCycleResult(): Flow<CycleEngineResult> =
-        combine(observeProfile(), observePeriods()) { profile, periods ->
+        combine(observeProfile(), observePeriods(), calendarDay) { profile, periods, _ ->
             computeCycle(profile, periods)
         }
 

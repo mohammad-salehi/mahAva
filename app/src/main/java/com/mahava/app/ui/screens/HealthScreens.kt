@@ -47,6 +47,8 @@ import com.mahava.app.health.models.InsightReviewStatus
 import com.mahava.app.ui.AppViewModel
 import com.mahava.app.ui.components.MahavaCard
 import com.mahava.app.ui.components.PrimaryButton
+import com.mahava.app.ui.components.HealthContextNote
+import com.mahava.app.ui.components.HealthNote
 import com.mahava.app.ui.components.QuietInfo
 import com.mahava.app.ui.components.ScreenHeader
 import com.mahava.app.ui.components.SecondaryButton
@@ -95,11 +97,12 @@ fun HealthMiniDashboard(
                     SecondaryButton("تنظیم بارداری", onClick = onPregnancySetup)
                 }
                 health.pregnancyProgress?.contentWeek?.let { w ->
-                    val fetal = vm.fetalWeek(w.coerceAtMost(40))
+                    val fetal = vm.fetalWeek(w.coerceAtMost(42))
                     if (fetal != null) {
                         Spacer(Modifier.height(8.dp))
                         Text("رشد این هفته (آموزشی)", style = MaterialTheme.typography.titleMedium)
                         Text(fetal.growthFa)
+                        HealthContextNote(HealthNote.FETAL_GROWTH)
                         fetal.sizeHintFa?.let {
                             Text("اندازهٔ تقریبی آموزشی: $it — اندازهٔ واقعی جنین شما نیست.", color = MahavaTextSecondary)
                         }
@@ -124,7 +127,7 @@ fun HealthMiniDashboard(
                 }
                 Text(sum?.phaseLabelFa ?: "مرحله نامشخص", color = MahavaTextSecondary)
                 sum?.nextPeriodLabelFa?.let { Text(it) }
-                QuietInfo("مرحله و زمان پریود بعدی تخمینی‌اند و روش جلوگیری از بارداری نیستند.")
+                HealthContextNote(HealthNote.PREDICTION)
                 Text(sum?.historySummaryFa ?: "", color = MahavaTextSecondary)
                 Spacer(Modifier.height(8.dp))
                 SymptomSparkline(health.homeChartData.map { it.painScore })
@@ -193,9 +196,12 @@ fun SymptomSparkline(values: List<Int?>) {
 @Composable
 fun PregnancySetupPage(vm: AppViewModel, onBack: () -> Unit, onDone: () -> Unit) {
     val today = vm.today()
-    var method by remember { mutableStateOf("lmp") }
-    var lmp by remember { mutableStateOf(today.minusDays(40)) }
-    var edd by remember { mutableStateOf(today.plusDays(240)) }
+    val state by vm.state.collectAsState()
+    val saved = state.health?.pregnancy
+    var method by remember(saved?.id) { mutableStateOf(saved?.datingMethod ?: "lmp") }
+    var lmp by remember(saved?.id) { mutableStateOf(saved?.lmpEpochDay?.let { LocalDate.ofEpochDay(it) } ?: state.periods.maxByOrNull { it.startEpochDay }?.let { LocalDate.ofEpochDay(it.startEpochDay) } ?: today) }
+    var edd by remember(saved?.id) { mutableStateOf(saved?.estimatedDueEpochDay?.let { LocalDate.ofEpochDay(it) } ?: today.plusDays(280)) }
+    var confirmed by remember { mutableStateOf(false) }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -212,8 +218,12 @@ fun PregnancySetupPage(vm: AppViewModel, onBack: () -> Unit, onDone: () -> Unit)
             Text("تاریخ تخمینی زایمان پزشک")
             DateStepper(date = edd, min = today.minusDays(30), max = today.plusDays(300), onChange = { edd = it })
         }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Checkbox(confirmed, { confirmed = it })
+            Text("تاریخ مبنا را بررسی کردم و می‌خواهم بارداری فعال شود.")
+        }
         Spacer(Modifier.height(8.dp))
-        PrimaryButton("ذخیره و ورود به حالت بارداری") {
+        PrimaryButton("ذخیره و ورود به حالت بارداری", enabled = confirmed) {
             vm.savePregnancySetup(
                 datingMethod = method,
                 lmp = if (method == "lmp") lmp else null,
@@ -248,13 +258,14 @@ fun PregnancyPage(
         Text(progress.weekOrdinalLabelFa, color = MahavaTextSecondary)
         Text("EDD: ${JalaliDate.from(LocalDate.parse(progress.estimatedDueDate)).formatShortFa()}")
         LinearProgressIndicator(progress = { progress.progressFraction }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
-        val week = progress.contentWeek.coerceAtMost(40)
+        val week = progress.contentWeek.coerceAtMost(42)
         val fetal = vm.fetalWeek(week)
         if (fetal != null) {
             MahavaCard(Modifier.clickable { onInsight("preg_week_${fetal.week}") }) {
                 Text("رشد هفتهٔ ${PersianDigits.toPersian(fetal.week)}", style = MaterialTheme.typography.titleMedium)
                 Text(fetal.growthFa)
                 Text(fetal.bodyChangesFa)
+                HealthContextNote(HealthNote.FETAL_GROWTH)
                 fetal.sizeHintFa?.let { Text("مقایسهٔ آموزشی: $it", color = MahavaTextSecondary) }
             }
         } else if (progress.contentWeek > 40) {
@@ -366,6 +377,11 @@ fun HealthInsightDetailPage(vm: AppViewModel, id: String, onBack: () -> Unit) {
         }
         Text(insight.titleFa, style = MaterialTheme.typography.headlineLarge)
         Text(insight.summaryFa)
+        QuietInfo(insight.applicabilityNoteFa)
+        if (insight.topic == "pregnancy") {
+            com.mahava.app.ui.components.Illustration(com.mahava.app.R.drawable.design_fetus_educational, Modifier.height(120.dp))
+            QuietInfo("تصویر نمادین آموزشی است؛ شکل دقیق جنین در هفتهٔ انتخاب‌شده یا نتیجهٔ سونوگرافی نیست.")
+        }
         QuietInfo("وضعیت بازبینی: ${reviewFa(insight.reviewStatus)}")
         insight.sections.forEach { s ->
             MahavaCard {
@@ -374,6 +390,7 @@ fun HealthInsightDetailPage(vm: AppViewModel, id: String, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(8.dp))
         }
+        HealthContextNote(if (id.startsWith("preg_week_")) HealthNote.FETAL_GROWTH else HealthNote.GENERAL)
         Text("منابع", style = MaterialTheme.typography.titleMedium)
         insight.sourceIds.forEach { sid ->
             val src = vm.scienceSource(sid)
@@ -390,7 +407,7 @@ fun HealthInsightDetailPage(vm: AppViewModel, id: String, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(6.dp))
         }
-        Text("بازبینی محتوا: ${insight.reviewedAt ?: "هنوز بازبینی بالینی مستقل ثبت نشده"}", color = MahavaTextSecondary)
+        Text("بازبینی محتوایی: ${insight.reviewedAt ?: "ثبت نشده"} · بازبینی بالینی مستقل انجام نشده", color = MahavaTextSecondary)
     }
 }
 
@@ -406,7 +423,29 @@ fun SmartAssistantPage(vm: AppViewModel, onBack: () -> Unit, onAlert: (String) -
     val alerts = state.health?.activeAlerts.orEmpty()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("smart_assistant")) {
         ScreenHeader("دستیار سلامت", onBack = onBack)
-        QuietInfo("این بخش بر قواعد قطعی و قابل توضیح است، نه مدل زبانی. تشخیص پزشکی یا تجویز دارو نیست.")
+        QuietInfo("راهنمای آفلاین بر اساس ثبت‌های تو و کتابخانهٔ ذخیره‌شده؛ تشخیص پزشکی یا پاسخ آنلاین نیست.")
+        Text(state.health?.pregnancyProgress?.let { "مبنای شخصی‌سازی: ${it.labelFa} از تاریخ ثبت‌شده" } ?: "مبنای شخصی‌سازی: ثبت‌ها و مرحلهٔ تخمینی چرخه")
+        var question by remember { mutableStateOf("") }
+        var asked by remember { mutableStateOf("") }
+        androidx.compose.material3.OutlinedTextField(question, { question = it }, modifier = Modifier.fillMaxWidth(), label = { Text("موضوع یا سؤال کوتاهت را بنویس") })
+        PrimaryButton("جست‌وجو در راهنمای آفلاین", enabled = question.isNotBlank()) { asked = question.trim() }
+        if (asked.isNotBlank()) {
+            val terms = asked.split(' ').filter { it.length > 2 }
+            val matches = vm.healthFeed().map { item -> item to terms.count { term -> (item.titleFa + item.summaryFa + item.sections.joinToString { it.bodyFa }).contains(term) } }.filter { it.second > 0 }.sortedByDescending { it.second }.take(3)
+            if (matches.isEmpty()) QuietInfo("در بانک ذخیره‌شده پاسخ مرتبطی پیدا نشد؛ سؤال کوتاه‌تر یا موضوع مشخص‌تری بنویس.")
+            matches.forEach { (item, _) ->
+                MahavaCard {
+                    Text(item.titleFa, style = MaterialTheme.typography.titleMedium)
+                    Text(item.summaryFa)
+                    QuietInfo("مبنای پاسخ: اطلاعات عمومی ذخیره‌شده، نه تشخیص وضعیت تو.")
+                    HealthContextNote(if (item.id.startsWith("preg_week_")) HealthNote.FETAL_GROWTH else HealthNote.GENERAL)
+                    item.sourceIds.mapNotNull { vm.scienceSource(it) }.take(2).forEach { source ->
+                        val context = LocalContext.current
+                        Text(source.publisherFa + " · " + source.titleFa, color = MahavaPrimary, modifier = Modifier.clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(source.url))) })
+                    }
+                }
+            }
+        }
         if (alerts.isEmpty()) {
             QuietInfo("الان هشدار فعالی از روی داده‌هایت ساخته نشده.")
         }
@@ -440,6 +479,7 @@ fun AlertDetailPage(vm: AppViewModel, id: String, onBack: () -> Unit) {
         Text("اقدام مناسب", style = MaterialTheme.typography.titleMedium)
         Text(alert.recommendedActionFa)
         QuietInfo("این پیام تشخیص قطعی نیست و دارویی تجویز نمی‌کند.")
+        HealthContextNote(if (id.startsWith("preg_week_")) HealthNote.FETAL_GROWTH else HealthNote.GENERAL)
         Text("منابع", style = MaterialTheme.typography.titleMedium)
         alert.evidenceReferences.forEach { sid ->
             val src = vm.scienceSource(sid)

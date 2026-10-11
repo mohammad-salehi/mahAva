@@ -190,7 +190,6 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
     val premium by vm.isPremium.collectAsState()
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf("") }
-    var confirmLogout by remember { mutableStateOf(false) }
     var askDelete by remember { mutableStateOf(false) }
     var deletePassword by remember { mutableStateOf("") }
     var deleteError by remember { mutableStateOf<String?>(null) }
@@ -252,8 +251,9 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 Spacer(Modifier.height(8.dp))
                 PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
-                        if (vm.logoutAccount(force = false) == "pending") confirmLogout = true
-                        else status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
+                        status = "داره خارج می‌شه…"
+                        vm.logoutAccount()
+                        status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
                     }
                 }
             }
@@ -264,20 +264,6 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 Spacer(Modifier.height(8.dp))
                 SecondaryButton("حذف حساب و همهٔ اطلاعات", modifier = Modifier.testTag("delete_account_btn")) { askDelete = true }
             }
-        }
-        if (confirmLogout) {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { confirmLogout = false },
-                title = { Text("بعضی تغییرها هنوز به سرور نرسیده") },
-                text = { Text("الان اینترنت نیست یا سرور در دسترس نیست. اگه خارج شی، تغییرهای اخیرِ همین گوشی پاک می‌شن. بهتره اول به اینترنت وصل شی.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        confirmLogout = false
-                        scope.launch { vm.logoutAccount(force = true); status = "خارج شدی." }
-                    }) { Text("با این حال خارج شو") }
-                },
-                dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("صبر می‌کنم") } }
-            )
         }
         if (askDelete) {
             androidx.compose.material3.AlertDialog(

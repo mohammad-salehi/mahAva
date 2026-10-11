@@ -38,7 +38,8 @@ class CycleEngine {
 
     fun compute(input: Input): CycleEngineResult {
         val confirmed = input.periods
-            .filter { it.confirmedByUser }
+            .filter { it.confirmedByUser && !it.start.isAfter(input.today) && (it.endInclusive == null || !it.endInclusive.isBefore(it.start)) }
+            .distinctBy { it.start }
             .sortedBy { it.start }
 
         val lastStart = confirmed.lastOrNull()?.start
@@ -103,18 +104,13 @@ class CycleEngine {
             samples.size >= 2 -> {
                 val used = samples.takeLast(input.maxCyclesForMedian)
                 val median = medianInt(used.map { it.lengthDays })
-                val variability = max(2, (mad(used.map { it.lengthDays }) * 1.5).roundToInt().coerceAtLeast(2))
-                // Extra uncertainty when few cycles
-                val dataPad = when (used.size) {
-                    2 -> 2
-                    3 -> 1
-                    else -> 0
-                }
-                val half = variability + dataPad
+                val observedMin = used.minOf { it.lengthDays }
+                val observedMax = used.maxOf { it.lengthDays }
+                val half = max(median - observedMin, observedMax - median)
                 val anchor = lastStart!!
                 val central = anchor.plusDays(median.toLong())
-                val earliest = central.minusDays(half.toLong())
-                val latest = central.plusDays(half.toLong())
+                val earliest = anchor.plusDays(observedMin.toLong())
+                val latest = anchor.plusDays(observedMax.toLong())
                 val (ovEarliest, ovLatest) = SubWindowMath.ovulationRange(central, half, anchor)
                 val fertEarliest = maxDate(ovEarliest.minusDays(3), anchor)
                 val fertLatest = ovLatest
@@ -131,15 +127,15 @@ class CycleEngine {
                 )
                 effectiveRestriction = PredictionRestriction.NONE
                 basis = "بر اساس ${fa(used.size)} چرخه‌ای که ثبت کرده‌ای؛ چرخه‌هایت معمولاً حدود ${fa(median)} روز است."
-                limits = "این فقط یک تخمین است و ممکن است چند روز زودتر یا دیرتر باشد."
+                limits = "بازه از کوتاه‌ترین و بلندترین چرخه‌های ثبت‌شده آمده؛ بازهٔ اطمینان آماری نیست و چرخهٔ بعدی می‌تواند بیرون آن باشد."
                 reason = "median_recent_cycles"
             }
             input.typicalCycleLength != null && lastStart != null -> {
                 val L = input.typicalCycleLength
-                val half = 3 // minimum uncertainty for single user-stated length
+                val half = 0 // A stated length supplies a tentative date, not an evidenced uncertainty interval.
                 val central = lastStart.plusDays(L.toLong())
-                val earliest = central.minusDays(half.toLong())
-                val latest = central.plusDays(half.toLong())
+                val earliest = central
+                val latest = central
                 val (ovEarliest, ovLatest) = SubWindowMath.ovulationRange(central, half, lastStart)
                 val fertEarliest = maxDate(ovEarliest.minusDays(3), lastStart)
                 val fertLatest = ovLatest
@@ -156,7 +152,7 @@ class CycleEngine {
                 )
                 effectiveRestriction = PredictionRestriction.NONE
                 basis = "بر اساس طول چرخه‌ای که خودت وارد کرده‌ای (حدود ${fa(L)} روز)."
-                limits = "هنوز چرخهٔ کاملی ثبت نشده؛ تاریخ ممکن است تا ${fa(half)} روز زودتر یا دیرتر باشد."
+                limits = "سابقه برای ساخت بازه کافی نیست؛ این فقط تاریخ تقریبی بر اساس طول واردشده است و می‌تواند جابه‌جا شود."
                 reason = "user_stated_cycle_length"
             }
             else -> {

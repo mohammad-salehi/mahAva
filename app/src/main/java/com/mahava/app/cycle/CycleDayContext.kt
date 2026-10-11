@@ -156,7 +156,7 @@ object CycleDayContextResolver {
         }
 
         val bleedDay: Int? = if (
-            result.periodOngoing &&
+            !day.isAfter(result.today) && result.periodOngoing &&
             lastStart != null &&
             !day.isBefore(lastStart) &&
             (!restricted || CycleContentPolicy.bleedingContentAllowed(result.restriction))

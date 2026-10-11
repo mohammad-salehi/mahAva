@@ -63,7 +63,7 @@ object HealthStore {
                 chart = chart
             )
         } else null
-        val insights = content.insightsForHome(cycle, progress?.contentWeek?.coerceAtMost(40))
+        val insights = content.insightsForHome(cycle, progress?.contentWeek?.coerceAtMost(42))
         val computed = HealthRuleEngine.evaluate(profile, periods, logs, today, pregActive, nowMillis)
         val mergedAlerts = mergeAlerts(computed, persistedAlerts)
         return HealthUiSnapshot(

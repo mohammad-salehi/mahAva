@@ -117,7 +117,21 @@ object DataSyncEngine {
         return SyncPlan(push, apply, same)
     }
 
-    private fun SyncRecord.stamped(now: Long) = if (updatedAt > 0) this else copy(updatedAt = now)
+    /**
+     * Server rejects updatedAt before 2015-01-01 UTC (`زمان نامعتبر`).
+     * Values in (0, MIN) used to look "set" locally and then poison the whole push.
+     */
+    const val MIN_SERVER_TS = 1_420_070_400_000L // Date.UTC(2015, 0, 1)
+
+    fun SyncRecord.withServerTimestamp(now: Long): SyncRecord {
+        val ts = when {
+            updatedAt >= MIN_SERVER_TS -> updatedAt
+            else -> now.coerceAtLeast(MIN_SERVER_TS)
+        }
+        return if (ts == updatedAt) this else copy(updatedAt = ts)
+    }
+
+    private fun SyncRecord.stamped(now: Long) = withServerTimestamp(now)
 
     /**
      * Regular round: push what changed on the phone since the last sync (including deletions),
@@ -134,14 +148,18 @@ object DataSyncEngine {
         val out = mutableListOf<SyncRecord>()
         for ((id, rec) in local) {
             if (hash(rec) != synced[id]) {
-                val ts = if (rec.updatedAt > 0) rec.updatedAt else detectedAt[id] ?: now
-                out += rec.copy(updatedAt = ts)
+                val candidate = when {
+                    rec.updatedAt >= MIN_SERVER_TS -> rec.updatedAt
+                    else -> detectedAt[id] ?: now
+                }
+                out += rec.copy(updatedAt = candidate).withServerTimestamp(now)
             }
         }
         for (id in synced.keys) {
             if (id !in local) {
                 val (kind, key) = id.split('/', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
-                out += SyncRecord(kind, key, null, detectedAt[id] ?: now, deleted = true)
+                val ts = (detectedAt[id] ?: now).let { if (it >= MIN_SERVER_TS) it else now.coerceAtLeast(MIN_SERVER_TS) }
+                out += SyncRecord(kind, key, null, ts, deleted = true)
             }
         }
         return out

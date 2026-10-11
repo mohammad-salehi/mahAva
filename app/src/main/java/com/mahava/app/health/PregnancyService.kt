@@ -77,8 +77,8 @@ object PregnancyService {
         val gestationalAgeDays = (FULL_TERM_DAYS - daysUntilEdd).coerceAtLeast(0)
         val completedWeeks = gestationalAgeDays / 7
         val daysIntoWeek = gestationalAgeDays % 7
-        // Content week is 1-based completed+1 for "in week N" copy, clamped for bank lookup only.
-        val contentWeek = (completedWeeks + 1).coerceAtLeast(1)
+        // NHS week pages use completed gestational weeks; ordinal copy remains completed+1.
+        val contentWeek = completedWeeks.coerceAtLeast(1)
         val progressFraction = (gestationalAgeDays.toFloat() / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)
         val labelFa = buildString {
             append(PersianDigits.toPersian(completedWeeks))
@@ -89,7 +89,7 @@ object PregnancyService {
                 append(" روز")
             }
         }
-        val weekOrdinalFa = "در هفتهٔ ${PersianDigits.toPersian(contentWeek)}"
+        val weekOrdinalFa = "در هفتهٔ ${PersianDigits.toPersian(completedWeeks + 1)}"
         return PregnancyProgress(
             gestationalAgeDays = gestationalAgeDays,
             completedWeeks = completedWeeks,

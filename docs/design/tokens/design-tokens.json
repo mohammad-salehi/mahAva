@@ -1,0 +1,54 @@
+{
+  "colors": {
+    "background": "#FAF8FC",
+    "surface": "#FFFFFF",
+    "primary": "#9472C9",
+    "primaryStrong": "#7554AE",
+    "onPrimary": "#FFFFFF",
+    "text": "#30273E",
+    "secondaryText": "#776A83",
+    "lavender": "#EEE5F8",
+    "pink": "#FCE8EE",
+    "mint": "#EAF4EF",
+    "peach": "#FFF0E7",
+    "border": "#EEE8F2"
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32
+  ],
+  "radius": {
+    "chip": 12,
+    "button": 16,
+    "card": 20,
+    "hero": 24
+  },
+  "typography": {
+    "font": "Vazirmatn",
+    "body": 14,
+    "label": 12,
+    "section": 18,
+    "page": 24,
+    "hero": 30,
+    "lineHeight": 1.7,
+    "weights": [
+      400,
+      500,
+      700
+    ]
+  },
+  "layout": {
+    "horizontalPadding": 16,
+    "cardPadding": 16,
+    "cardGap": 12,
+    "minTouchTarget": 48,
+    "iconSize": 24,
+    "bottomNavigationItems": 5
+  },
+  "note": "Implementation specification derived from raster references, not original Figma measurements."
+}

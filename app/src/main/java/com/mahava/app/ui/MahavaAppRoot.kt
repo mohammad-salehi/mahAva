@@ -209,7 +209,7 @@ fun MahavaAppRoot(
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
     val showBottom = onboardingDone && loggedIn && !isPartnerAccount &&
-        route in setOf(Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.BODY)
+        route != null && route !in Routes.authOnly && route != Routes.ONBOARDING
 
     val startDestination = when {
         !loggedIn -> Routes.LOGIN
@@ -221,12 +221,12 @@ fun MahavaAppRoot(
     Scaffold(
         bottomBar = {
             if (showBottom) {
-                NavigationBar(containerColor = MahavaSurface) {
-                    NavItem(nav, Routes.TODAY, "امروز", R.drawable.ic_home, route)
-                    NavItem(nav, Routes.CALENDAR, "تقویم", R.drawable.ic_calendar, route)
-                    NavItem(nav, Routes.LOG_HUB, "ثبت", R.drawable.ic_plus, route)
-                    NavItem(nav, Routes.REPORTS, "گزارش‌ها", R.drawable.ic_reports, route)
-                    NavItem(nav, Routes.BODY, "شناخت بدن", R.drawable.ic_leaf, route)
+                com.mahava.app.ui.components.MainNavigation(route) { target ->
+                    nav.navigate(target) {
+                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             }
         },
@@ -315,7 +315,7 @@ fun MahavaAppRoot(
             ) { entry ->
                 val dayArg = entry.arguments?.getLong("day") ?: -1L
                 val day = if (dayArg >= 0) LocalDate.ofEpochDay(dayArg) else vm.today()
-                DailyLogScreen(vm, day, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+                DailyLogScreen(vm, day, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() }, onPeriod = { nav.navigate(Routes.PERIOD_LOG) }, onTest = { nav.navigate(Routes.LATE) })
             }
             composable(Routes.PERIOD_LOG) { PeriodLogScreen(vm, onBack = { nav.popBackStack() }) }
             composable(Routes.REPORTS) {
@@ -365,7 +365,8 @@ fun MahavaAppRoot(
                     onCategory = { nav.navigate(Routes.bodyCat(it)) },
                     onCare = { nav.navigate(Routes.CARE) },
                     onPhaseDetail = { nav.navigate(Routes.phaseDetail(it)) },
-                    onAccount = { goAccountOrLogin() }
+                    onAccount = { goAccountOrLogin() },
+                    onHealthInsight = { nav.navigate(Routes.healthInsight(it)) }
                 )
             }
             composable(
@@ -535,6 +536,7 @@ fun MahavaAppRoot(
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     vm, activity,
+                    onPregnancySetup = { nav.navigate(Routes.PREGNANCY_SETUP) },
                     onBack = { nav.popBackStack() },
                     onAccount = { goAccountOrLogin() },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
@@ -574,31 +576,6 @@ private fun LockScreen(onUnlock: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         PrimaryButton("باز کردن قفل", onClick = onUnlock)
     }
-}
-
-@Composable
-private fun RowScope.NavItem(nav: androidx.navigation.NavHostController, route: String, label: String, icon: Int, current: String?) {
-    val selected = current == route
-    NavigationBarItem(
-        selected = selected,
-        onClick = {
-            nav.navigate(route) {
-                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                launchSingleTop = true
-                restoreState = true
-            }
-        },
-        modifier = Modifier.testTag("nav_$route"),
-        icon = {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = label,
-                tint = if (selected) MahavaPrimary else MahavaTextSecondary
-            )
-        },
-        label = { Text(label, color = if (selected) MahavaPrimary else MahavaTextSecondary, maxLines = 1) },
-        colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFEEE8FB))
-    )
 }
 
 @Composable

@@ -165,12 +165,21 @@ class MahApiClient(
         gson.fromJson(request("GET", "/api/mah/data?since=$since", null, token), DataPullDto::class.java)
 
     suspend fun dataPush(token: String, changes: List<com.mahava.app.sync.SyncRecord>): DataPushDto {
-        val body = mapOf(
-            "changes" to changes.map {
-                mapOf("kind" to it.kind, "key" to it.key, "data" to it.data, "deleted" to it.deleted, "updatedAt" to it.updatedAt)
-            }
-        )
-        return gson.fromJson(request("POST", "/api/mah/data/sync", body, token), DataPushDto::class.java)
+        // Build a real JsonObject so nested record `data` is not lost (Map+Any + Gson can drop JsonObject).
+        val root = JsonObject()
+        val arr = com.google.gson.JsonArray()
+        changes.forEach { c ->
+            arr.add(JsonObject().apply {
+                addProperty("kind", c.kind)
+                addProperty("key", c.key)
+                addProperty("deleted", c.deleted)
+                addProperty("updatedAt", c.updatedAt)
+                if (c.deleted || c.data == null) add("data", com.google.gson.JsonNull.INSTANCE)
+                else add("data", c.data)
+            })
+        }
+        root.add("changes", arr)
+        return gson.fromJson(requestJson("POST", "/api/mah/data/sync", root, token), DataPushDto::class.java)
     }
 
     suspend fun dataWipe(token: String) {
@@ -196,6 +205,20 @@ class MahApiClient(
         path: String,
         body: Map<String, Any?>?,
         token: String?
+    ): String = requestRaw(method, path, body?.let { gson.toJson(it) }, token)
+
+    private suspend fun requestJson(
+        method: String,
+        path: String,
+        body: JsonObject,
+        token: String?
+    ): String = requestRaw(method, path, gson.toJson(body), token)
+
+    private suspend fun requestRaw(
+        method: String,
+        path: String,
+        bodyJson: String?,
+        token: String?
     ): String = withContext(Dispatchers.IO) {
         val url = URL(currentBaseUrl() + path)
         val conn = (url.openConnection() as HttpURLConnection).apply {
@@ -206,9 +229,9 @@ class MahApiClient(
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             if (!token.isNullOrBlank()) setRequestProperty("Authorization", "Bearer $token")
             doInput = true
-            if (body != null) {
+            if (bodyJson != null) {
                 doOutput = true
-                OutputStreamWriter(outputStream, Charsets.UTF_8).use { it.write(gson.toJson(body)) }
+                OutputStreamWriter(outputStream, Charsets.UTF_8).use { it.write(bodyJson) }
             }
         }
         val code = conn.responseCode

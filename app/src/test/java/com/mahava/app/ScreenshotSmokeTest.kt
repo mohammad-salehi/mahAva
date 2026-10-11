@@ -1,43 +1,47 @@
-package com.mahava.app
+﻿package com.mahava.app
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
+import androidx.work.testing.WorkManagerTestInitHelper
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
-import java.io.FileOutputStream
 
-/**
- * Best-effort screenshot capture. May be skipped/fail on environments without native graphics;
- * failures are reported honestly and do not invent success.
- */
+/** Capture the real launch activity; isolate WorkManager before its ViewModel starts. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ScreenshotSmokeTest {
-    @get:Rule
-    val rule = createAndroidComposeRule<MainActivity>()
+    private val compose = createAndroidComposeRule<MainActivity>()
+    private val work = object : ExternalResource() {
+        override fun before() {
+            WorkManagerTestInitHelper.initializeTestWorkManager(RuntimeEnvironment.getApplication())
+        }
+        override fun after() {
+            WorkManagerTestInitHelper.closeWorkDatabase()
+        }
+    }
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(work).around(compose)
 
     @Test fun captureLaunch() {
-        // Allow activity to settle
-        rule.waitForIdle()
-        val dir = File("build/screenshots").apply { mkdirs() }
-        try {
-            val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
-            FileOutputStream(File(dir, "launch.png")).use { out ->
-                bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-        } catch (t: Throwable) {
-            File(dir, "CAPTURE_FAILED.txt").writeText("capture failed: ${t.javaClass.simpleName}: ${t.message}")
-            // Do not fail the whole suite solely for screenshots — but mark clearly
-            println("SCREENSHOT_CAPTURE_FAILED: ${t.message}")
+        compose.waitForIdle()
+        val file = File("build/screenshots/launch.png").apply { parentFile!!.mkdirs() }
+        lateinit var bitmap: Bitmap
+        compose.runOnUiThread {
+            val view = compose.activity.window.decorView
+            bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            view.draw(Canvas(bitmap))
         }
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        assertTrue(file.length() > 1000)
     }
 }

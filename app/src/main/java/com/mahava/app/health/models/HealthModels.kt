@@ -98,7 +98,10 @@ data class FetalDevelopmentEntry(
     val bodyChangesFa: String,
     val milestonesFa: List<String>,
     val sizeHintFa: String?,
-    val sourceIds: List<String>
+    val sourceIds: List<String>,
+    val motherAdviceFa: String = "",
+    val fatherAdviceFa: String = "",
+    val careFa: String = ""
 )
 
 enum class InsightReviewStatus { DRAFT, SOURCE_VERIFIED, CLINICALLY_REVIEWED }

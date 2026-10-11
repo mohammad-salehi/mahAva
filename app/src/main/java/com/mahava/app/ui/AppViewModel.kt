@@ -244,6 +244,12 @@ class AppViewModel(
     fun scienceSource(id: String) = app.scientificContent.sourceById(id)
 
     init {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(60_000)
+                repo.refreshCalendarDay()
+            }
+        }
         com.mahava.app.notice.AppNotices.load(app)
         checkForceUpdate()
 
@@ -303,6 +309,7 @@ class AppViewModel(
 
     /** Called from Activity.onStart: lock again when the app was away longer than the chosen timeout. */
     fun onAppForegrounded() {
+        repo.refreshCalendarDay()
         val p = state.value.profile
         val since = backgroundedAt
         backgroundedAt = null
@@ -542,6 +549,23 @@ class AppViewModel(
     private val todaySignalSaveMutex = Mutex()
 
     /** Keep unrelated daily-log fields when the user taps a signal on Today. */
+    fun toggleTodayFeeling(key: String) = viewModelScope.launch {
+        todaySignalSaveMutex.withLock {
+            val epoch = today().toEpochDay()
+            val now = clock.nowMillis()
+            val row = repo.getDailyLog(epoch) ?: DailyLogEntity(epochDay = epoch, createdAt = now, updatedAt = now)
+            val symptoms = row.physicalSymptoms.orEmpty().split(',').filter { it.isNotBlank() }.toSet()
+            val updated = if (key == "happy") row.copy(moods = if (row.moods == "happy") null else "happy")
+            else {
+                val next = if (key in symptoms) symptoms-key else symptoms+key
+                row.copy(physicalSymptoms = next.sorted().joinToString(",").ifBlank { null }, noSymptoms = if (next.isNotEmpty()) false else row.noSymptoms,
+                    painScore = if (key == "pain" && key in symptoms) null else row.painScore)
+            }
+            repo.upsertDailyLog(updated.copy(updatedAt = now))
+        }
+        pushWomanDataToServer(await = false)
+    }
+
     fun saveTodaySignals(food: Set<String>, body: Set<String>, mood: String?) = viewModelScope.launch {
         todaySignalSaveMutex.withLock {
             val epochDay = today().toEpochDay()
@@ -675,13 +699,16 @@ class AppViewModel(
     }
 
     /**
-     * Logout clears the phone's copy (the server keeps everything). First tries to send pending
-     * changes; if some could not be sent and [force] is false, returns "pending" so the UI can warn.
+     * Logout clears the phone's copy (the server keeps everything).
+     * Always completes: best-effort sync first, then leave — never trap the user behind "pending".
      */
     suspend fun logoutAccount(force: Boolean = true): String? {
         if (prefs.getAccountRole() != "male") {
-            kotlinx.coroutines.withTimeoutOrNull(10_000) { app.dataSync.sync() }
-            if (!force && app.dataSync.pendingCount() > 0) return "pending"
+            try {
+                kotlinx.coroutines.withTimeoutOrNull(12_000) { app.dataSync.sync() }
+            } catch (_: Throwable) { }
+            // Best-effort: never block exit if a push is still pending.
+            try { app.dataSync.clearPendingForLogout() } catch (_: Throwable) { }
         }
         com.mahava.app.partner.PartnerSync.cancel(app)
         com.mahava.app.sync.DataSync.cancel(app)

@@ -64,22 +64,34 @@ class DataSyncEngineTest {
 
     @Test
     fun offlineEditsAndDeletesArePushedOnce() {
-        val a = log(100, 10, "moods" to "sad")
-        val b = log(101, 10, "moods" to "calm")
+        val a = log(100, 1_790_000_000_010L, "moods" to "sad")
+        val b = log(101, 1_790_000_000_010L, "moods" to "calm")
         val synced = mapOf(a.id to DataSyncEngine.hash(a)!!, b.id to DataSyncEngine.hash(b)!!, "period/90" to "old")
-        val edited = log(100, 30, "moods" to "happy")
+        val edited = log(100, 1_790_000_000_030L, "moods" to "happy")
         val reminder = SyncRecord("reminder", "daily_log", obj("enabled" to true), 0)
-        val changes = DataSyncEngine.localChanges(map(edited, b, reminder), synced, now = 1000, detectedAt = mapOf("reminder/daily_log" to 500))
+        val now = 1_790_000_000_100L
+        val detected = 1_790_000_000_050L
+        val changes = DataSyncEngine.localChanges(map(edited, b, reminder), synced, now = now, detectedAt = mapOf("reminder/daily_log" to detected))
         val byId = changes.associateBy { it.id }
         assertEquals(setOf("log/100", "reminder/daily_log", "period/90"), byId.keys)
-        assertEquals(30L, byId["log/100"]!!.updatedAt)
-        assertEquals(500L, byId["reminder/daily_log"]!!.updatedAt)
+        assertEquals(1_790_000_000_030L, byId["log/100"]!!.updatedAt)
+        assertEquals(detected, byId["reminder/daily_log"]!!.updatedAt)
         assertTrue(byId["period/90"]!!.deleted)
+        assertTrue(byId["period/90"]!!.updatedAt >= DataSyncEngine.MIN_SERVER_TS)
         // After a successful push nothing is pending.
         val after = synced.toMutableMap().apply {
             changes.forEach { c -> DataSyncEngine.hash(c)?.let { put(c.id, it) } ?: remove(c.id) }
         }
-        assertTrue(DataSyncEngine.localChanges(map(edited, b, reminder), after, 2000).isEmpty())
+        assertTrue(DataSyncEngine.localChanges(map(edited, b, reminder), after, now + 1).isEmpty())
+    }
+
+    @Test
+    fun tinyLocalTimestampsAreRaisedToServerMinimum() {
+        val dirty = SyncRecord("pregnancy", "main", obj("status" to "active"), 1L)
+        val changes = DataSyncEngine.localChanges(mapOf(dirty.id to dirty), emptyMap(), now = 1_790_000_000_000L)
+        assertEquals(1, changes.size)
+        assertTrue(changes[0].updatedAt >= DataSyncEngine.MIN_SERVER_TS)
+        assertEquals(1_790_000_000_000L, changes[0].updatedAt)
     }
 
     @Test

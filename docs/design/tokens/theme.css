@@ -1,0 +1,15 @@
+:root {
+  --mh-background: #FAF8FC;
+  --mh-surface: #FFFFFF;
+  --mh-primary: #9472C9;
+  --mh-primaryStrong: #7554AE;
+  --mh-onPrimary: #FFFFFF;
+  --mh-text: #30273E;
+  --mh-secondaryText: #776A83;
+  --mh-lavender: #EEE5F8;
+  --mh-pink: #FCE8EE;
+  --mh-mint: #EAF4EF;
+  --mh-peach: #FFF0E7;
+  --mh-border: #EEE8F2;
+}
+@font-face {font-family:Vazirmatn;src:url(../fonts/Vazirmatn-Regular.ttf) format("truetype");font-weight:400;font-display:swap;}

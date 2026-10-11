@@ -70,7 +70,7 @@ fun PhaseScienceScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
         Spacer(Modifier.height(8.dp))
         SourcesCard(science.sourceIds)
         Spacer(Modifier.height(8.dp))
-        QuietInfo(science.disclaimerFa)
+        HealthContextNote(HealthNote.GENERAL)
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -144,7 +144,7 @@ fun QuickSymptomLogScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () ->
                     physicalSymptoms = symptoms.takeIf { it.isNotEmpty() }?.joinToString(","),
                     painScore = pain.takeIf { it >= 0 },
                     foodCravings = cravings.takeIf { it.isNotEmpty() }?.joinToString(","),
-                    noSymptoms = symptoms.isEmpty() && pain < 0,
+                    noSymptoms = if (symptoms.isNotEmpty() || pain >= 0) false else base.noSymptoms,
                     updatedAt = now
                 )
             )
@@ -177,7 +177,7 @@ fun PhaseFoodTipsScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> U
             Text("هوس رایج این دوره", style = MaterialTheme.typography.titleMedium)
             Text(science.cravingFa)
         }
-        QuietInfo(science.disclaimerFa)
+        HealthContextNote(HealthNote.GENERAL)
         QuietInfo("این‌ها پیشنهاد آموزشی‌اند، نه رژیم درمانی.")
         Spacer(Modifier.height(24.dp))
     }
@@ -196,7 +196,7 @@ fun FertilityWindowScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () ->
         }
         MahavaCard {
             Text("هشدار مهم", color = MahavaDanger, style = MaterialTheme.typography.titleMedium)
-            Text("این بازه فقط تخمینی و آموزشی است و روش جلوگیری از بارداری نیست. برای پیشگیری از روش مطمئن استفاده کن.")
+            HealthContextNote(HealthNote.PREDICTION)
         }
         Spacer(Modifier.height(8.dp))
         if (pred == null) {

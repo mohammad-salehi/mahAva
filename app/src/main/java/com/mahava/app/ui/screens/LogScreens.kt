@@ -32,41 +32,11 @@ fun LogHubScreen(
     onSettings: () -> Unit,
     onAccount: () -> Unit = {}
 ) {
-    val state by vm.state.collectAsState()
-    val premium by vm.isPremium.collectAsState()
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("log_hub")) {
-        ScreenHeader("ثبت", onSettings = onSettings)
-        SecondaryButton(
-            if (state.cycle?.periodOngoing == true) "ثبت پایان پریود" else "ثبت شروع پریود",
-            modifier = Modifier.testTag("hub_period"),
-            onClick = onPeriod
-        )
-        Spacer(Modifier.height(12.dp))
-        if (premium) {
-            PrimaryButton(
-                if (vm.logFor(vm.today()) == null) "ثبت حال امروز" else "ویرایش حال امروز",
-                modifier = Modifier.testTag("hub_daily"),
-                onClick = onDaily
-            )
-            Spacer(Modifier.height(12.dp))
-            SecondaryButton("پریود دیر کرده / ثبت تست بارداری", modifier = Modifier.testTag("hub_late"), onClick = onLate)
-            Spacer(Modifier.height(12.dp))
-            QuietInfo("هر چیزی را که انتخاب نکنی «ثبت نشده» می‌ماند؛ برنامه چیزی را به‌جای تو فرض نمی‌کند.")
-            QuietInfo("برای ثبت یا ویرایش روزهای گذشته، از «تقویم» روی آن روز بزن.")
-        } else {
-            PremiumPaywallCard(
-                vm = vm,
-                titleFa = "ثبت حال و امکانات بیشتر",
-                benefitFa = "ثبت حال روزانه، هوس خوراکی، علائم و تست بارداری با اشتراک ماه باز می‌شه.",
-                onOpenAccount = onAccount
-            )
-            QuietInfo("بدون اشتراک فقط ثبت شروع و پایان پریود آزاد است.")
-        }
-    }
+    DailyLogScreen(vm, vm.today(), onBack = {}, onAccount = onAccount, onPeriod = onPeriod, onTest = onLate, onSettings = onSettings)
 }
 
 @Composable
-fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccount: () -> Unit = {}) {
+fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccount: () -> Unit = {}, onPeriod: (() -> Unit)? = null, onTest: (() -> Unit)? = null, onSettings: (() -> Unit)? = null) {
     val premium by vm.isPremium.collectAsState()
     if (!premium) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("daily_log_screen")) {
@@ -80,6 +50,17 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
         }
         return
     }
+    var selectedDay by androidx.compose.runtime.saveable.rememberSaveable(day) { mutableStateOf(day.toEpochDay()) }
+    val date = LocalDate.ofEpochDay(selectedDay)
+    key(selectedDay) {
+    DailyLogForm(vm, date, onBack, onPeriod, onTest, onSettings) { selectedDay = it.toEpochDay() }
+    }
+}
+
+@Composable
+private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onPeriod: (() -> Unit)?, onTest: (() -> Unit)?, onSettings: (() -> Unit)?, onDate: (LocalDate) -> Unit) {
+    val state by vm.state.collectAsState()
+    val pregnant = state.health?.appMode == com.mahava.app.health.models.AppHealthMode.PREGNANCY
     val existing = remember(day) { vm.logFor(day) }
     var bleeding by remember { mutableStateOf(existing?.bleeding) }
     var mood by remember { mutableStateOf(existing?.moods?.split(',')?.firstOrNull { it.isNotBlank() }) }
@@ -104,8 +85,14 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
     val isFuture = day.isAfter(vm.today())
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("daily_log_screen")) {
-        ScreenHeader(if (day == vm.today()) "ثبت حال امروز" else "ثبت حال این روز", onBack = onBack)
-        Text("${JalaliDate.weekdayNameFa(day)}، ${JalaliDate.from(day).formatFa()}", color = MahavaTextSecondary)
+        ScreenHeader(if (day == vm.today()) "ثبت امروز" else "ثبت روزانه", onBack = if (onSettings == null) onBack else null, onSettings = onSettings)
+        MahavaCard(containerColor = MahavaPrimarySoft.copy(alpha = 0.5f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) { SectionLabel("یک دقیقه برای خودت"); QuietInfo("هرچه ثبت کنی، شناختت دقیق‌تر می‌شود.") }
+                Illustration(R.drawable.design_lavender_sprig, Modifier.width(60.dp).height(70.dp))
+            }
+        }
+        DateStepper(day, max = vm.today(), min = vm.today().minusDays(3650), onChange = onDate)
         if (existing != null) QuietInfo("برای این روز قبلاً ثبت کرده‌ای؛ تغییرها همان ثبت را به‌روز می‌کند.")
         if (isFuture) {
             Spacer(Modifier.height(12.dp))
@@ -115,12 +102,17 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
             return@Column
         }
         Spacer(Modifier.height(12.dp))
-        SectionLabel("خون‌ریزی")
+        MahavaCard {
+        SectionLabel(if (pregnant) "خون‌ریزی در بارداری" else "خون‌ریزی")
         ChipsFlow(
             listOf("none" to "ندارم", "spotting" to "لکه‌بینی", "light" to "کم", "medium" to "متوسط", "heavy" to "زیاد"),
             bleeding, "bleed"
         ) { bleeding = if (bleeding == it) null else it }
 
+        if (pregnant && bleeding != null && bleeding != "none") Text("خون‌ریزی در بارداری را با پزشک یا ماما مطرح کن؛ درد شدید، غش یا خون‌ریزی زیاد به بررسی فوری نیاز دارد.", color = MahavaDanger)
+        }
+        Spacer(Modifier.height(12.dp))
+        MahavaCard {
         SectionLabel("حالت چطور است؟")
         MoodIconRow(
             listOf(
@@ -136,16 +128,20 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
         SectionLabel("سطح انرژی")
         ChipsFlow(listOf("low" to "کم", "medium" to "متوسط", "high" to "زیاد"), energy, "energy") { energy = if (energy == it) null else it }
 
-        SectionLabel("علائم جسمی (چند مورد را می‌توانی انتخاب کنی)")
+        }
+        Spacer(Modifier.height(12.dp))
+        MahavaCard {
+        SectionLabel("بدنت چه حسی دارد؟")
         ChoiceChipPill("هیچ علامتی ندارم", noSymptoms, tag = "sym_none") {
             noSymptoms = !noSymptoms
             if (noSymptoms) { symptoms = emptySet(); pain = -1 }
         }
         if (!noSymptoms) {
             MultiChipsFlow(
-                listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "fatigue" to "خستگی", "nausea" to "حالت تهوع", "acne" to "جوش"),
+                listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "fatigue" to "خستگی", "nausea" to "حالت تهوع", "acne" to "جوش") + if (pregnant) listOf("severe_headache" to "سردرد شدید", "vision_changes" to "تغییر دید", "reduced_movement" to "کاهش حرکت جنین", "fluid_leak" to "خروج مایع", "fainting" to "غش") else emptyList(),
                 symptoms, "sym"
             ) { k -> symptoms = if (k in symptoms) symptoms - k else symptoms + k }
+            if (pregnant && symptoms.any { it in setOf("severe_headache", "vision_changes", "reduced_movement", "fluid_leak", "fainting") }) Text("برای این علامت همین حالا با تیم مراقبت بارداری تماس بگیر؛ ثبت در برنامه جای تماس را نمی‌گیرد.", color = MahavaDanger)
             SectionLabel("شدت درد از ۰ تا ۱۰ (اختیاری)")
             Slider(
                 value = if (pain < 0) 0f else pain.toFloat(),
@@ -159,6 +155,9 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
                 if (pain >= 0) TextButton(onClick = { pain = -1 }) { Text("پاک کردن") }
             }
         }
+        }
+        Spacer(Modifier.height(12.dp))
+        MahavaCard {
         SectionLabel("خواب دیشب (اختیاری)")
         ChipsFlow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), sleep, "sleep") { sleep = if (sleep == it) null else it }
         SectionLabel("مدت خواب (دقیقه — اختیاری؛ خالی = ثبت‌نشده)")
@@ -173,6 +172,8 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
             Text(if (sleepMinutes < 0) "ثبت نشده" else "${PersianDigits.toPersian(sleepMinutes)} دقیقه", Modifier.weight(1f))
             if (sleepMinutes >= 0) TextButton(onClick = { sleepMinutes = -1 }) { Text("پاک کردن") }
         }
+        }
+        Spacer(Modifier.height(12.dp))
         SectionLabel("آب امروز (میلی‌لیتر — اختیاری؛ خالی = ثبت‌نشده، نه صفر)")
         Slider(
             value = if (waterMl < 0) 0f else waterMl.toFloat().coerceIn(0f, 4000f),
@@ -201,8 +202,12 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
             modifier = Modifier.fillMaxWidth().testTag("note_field"),
             label = { Text("یادداشت (اختیاری)") }
         )
+        Spacer(Modifier.height(12.dp))
+        if (onPeriod != null && !pregnant) SecondaryButton(if (state.cycle?.periodOngoing == true) "ثبت پایان خون‌ریزی" else "ثبت شروع پریود", onClick = onPeriod)
+        if (onTest != null) SecondaryButton("ثبت تست بارداری", onClick = onTest)
+        QuietInfo("گزینهٔ انتخاب‌نشده نامشخص است؛ خون‌ریزی روزانه به‌تنهایی شروع چرخه نیست.")
         Spacer(Modifier.height(16.dp))
-        PrimaryButton("ذخیره", modifier = Modifier.testTag("save_daily")) {
+        PrimaryButton("ذخیرهٔ ثبت روزانه", modifier = Modifier.testTag("save_daily")) {
             val now = System.currentTimeMillis()
             vm.saveDailyLog(
                 (existing ?: DailyLogEntity(epochDay = day.toEpochDay(), createdAt = now, updatedAt = now)).copy(
@@ -254,7 +259,7 @@ private fun MoodIconRow(
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(label, style = MaterialTheme.typography.labelSmall, color = if (isOn) MahavaPrimary else MahavaTextSecondary, maxLines = 1)
+                Text(label, style = MaterialTheme.typography.bodySmall, color = if (isOn) MahavaPrimaryDeep else MahavaTextSecondary)
             }
         }
     }

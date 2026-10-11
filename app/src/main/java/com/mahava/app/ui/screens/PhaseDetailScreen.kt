@@ -165,7 +165,7 @@ fun PhaseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit, onAccoun
                     }
                 }
                 QuietInfo(item.medicalReviewStatus)
-                QuietInfo("این توضیح آموزشی است و جای معاینه و نظر پزشک را نمی‌گیرد.")
+                HealthContextNote(HealthNote.GENERAL)
             }
             SecondaryButton("بازگشت", modifier = Modifier.testTag("detail_back"), onClick = onBack)
             Spacer(Modifier.height(24.dp))

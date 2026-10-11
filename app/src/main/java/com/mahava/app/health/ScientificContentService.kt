@@ -52,7 +52,10 @@ class ScientificContentService(
         val fromApp = ScienceSources.allSources().map {
             ScientificSource(it.id, it.host, it.labelFa, it.url, null, "2026-10-10", "curated", "en")
         }
-        return (curated + fromApp).distinctBy { it.id }
+        val verified = context.assets.open("content/design_sources.json").bufferedReader().use {
+            gson.fromJson(it, Array<ScientificSource>::class.java).toList()
+        }
+        return (verified + curated + fromApp).distinctBy { it.id }
     }
 
     fun sourceById(id: String): ScientificSource? = scientificSources().find { it.id == id }
@@ -74,7 +77,10 @@ class ScientificContentService(
             bodyChangesFa = entry.bodyChangesFa,
             milestonesFa = entry.milestonesFa.orEmpty(),
             sizeHintFa = entry.sizeHintFa,
-            sourceIds = entry.sourceIds.orEmpty()
+            sourceIds = entry.sourceIds.orEmpty(),
+            motherAdviceFa = entry.motherAdviceFa,
+            fatherAdviceFa = entry.fatherAdviceFa,
+            careFa = entry.careFa
         )
     }
 
@@ -85,7 +91,7 @@ class ScientificContentService(
     fun insightsForHome(cycle: CycleEngineResult?, pregnancyWeek: Int?): List<HealthInsight> {
         val list = mutableListOf<HealthInsight>()
         if (pregnancyWeek != null) {
-            fetalWeek(pregnancyWeek.coerceAtMost(40))?.let { w ->
+            fetalWeek(pregnancyWeek.coerceAtMost(42))?.let { w ->
                 list += HealthInsight(
                     id = "preg_week_${w.week}",
                     titleFa = "رشد تقریبی این هفته",
@@ -93,6 +99,9 @@ class ScientificContentService(
                     sections = listOf(
                         InsightSection("رشد عمومی", w.growthFa),
                         InsightSection("تغییرات رایج بدن", w.bodyChangesFa),
+                        InsightSection("برای مادر", w.motherAdviceFa),
+                        InsightSection("برای پدر", w.fatherAdviceFa),
+                        InsightSection("مراقبت‌های این مرحله", w.careFa),
                         InsightSection(
                             "اندازهٔ تقریبی",
                             (w.sizeHintFa ?: "برای این هفته اندازهٔ مقایسه‌ای ثبت نشده.") +
@@ -122,6 +131,21 @@ class ScientificContentService(
     }
 
     fun insightById(id: String): HealthInsight? {
+        if (id.startsWith("preg_mother_") || id.startsWith("preg_father_")) {
+            val week = id.substringAfterLast('_').toIntOrNull() ?: return null
+            val w = fetalWeek(week) ?: return null
+            val mother = id.startsWith("preg_mother_")
+            return HealthInsight(id, if (mother) "برای مادر؛ این هفته" else "برای پدر؛ این هفته",
+                if (mother) w.bodyChangesFa else w.fatherAdviceFa,
+                listOf(InsightSection("رشد معمول این مرحله", w.growthFa),
+                    InsightSection("کارهای کاربردی", if (mother) w.motherAdviceFa else w.fatherAdviceFa),
+                    InsightSection("مراقبت و محدودیت", w.careFa),
+                    InsightSection("زمان بررسی", "خون‌ریزی، درد شدید، سردرد شدید یا تغییر دید و کاهش حرکت جنین نیازمند تماس به‌موقع با تیم مراقبت است.")),
+                "pregnancy", listOf("week_$week", if (mother) "mother" else "father"), "pregnant",
+                "توصیهٔ آموزشی برای هفتهٔ انتخاب‌شده؛ وضعیت واقعی فرد از علائم و ارزیابی پزشکی مشخص می‌شود.",
+                w.sourceIds, "2026-10-11", "2026-10-11", InsightReviewStatus.SOURCE_VERIFIED, "1.1.0")
+        }
+        pregnancyArticles().find { it.id == id }?.let { return it }
         if (id.startsWith("preg_week_")) {
             val w = id.removePrefix("preg_week_").toIntOrNull() ?: return null
             return insightsForHome(null, w).find { it.id == id }
@@ -154,7 +178,23 @@ class ScientificContentService(
             .filter { !it.isCare && !it.isContext }
             .take(24)
             .mapNotNull { insightById(it.id) }
-        return (allStaticInsights() + fromBank).distinctBy { it.id }
+        return (pregnancyArticles() + allStaticInsights() + fromBank).distinctBy { it.id }
+    }
+
+    private fun pregnancyArticles(): List<HealthInsight> {
+        fun article(id: String, title: String, summary: String, action: String, source: List<String>) = HealthInsight(
+            id, title, summary,
+            listOf(InsightSection("توضیح ساده", summary), InsightSection("کارهای کاربردی", action),
+                InsightSection("محدودیت", "اطلاعات عمومی است؛ برنامهٔ پزشک و شرایط تو مقدم است. دارو یا دوز مکمل شخصی تجویز نمی‌شود.")),
+            "pregnancy", listOf("pregnancy"), "pregnant", "مطالعهٔ آموزشی؛ وضعیت واقعی بارداری را تغییر نمی‌دهد.",
+            source, "2026-10-11", "2026-10-11", InsightReviewStatus.SOURCE_VERIFIED, "1.1.0")
+        return listOf(
+            article("preg_nutrition", "تغذیه و فعالیت در بارداری", "غذای متنوع و فعالیت متناسب با توان بدن، بخشی از مراقبت بارداری است.", "با مراقب سلامت دربارهٔ فعالیت مناسب و مکمل مورد نیازت صحبت کن. داروی ثابت را خودسرانه قطع نکن.", listOf("nhs_week_4", "nhs_partners")),
+            article("preg_care", "مراقبت‌ها و مراجعه‌ها", "زمان و نوع مراقبت در کشورها و بارداری‌های مختلف متفاوت است.", "زمان مراجعه و نتیجهٔ آزمایش‌ها را با پزشک یا ماما مرور کن؛ برنامهٔ شخصی خودت را دنبال کن.", listOf("nhs_week_16", "nhs_week_20")),
+            article("preg_mental", "سلامت روان مادر و همراه", "احساس نگرانی در بارداری ممکن است پیش بیاید؛ کمک خواستن بخشی از مراقبت است.", "احساساتت را با فرد مورد اعتماد و مراقب سلامت مطرح کن؛ شریک زندگی می‌تواند شنونده و کمک عملی باشد.", listOf("nhs_week_8", "nhs_partners")),
+            article("preg_birth", "آمادگی برای تولد", "آمادگی تدریجی، هماهنگی مسیر مراجعه و شناخت خواسته‌های مادر به همراهی کمک می‌کند.", "اطلاعات تماس، مسیر مرکز زایمان و وسایل ضروری را آماده کنید. دربارهٔ نقش همراه و حمایت بعد از تولد گفت‌وگو کنید.", listOf("nhs_partners", "nhs_week_37")),
+            article("preg_warning", "علائم هشدار در بارداری", "خون‌ریزی در بارداری، درد شدید، سردرد شدید یا اختلال دید و کاهش حرکت جنین نیازمند بررسی‌اند.", "با تیم مراقبت تماس بگیر. برای خون‌ریزی زیاد، درد شدید همراه غش یا وضعیت ناگهانی خطرناک از اورژانس محلی کمک بگیر. کاهش حرکت را تا فردا به تعویق نینداز.", listOf("nhs_week_25", "nhs_week_26", "nhs_week_40"))
+        )
     }
 
     private fun allStaticInsights(): List<HealthInsight> = listOf(
@@ -231,7 +271,7 @@ class ScientificContentService(
         tags = listOf("ovulation"),
         audienceGroup = "cycling",
         applicabilityNoteFa = "آموزشی",
-        sourceIds = listOf("acog_edd"),
+        sourceIds = listOf("nhs_cycle_current"),
         publishedAt = "2026-10-10",
         reviewedAt = null,
         reviewStatus = InsightReviewStatus.SOURCE_VERIFIED,
@@ -272,7 +312,10 @@ class ScientificContentService(
         val bodyChangesFa: String = "",
         val milestonesFa: List<String>? = null,
         val sizeHintFa: String? = null,
-        val sourceIds: List<String>? = null
+        val sourceIds: List<String>? = null,
+        val motherAdviceFa: String = "",
+        val fatherAdviceFa: String = "",
+        val careFa: String = ""
     )
 
     private data class MilestoneDto(

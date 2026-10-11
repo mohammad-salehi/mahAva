@@ -64,7 +64,7 @@ object HealthRuleEngine {
         pregnancyActive: Boolean,
         nowMillis: Long
     ): List<HealthAlert> {
-        if (pregnancyActive || profile?.pregnancyMode == true) return emptyList()
+        if (pregnancyActive || profile?.pregnancyMode == true) return pregnancyAlerts(logs, today, nowMillis)
         if (profile?.postpartumOrBreastfeeding == true) {
             // Soften: still allow pain rules; skip cycle-length population norms.
             return painAlerts(logs, today, nowMillis)
@@ -76,6 +76,20 @@ object HealthRuleEngine {
         out += bleedAlerts(periods, nowMillis)
         out += painAlerts(logs, today, nowMillis)
         return out.distinctBy { it.deduplicationKey }
+    }
+
+    private fun pregnancyAlerts(logs: List<DailyLogEntity>, today: LocalDate, now: Long): List<HealthAlert> {
+        val log = logs.find { it.epochDay == today.toEpochDay() } ?: return emptyList()
+        val codes = log.physicalSymptoms.orEmpty().split(',').toSet()
+        val bleeding = log.bleeding != null && log.bleeding != "none"
+        val severe = (log.painScore ?: -1) >= severePainThreshold || codes.any { it in setOf("vision_changes", "severe_headache", "reduced_movement", "fainting", "fluid_leak") }
+        if (!bleeding && !severe) return emptyList()
+        val cfg = RuleConfig("pregnancy_symptom_guidance", 1, "علامت نیازمند بررسی در بارداری", listOf("nhs_week_25", "nhs_week_26", "nhs_week_40"), AlertSeverity.URGENT_GUIDANCE)
+        return listOf(alert(cfg,
+            "برای امروز خون‌ریزی، درد شدید یا علامت مهم بارداری ثبت کرده‌ای.",
+            "این پیام بر اساس ثبت خودت است و تشخیص علت نیست.",
+            "همین حالا با تیم مراقبت بارداری تماس بگیر؛ برای خون‌ریزی زیاد، غش یا درد ناگهانی شدید از اورژانس محلی کمک بگیر. کاهش حرکت را تا فردا به تعویق نینداز.",
+            listOf(today.toString()), "pregnancy_guidance:${today.toEpochDay()}:${log.bleeding}:${log.painScore}:${codes.sorted()}", now))
     }
 
     private fun cycleLengthAlerts(periods: List<PeriodEventEntity>, now: Long): List<HealthAlert> {

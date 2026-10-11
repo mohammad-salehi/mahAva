@@ -43,130 +43,100 @@ fun ReportsScreen(
 ) {
     val state by vm.state.collectAsState()
     val premium by vm.isPremium.collectAsState()
-    val periods = state.periods.sortedBy { it.startEpochDay }
-    val lengths = periods.zipWithNext { a, b -> (b.startEpochDay - a.startEpochDay).toInt() }.filter { it in 15..90 }
-    val bleedLens = periods.mapNotNull { p ->
-        val end = p.endEpochDay ?: return@mapNotNull null
-        (end - p.startEpochDay + 1).toInt()
-    }
-    val pred = state.cycle?.prediction as? PredictionKind.Estimate
+    var months by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(3) }
+    var custom by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var fromEpoch by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(vm.today().minusMonths(3).toEpochDay()) }
+    var toEpoch by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(vm.today().toEpochDay()) }
+    val from = LocalDate.ofEpochDay(fromEpoch)
+    val to = LocalDate.ofEpochDay(toEpoch)
+    val periods = state.periods.filter { it.startEpochDay <= toEpoch }.sortedBy { it.startEpochDay }
+    val lengths = periods.zipWithNext().filter { (_,b) -> b.startEpochDay >= fromEpoch }.map { (a,b) -> (b.startEpochDay-a.startEpochDay).toInt() }.filter { it in 15..90 }
+    val bleedLens = com.mahava.app.health.CycleAnalyticsService.bleedLengths(periods.filter { it.startEpochDay >= fromEpoch })
+    val logs = state.dailyLogs.filter { it.epochDay in fromEpoch..toEpoch }
+    val pregnant = state.health?.appMode == com.mahava.app.health.models.AppHealthMode.PREGNANCY
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("reports_screen")) {
         ScreenHeader("گزارش‌های من", onSettings = onSettings)
-        // Free: next period prediction only
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("reports_period_pred")) {
-            Text("پیش‌بینی پریود بعدی", style = MaterialTheme.typography.titleMedium)
-            when {
-                state.cycle?.isLate == true ->
-                    Text("پریود حدود ${com.mahava.app.util.PersianDigits.toPersian(state.cycle?.daysLate ?: 0)} روز دیر کرده (تخمینی).")
-                pred != null -> {
-                    val d = state.cycle?.daysUntilCentralPeriod
-                    Text(
-                        when {
-                            d == null -> "تخمین پریود بعدی آماده است."
-                            d == 0 -> "پریود ممکن است از همین روزها شروع شود."
-                            else -> "حدود ${com.mahava.app.util.PersianDigits.toPersian(d)} روز تا پریود بعدی."
-                        }
-                    )
-                    QuietInfo(vm.predictionBasisShortFa())
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ChoiceChipPill("۳ ماه اخیر", !custom && months == 3) { months=3; custom=false; fromEpoch=vm.today().minusMonths(3).toEpochDay(); toEpoch=vm.today().toEpochDay() }
+                ChoiceChipPill("۶ ماه", !custom && months == 6) { months=6; custom=false; fromEpoch=vm.today().minusMonths(6).toEpochDay(); toEpoch=vm.today().toEpochDay() }
+                ChoiceChipPill("بازهٔ دلخواه", custom) { custom = !custom }
+            }
+            if (custom) {
+                DateStepper(from, max=to, min=vm.today().minusYears(10), onChange={ fromEpoch=it.toEpochDay() }, testTagPrefix="analytics_from")
+                DateStepper(to, max=vm.today(), min=from, onChange={ toEpoch=it.toEpochDay() }, testTagPrefix="analytics_to")
+            }
+            MahavaCard(containerColor = MahavaPrimarySoft) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) { Text("بدنت را بهتر بشناس", style = MaterialTheme.typography.headlineLarge); QuietInfo("خلاصهٔ ثبت‌های تو در یک نگاه") }
+                    Illustration(R.drawable.design_lavender_sprig, Modifier.width(70.dp).height(80.dp))
                 }
-                else -> QuietInfo(state.cycle?.basisDescriptionFa ?: "با ثبت چند پریود، تخمین روشن‌تر می‌شود.")
             }
-        }
-        Spacer(Modifier.height(8.dp))
-        if (!premium) {
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                PremiumPaywallCard(
-                    vm = vm,
-                    titleFa = "گزارش‌ها و الگوها",
-                    benefitFa = "روند چرخه، الگوی علائم، بینش روزانه و گزارش پزشک با اشتراک ماه باز می‌شه.",
-                    onOpenAccount = onAccount
-                )
-            }
-            Spacer(Modifier.height(24.dp))
-            return@Column
-        }
-        if (periods.isEmpty() && state.dailyLogs.isEmpty()) {
-            MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("reports_empty")) {
-                Text("هنوز چیزی برای گزارش نیست", style = MaterialTheme.typography.titleMedium)
-                QuietInfo("وقتی پریودها و حال روزانه‌ات را ثبت کنی، خلاصه‌ها اینجا ساخته می‌شوند. نمودار ساختگی نشان نمی‌دهیم.")
-            }
-        }
-        Row(Modifier.padding(16.dp).height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MahavaCard(Modifier.weight(1f).fillMaxHeight()) {
-                MahavaIcon(R.drawable.ic_droplet, MahavaMenstruation)
-                Text("میانگین مدت خون‌ریزی", color = MahavaTextSecondary)
-                Text(
-                    if (bleedLens.isEmpty()) "—" else "${PersianDigits.toPersian(Math.round(bleedLens.average()).toInt())} روز",
-                    style = MaterialTheme.typography.headlineLarge
-                )
-                QuietInfo(if (bleedLens.isEmpty()) "هنوز پریودی با روز پایان ثبت نشده" else "از ${PersianDigits.toPersian(bleedLens.size)} پریود ثبت‌شده")
-            }
-            MahavaCard(Modifier.weight(1f).fillMaxHeight()) {
-                MahavaIcon(R.drawable.ic_cycle)
-                Text("میانگین طول چرخه", color = MahavaTextSecondary)
-                Text(
-                    if (lengths.isEmpty()) "—" else "${PersianDigits.toPersian(Math.round(lengths.average()).toInt())} روز",
-                    style = MaterialTheme.typography.headlineLarge
-                )
-                QuietInfo(if (lengths.isEmpty()) "هنوز چرخهٔ کاملی ثبت نشده" else "از ${PersianDigits.toPersian(lengths.size)} چرخهٔ کامل")
-            }
-        }
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("reports_lengths")) {
-            Text("طول چرخه‌های اخیر", style = MaterialTheme.typography.titleLarge)
-            if (lengths.isEmpty()) QuietInfo("وقتی دست‌کم دو پریود پشت سر هم ثبت شود، طول چرخه اینجا دیده می‌شود.")
-            else {
-                val maxLen = (lengths.maxOrNull() ?: 1).coerceAtLeast(1)
-                lengths.takeLast(6).forEachIndexed { idx, len ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("چرخهٔ ${PersianDigits.toPersian(idx + 1)}", Modifier.width(72.dp), style = MaterialTheme.typography.bodySmall)
-                        Box(Modifier.weight(1f).height(12.dp)) {
-                            Box(Modifier.fillMaxWidth(len.toFloat() / maxLen).fillMaxHeight().background(MahavaPrimarySoft, RoundedCornerShape(6.dp)))
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Text("${PersianDigits.toPersian(len)} روز", style = MaterialTheme.typography.bodySmall)
+            if (!premium) {
+                PremiumPaywallCard(vm, "گزارش‌ها و الگوها", "تحلیل ثبت‌های واقعی و گزارش پزشک با اشتراک ماه باز می‌شود.", onAccount)
+            } else {
+                if (logs.isEmpty() && lengths.isEmpty()) QuietInfo("در این بازه ثبت کافی نداریم؛ شروع و پایان پریود و علائم روزانه‌ات را ثبت کن.")
+                if (pregnant) {
+                    MahavaCard {
+                        SectionLabel("خلاصهٔ بارداری")
+                        Text(state.health?.pregnancyProgress?.labelFa ?: "تاریخ مبنای بارداری را تنظیم کن.", style=MaterialTheme.typography.headlineLarge)
+                        QuietInfo("${PersianDigits.toPersian(logs.size)} روز دارای ثبت در بازهٔ انتخاب‌شده؛ روزهای بدون ثبت نامشخص‌اند.")
+                    }
+                } else {
+                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ReportStat("میانگین چرخه", lengths, R.drawable.design_calendar, Modifier.weight(1f).fillMaxHeight())
+                        ReportStat("مدت خون‌ریزی", bleedLens, R.drawable.design_droplet, Modifier.weight(1f).fillMaxHeight())
+                    }
+                    if (lengths.isNotEmpty()) MahavaCard(Modifier.testTag("reports_lengths")) {
+                        SectionLabel("طول چرخه‌های اخیر")
+                        CycleColumns(lengths.takeLast(6))
+                        QuietInfo("${PersianDigits.toPersian(lengths.size)} چرخهٔ کامل؛ چرخهٔ جاری در میانگین نیست.")
                     }
                 }
+                MahavaCard(Modifier.testTag("open_patterns").clickable(onClick = onPatterns)) {
+                    SectionLabel("الگوی علائم")
+                    val codes = listOf("fatigue" to "خستگی", "bloating" to "نفخ", "pain" to "درد")
+                    codes.forEach { (code,label) ->
+                        val count = logs.count { code in it.physicalSymptoms.orEmpty().split(',') }
+                        Row(Modifier.fillMaxWidth().padding(vertical=6.dp), horizontalArrangement=Arrangement.SpaceBetween) {
+                            Text(label); Text("${PersianDigits.toPersian(count)} روز ثبت‌شده", color=MahavaTextSecondary)
+                        }
+                    }
+                    QuietInfo("${PersianDigits.toPersian(logs.size)} روز دارای ثبت؛ نبود ثبت به معنی نبود علامت نیست.")
+                    Text("مشاهدهٔ روند و الگوها ‹", color=MahavaPrimaryDeep)
+                }
+                MahavaCard {
+                    CompanionAction("تحلیل کامل", "چرخه، خواب و علائم", R.drawable.design_chart, onHealthAnalytics)
+                    CompanionAction("راهنمای بررسی علائم", "آموزشی، بدون تشخیص", R.drawable.design_clipboard, onChecker)
+                }
+                SecondaryButton("آماده‌سازی گزارش برای پزشک", modifier=Modifier.testTag("open_doctor"), onClick=onDoctor)
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun ReportStat(title: String, values: List<Int>, icon: Int, modifier: Modifier) {
+    MahavaCard(modifier) {
+        MahavaIcon(icon)
+        Text(title, style=MaterialTheme.typography.bodySmall)
+        Text(if (values.isEmpty()) "—" else "${PersianDigits.toPersian(kotlin.math.round(values.average()).toInt())} روز", style=MaterialTheme.typography.headlineLarge)
+        QuietInfo(if (values.isEmpty()) "سابقهٔ کافی ثبت نشده" else "از ${PersianDigits.toPersian(values.size)} سابقهٔ کامل")
+    }
+}
+
+@Composable
+private fun CycleColumns(values: List<Int>) {
+    val max=values.maxOrNull()?.coerceAtLeast(1) ?: 1
+    Row(Modifier.fillMaxWidth().height(150.dp), horizontalArrangement=Arrangement.spacedBy(12.dp), verticalAlignment=Alignment.Bottom) {
+        values.forEachIndexed { i,v ->
+            Column(Modifier.weight(1f), horizontalAlignment=Alignment.CenterHorizontally) {
+                Text(PersianDigits.toPersian(v), style=MaterialTheme.typography.bodySmall)
+                Box(Modifier.fillMaxWidth().height((100f*v/max).dp).background(MahavaPrimary.copy(alpha=0.65f), RoundedCornerShape(topStart=8.dp,topEnd=8.dp)))
+                QuietInfo("چرخهٔ ${PersianDigits.toPersian(i+1)}")
             }
         }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).clickable(onClick = onInsight)) {
-            Text("بینش روزانه", style = MaterialTheme.typography.titleMedium)
-            QuietInfo("خلاصهٔ شخصی امروز بر اساس چرخه و ثبت‌هایت.")
-        }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_patterns").clickable(onClick = onPatterns)) {
-            Text("الگوی علائم (ویژه)", style = MaterialTheme.typography.titleLarge)
-            if (state.patterns.isEmpty()) QuietInfo("برای دیدن الگو، دست‌کم ۲ چرخه با ثبت علائم لازم است.")
-            else {
-                state.patterns.take(2).forEach { Text("• ${it.textFa}") }
-                QuietInfo("برای خوشه‌بندی کامل مرحله‌ای، وارد شو.")
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_health_analytics").clickable(onClick = onHealthAnalytics)) {
-            Text("تحلیل کامل سلامت", style = MaterialTheme.typography.titleMedium)
-            QuietInfo("طول چرخه، خون‌ریزی، درد، خواب و آب — جدا از خلاصهٔ خانه.")
-        }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_trends").clickable(onClick = onTrends)) {
-            Text("روند چرخه (ویژه)", style = MaterialTheme.typography.titleMedium)
-            QuietInfo("نمودار طول چرخه، مدت خون‌ریزی و علائم پرتکرار.")
-        }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_checker").clickable(onClick = onChecker)) {
-            Text("بررسی آموزشی علائم (ویژه)", style = MaterialTheme.typography.titleMedium)
-            QuietInfo("فهرست هم‌پوشانی با تنبلی تخمدان و اندومتریوز — بدون تشخیص.")
-        }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).testTag("open_doctor").clickable(onClick = onDoctor)) {
-            Text("گزارش برای پزشک", style = MaterialTheme.typography.titleMedium)
-            QuietInfo("بازهٔ زمانی را انتخاب کن، پیش‌نمایش را ببین و موارد خصوصی را حذف کن؛ فایل فقط وقتی خودت بخواهی ساخته می‌شود.")
-        }
-        Spacer(Modifier.height(8.dp))
-        MahavaCard(Modifier.padding(horizontal = 16.dp).clickable(onClick = onLate)) {
-            Text("پریود دیر کرده / تست بارداری", style = MaterialTheme.typography.titleMedium)
-        }
-        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -216,35 +186,53 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
         val logs = state.dailyLogs.filter { it.epochDay in from.toEpochDay()..to.toEpochDay() }
         if (logs.isEmpty()) sb.appendLine("- در این بازه ثبتی نیست")
         logs.forEach { log ->
-            if (!includeIntimate && log.intimacyLogged) return@forEach
+            // Private intimacy fields are omitted without dropping other data from the day.
             sb.append("- ${JalaliDate.from(LocalDate.ofEpochDay(log.epochDay)).formatFa()}: ")
             sb.append("خون‌ریزی ${bleedFa(log.bleeding)}، درد ${log.painScore?.let { PersianDigits.toPersian(it) } ?: "-"}")
             log.moods?.takeIf { it.isNotBlank() }?.let { sb.append("، حال ${it.split(',').joinToString("/") { m -> moodFa(m) ?: m }}") }
             log.physicalSymptoms?.takeIf { it.isNotBlank() }?.let { sb.append("، علائم ${it.split(',').joinToString("/") { k -> com.mahava.app.content.PhaseHistory.labelFa(k) }}") }
+            if (includeIntimate && log.intimacyLogged) sb.append("، رابطه: ثبت‌شده؛ محافظت: ${when (log.intimacyProtected) { "yes" -> "بله"; "no" -> "خیر"; else -> "نامشخص" }}")
             if (includeNotes && !log.note.isNullOrBlank()) sb.append("، یادداشت: ${log.note}")
             if (includeTests && log.pregnancyTest != null) sb.append("، تست بارداری ${testFa(log.pregnancyTest)}")
             sb.appendLine()
         }
         sb.appendLine()
-        sb.appendLine("الگوها (فقط هم‌زمانی):")
-        if (state.patterns.isEmpty()) sb.appendLine("- داده برای الگو کافی نیست")
-        state.patterns.forEach { sb.appendLine("- ${it.textFa}") }
+        sb.appendLine("روزهای بدون ثبت: نامشخص؛ به معنی نبود علامت نیست.")
+        state.health?.pregnancy?.let { p ->
+            sb.appendLine("بارداری: تاریخ تخمینی زایمان ${JalaliDate.from(LocalDate.ofEpochDay(p.estimatedDueEpochDay)).formatFa()}؛ مبنا ${if (p.datingMethod == "clinician_edd") "تاریخ پزشک" else "آخرین پریود"}")
+        }
         return sb.toString()
     }
 
     fun writePdf(uri: android.net.Uri): Boolean = try {
         val doc = PdfDocument()
-        val paint = Paint().apply { textSize = 12f; isAntiAlias = true; textAlign = Paint.Align.RIGHT }
-        var pageNo = 1
-        var page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo).create())
-        var y = 40f
-        buildText().lines().flatMap { it.chunked(85).ifEmpty { listOf("") } }.forEach { line ->
-            if (y > 810f) {
-                doc.finishPage(page); pageNo++
-                page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo).create()); y = 40f
+        val paint = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 12f
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(ctx, R.font.vazirmatn_regular)
+            color = android.graphics.Color.rgb(48,39,62)
+        }
+        var pageNo=1
+        var page=doc.startPage(PdfDocument.PageInfo.Builder(595,842,pageNo).create())
+        var y=40
+        buildText().lines().forEach { line ->
+            val layout = android.text.StaticLayout.Builder.obtain(line.ifEmpty { " " },0,line.ifEmpty { " " }.length,paint,515)
+                .setAlignment(android.text.Layout.Alignment.ALIGN_NORMAL)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL)
+                .setLineSpacing(4f,1f).setIncludePad(false).build()
+            // Render each shaped line independently to allow long private notes to span pages.
+            for (i in 0 until layout.lineCount) {
+                val top=layout.getLineTop(i)
+                val bottom=layout.getLineBottom(i)
+                val height=bottom-top
+                if (y+height>802) { doc.finishPage(page); pageNo++; page=doc.startPage(PdfDocument.PageInfo.Builder(595,842,pageNo).create()); y=40 }
+                page.canvas.save()
+                page.canvas.translate(40f,(y-top).toFloat())
+                page.canvas.clipRect(0,top,515,bottom)
+                layout.draw(page.canvas)
+                page.canvas.restore()
+                y+=height
             }
-            page.canvas.drawText(line, 555f, y, paint)
-            y += 18f
+            y+=4
         }
         doc.finishPage(page)
         ctx.contentResolver.openOutputStream(uri)?.use { doc.writeTo(it) }
@@ -279,11 +267,11 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
             androidx.compose.material3.Checkbox(includeTests, { includeTests = it }); Text("نتیجهٔ تست‌ها هم بیاید")
         }
         SecondaryButton("پیش‌نمایش", modifier = Modifier.testTag("doctor_preview")) { preview = buildText() }
+        if (preview.isNotBlank() && preview != buildText()) QuietInfo("بازه یا گزینه‌ها تغییر کرده؛ پیش‌نمایش را دوباره ببین.")
         if (preview.isNotBlank()) {
             MahavaCard { Text(preview, style = MaterialTheme.typography.bodySmall) }
         }
-        PrimaryButton("ساخت فایل PDF") {
-            preview = buildText()
+        PrimaryButton("ساخت فایل PDF", enabled = preview.isNotBlank() && preview == buildText()) {
             val hook = (ctx.applicationContext as? MahavaApplication)?.documentPickerOverride
             if (hook != null) hook("create", "mahava-doctor-report.pdf")?.let { status = if (writePdf(it)) "فایل PDF ذخیره شد." else "ساخت فایل ناموفق بود." }
             else saveLauncher.launch("mahava-doctor-report.pdf")
@@ -339,7 +327,7 @@ fun LateTestScreen(
         }
         SectionLabel("روز تست")
         DateStepper(testDate, max = vm.today(), min = vm.today().minusDays(60), onChange = { testDate = it }, testTagPrefix = "test_date")
-        if (result == "positive") QuietInfo("با ثبت نتیجهٔ مثبت، «حالت بارداری» روشن می‌شود و پیش‌بینی پریود متوقف می‌شود. از تنظیمات می‌توانی آن را خاموش کنی.")
+        if (result == "positive") QuietInfo("نتیجهٔ مثبت را با مراقب سلامت پیگیری کن؛ برای فعال‌سازی بارداری، تاریخ مبنا را از تنظیمات ثبت کن.")
         PrimaryButton("ثبت نتیجه", enabled = result != null, modifier = Modifier.testTag("save_test")) {
             val now = System.currentTimeMillis()
             val existing = vm.logFor(testDate)
@@ -350,9 +338,7 @@ fun LateTestScreen(
                     updatedAt = now
                 )
             )
-            if (result == "positive") {
-                vm.updateProfile { it.copy(pregnancyMode = true, fertilityTrackingEnabled = false) }
-            }
+
             onBack()
         }
         QuietInfo("جواب منفیِ زود همیشه درست نیست؛ اگر پریود نیامد، چند روز بعد دوباره تست بده.")

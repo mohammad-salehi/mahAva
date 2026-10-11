@@ -27,13 +27,12 @@ import com.mahava.app.util.PersianDigits
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onPartner: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}) {
+fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onPartner: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}, onPregnancySetup: () -> Unit = {}) {
     val state by vm.state.collectAsState()
     val profile = state.profile
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
-    var confirmLogout by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
 
     val notifPerm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -66,8 +65,9 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 Spacer(Modifier.height(4.dp))
                 PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
-                        if (vm.logoutAccount(force = false) == "pending") confirmLogout = true
-                        else status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
+                        status = "داره خارج می‌شه…"
+                        vm.logoutAccount()
+                        status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
                     }
                 }
             }
@@ -102,7 +102,8 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 SwitchLine("روش هورمونی جلوگیری", profile?.hormonalContraception == true, "set_hormonal") { v -> vm.updateProfile { it.copy(hormonalContraception = v) } }
                 SwitchLine("زایمان اخیر یا شیردهی", profile?.postpartumOrBreastfeeding == true, "set_postpartum") { v -> vm.updateProfile { it.copy(postpartumOrBreastfeeding = v) } }
                 SwitchLine("نزدیک یائسگی", profile?.perimenopause == true, "set_peri") { v -> vm.updateProfile { it.copy(perimenopause = v) } }
-                SwitchLine("حالت بارداری", profile?.pregnancyMode == true, "set_pregnancy") { v -> vm.updateProfile { it.copy(pregnancyMode = v) } }
+                SecondaryButton(if (profile?.pregnancyMode == true) "اصلاح تاریخ مبنای بارداری" else "فعال‌سازی بارداری با تاریخ مبنا", onClick = onPregnancySetup)
+                if (profile?.pregnancyMode == true) TextButton(onClick = { vm.endPregnancyMode("user_ended") }) { Text("پایان حالت بارداری؛ حفظ سوابق") }
             }
 
             SettingsGroup("تقویم") {
@@ -161,20 +162,6 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
 
         SettingsGroup("پاک کردن") {
             SecondaryButton("پاک کردن همهٔ اطلاعات", modifier = Modifier.testTag("delete_all")) { confirmDelete = true }
-        }
-        if (confirmLogout) {
-            AlertDialog(
-                onDismissRequest = { confirmLogout = false },
-                title = { Text("بعضی تغییرها هنوز به سرور نرسیده") },
-                text = { Text("الان اینترنت نیست یا سرور در دسترس نیست. اگه خارج شی، تغییرهای اخیرِ همین گوشی پاک می‌شن. بهتره اول به اینترنت وصل شی.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        confirmLogout = false
-                        scope.launch { vm.logoutAccount(force = true); status = "خارج شدی." }
-                    }) { Text("با این حال خارج شو") }
-                },
-                dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("صبر می‌کنم") } }
-            )
         }
         if (confirmDelete) {
             AlertDialog(
