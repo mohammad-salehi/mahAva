@@ -25,6 +25,7 @@ import com.mahava.app.pattern.PeriodStartPoint
 import com.mahava.app.pattern.PhaseClusterInsight
 import com.mahava.app.pattern.CycleTrendsResult
 import com.mahava.app.pattern.CycleTrendsAnalyzer
+import com.mahava.app.billing.toClaimMap
 import com.mahava.app.network.MahApiException
 import com.mahava.app.insight.DailyInsightEngine
 import com.mahava.app.insight.DailyInsight
@@ -662,15 +663,64 @@ class AppViewModel(
         }
     }
 
-    suspend fun register(phone: String, password: String, role: String): String? {
+    suspend fun requestOtp(phone: String, purpose: String): String? {
         return try {
-            authRepository.register(phone.trim(), password, role)
+            authRepository.requestOtp(phone.trim(), purpose)
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "ارسال کد ناموفق بود."
+        } catch (t: Throwable) {
+            t.message ?: "ارسال کد ناموفق بود."
+        }
+    }
+
+    suspend fun verifyOtp(phone: String, purpose: String, otp: String): String? {
+        return try {
+            val res = authRepository.verifyOtp(phone.trim(), purpose, otp.trim())
+            if (res.ok && res.verified) null else res.message ?: "کد تأیید نادرست است."
+        } catch (e: MahApiException) {
+            e.message ?: "کد تأیید نادرست است."
+        } catch (t: Throwable) {
+            t.message ?: "کد تأیید نادرست است."
+        }
+    }
+
+    suspend fun register(
+        phone: String,
+        password: String,
+        role: String,
+        otp: String,
+        acceptedPrivacy: Boolean,
+        acceptedTerms: Boolean
+    ): String? {
+        return try {
+            authRepository.register(
+                phone = phone.trim(),
+                password = password,
+                role = role,
+                otp = otp.trim(),
+                acceptedPrivacy = acceptedPrivacy,
+                acceptedTerms = acceptedTerms,
+                privacyVersion = com.mahava.app.content.LegalDocuments.PRIVACY_VERSION,
+                termsVersion = com.mahava.app.content.LegalDocuments.TERMS_VERSION
+            )
             refreshRoleAfterAuth()
             restoreFromServer()
         } catch (e: MahApiException) {
             e.message ?: "ثبت‌نام ناموفق بود."
         } catch (t: Throwable) {
             t.message ?: "ثبت‌نام ناموفق بود."
+        }
+    }
+
+    suspend fun resetPassword(phone: String, otp: String, newPassword: String): String? {
+        return try {
+            authRepository.resetPassword(phone.trim(), otp.trim(), newPassword)
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "بازیابی رمز ناموفق بود."
+        } catch (t: Throwable) {
+            t.message ?: "بازیابی رمز ناموفق بود."
         }
     }
 
@@ -696,6 +746,27 @@ class AppViewModel(
         is com.mahava.app.sync.SyncOutcome.Ok -> "اطلاعاتت با سرور همگام شد."
         is com.mahava.app.sync.SyncOutcome.Skipped -> "برای این حساب همگام‌سازی لازم نیست."
         is com.mahava.app.sync.SyncOutcome.Failed -> "همگام نشد (${r.message ?: "اینترنت"}). بعداً خودکار دوباره امتحان می‌شود."
+    }
+
+    suspend fun loadTickets(): List<com.mahava.app.network.MahTicketDto> =
+        authRepository.withToken { app.apiClient.listTickets(it) }.tickets.orEmpty()
+
+    suspend fun createTicket(subject: String, body: String): String? = try {
+        authRepository.withToken { app.apiClient.createTicket(it, subject, body) }
+        null
+    } catch (e: MahApiException) {
+        e.message ?: "ارسال تیکت ناموفق بود."
+    } catch (t: Throwable) {
+        t.message ?: "ارسال تیکت ناموفق بود."
+    }
+
+    suspend fun replyTicket(id: String, body: String): String? = try {
+        authRepository.withToken { app.apiClient.replyTicket(it, id, body) }
+        null
+    } catch (e: MahApiException) {
+        e.message ?: "ارسال پاسخ ناموفق بود."
+    } catch (t: Throwable) {
+        t.message ?: "ارسال پاسخ ناموفق بود."
     }
 
     /**
@@ -786,6 +857,113 @@ class AppViewModel(
         val me = authRepository.fetchMe()
         val sub = authRepository.refreshSubscription()
         return me != null || sub != null
+    }
+
+    suspend fun loadPendingDiscount(): com.mahava.app.network.MahDiscountPreviewDto? {
+        return try {
+            authRepository.withToken { token -> app.apiClient.discountPending(token) }.pending
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /** Attach promo code for next purchase, or redeem immediately if 100% off. */
+    suspend fun applyDiscountCode(code: String): Pair<String?, com.mahava.app.network.MahDiscountPreviewDto?> {
+        return try {
+            val attached = authRepository.withToken { token -> app.apiClient.attachDiscount(token, code.trim()) }
+            if (attached.freeGrant) {
+                authRepository.withToken { token -> app.apiClient.redeemDiscount(token, code.trim()) }
+                authRepository.refreshSubscription()
+                null to attached.copy(attached = true)
+            } else {
+                null to attached
+            }
+        } catch (e: MahApiException) {
+            (e.message ?: "اعمال کد ناموفق بود.") to null
+        } catch (t: Throwable) {
+            (t.message ?: "اعمال کد ناموفق بود.") to null
+        }
+    }
+
+    suspend fun clearDiscountCode(): String? {
+        return try {
+            authRepository.withToken { token -> app.apiClient.clearDiscount(token) }
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "حذف کد ناموفق بود."
+        } catch (t: Throwable) {
+            t.message ?: "حذف کد ناموفق بود."
+        }
+    }
+
+    /**
+     * Buy yearly subscription via Cafe Bazaar IAB, claim on server, then consume so next year is buyable.
+     * Pending discount code on the server is consumed during claim.
+     * @return null on success, otherwise a short Persian error.
+     */
+    suspend fun purchaseYearlyWithBazaar(registry: androidx.activity.result.ActivityResultRegistry): String? {
+        if (!authRepository.hasSessionTokens()) return "اول وارد حساب شو."
+        if (!com.mahava.app.billing.BazaarBilling.isBazaarInstalled(app)) {
+            return com.mahava.app.billing.BazaarBilling.friendlyBazaarError(
+                Exception("Bazaar is not installed")
+            )
+        }
+        val billing = com.mahava.app.billing.BazaarBilling(app)
+        return try {
+            billing.connect().getOrElse {
+                return it.message ?: com.mahava.app.billing.BazaarBilling.friendlyBazaarError(it)
+            }
+            val purchase = billing.purchaseYearly(registry).getOrElse {
+                return it.message ?: "خرید انجام نشد."
+            }
+            authRepository.withToken { token ->
+                app.apiClient.claimBazaarPurchase(token, purchase.toClaimMap())
+            }
+            // Allow repurchase next year (managed product consumed after server grant).
+            billing.consume(purchase.purchaseToken)
+            authRepository.refreshSubscription()
+            null
+        } catch (e: MahApiException) {
+            e.message ?: "فعال‌سازی اشتراک روی سرور ناموفق بود."
+        } catch (t: Throwable) {
+            t.message ?: "خرید ناموفق بود."
+        } finally {
+            billing.disconnect()
+        }
+    }
+
+    /** Re-claim any owned yearly purchases that were not yet applied on the server. */
+    suspend fun restoreBazaarPurchases(): String {
+        if (!authRepository.hasSessionTokens()) return "اول وارد حساب شو."
+        if (!com.mahava.app.billing.BazaarBilling.isBazaarInstalled(app)) {
+            return com.mahava.app.billing.BazaarBilling.friendlyBazaarError(
+                Exception("Bazaar is not installed")
+            )
+        }
+        val billing = com.mahava.app.billing.BazaarBilling(app)
+        return try {
+            billing.connect().getOrElse {
+                return it.message ?: com.mahava.app.billing.BazaarBilling.friendlyBazaarError(it)
+            }
+            val owned = billing.queryOwnedYearly()
+            if (owned.isEmpty()) return "خرید فعالی در بازار پیدا نشد."
+            var claimed = 0
+            for (p in owned) {
+                try {
+                    authRepository.withToken { token ->
+                        app.apiClient.claimBazaarPurchase(token, p.toClaimMap())
+                    }
+                    billing.consume(p.purchaseToken)
+                    claimed++
+                } catch (_: Throwable) { }
+            }
+            authRepository.refreshSubscription()
+            if (claimed > 0) "اشتراک از خرید بازار بازیابی شد." else "خرید پیدا شد ولی فعال‌سازی تازه لازم نبود."
+        } catch (t: Throwable) {
+            t.message ?: "بازیابی خرید ناموفق بود."
+        } finally {
+            billing.disconnect()
+        }
     }
 
     fun phaseForecast(): PhaseForecast {

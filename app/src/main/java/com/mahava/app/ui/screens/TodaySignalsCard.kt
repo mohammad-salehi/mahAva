@@ -214,7 +214,7 @@ private fun SectionChip(label: String, selected: Boolean, accent: Color, tag: St
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(if (selected) accent else MahavaSurface)
-            .border(BorderStroke(1.dp, accent.copy(alpha = if (selected) 1f else 0.35f)), RoundedCornerShape(14.dp))
+            .background(if (selected) accent.copy(alpha = 0.22f) else accent.copy(alpha = 0.10f), RoundedCornerShape(14.dp))
             .clickable(role = Role.Checkbox, onClick = onClick)
             .testTag(tag)
             .padding(horizontal = 14.dp, vertical = 10.dp),

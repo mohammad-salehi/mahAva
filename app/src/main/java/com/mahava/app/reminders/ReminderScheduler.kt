@@ -32,7 +32,8 @@ class ReminderScheduler(private val context: Context) {
     }
 
     fun ensurePeriodic() {
-        val req = PeriodicWorkRequestBuilder<ReminderWorker>(12, TimeUnit.HOURS).build()
+        // Check a few times a day so the morning tip / daily recommendation fires reliably.
+        val req = PeriodicWorkRequestBuilder<ReminderWorker>(6, TimeUnit.HOURS).build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,

@@ -442,11 +442,28 @@ fun MahavaAppRoot(
                     vm,
                     onBack = { nav.popBackStack() },
                     onGoLogin = { nav.navigate(Routes.LOGIN) { launchSingleTop = true } },
+                    onOpenPrivacy = { nav.navigate(Routes.PRIVACY) },
+                    onOpenTerms = { nav.navigate(Routes.TERMS) },
                     onSuccess = { goHomeAfterAuth(true) }
                 )
             }
             composable(Routes.PASSWORD_RECOVERY) {
-                PasswordRecoveryScreen(onBack = { nav.popBackStack() })
+                PasswordRecoveryScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onDone = {
+                        nav.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.PASSWORD_RECOVERY) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable(Routes.PRIVACY) {
+                PrivacyPolicyScreen(onBack = { nav.popBackStack() })
+            }
+            composable(Routes.TERMS) {
+                TermsOfUseScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.ACCOUNT) {
                 AccountScreen(
@@ -540,10 +557,14 @@ fun MahavaAppRoot(
                     onBack = { nav.popBackStack() },
                     onAccount = { goAccountOrLogin() },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
+                    onTickets = { nav.navigate(Routes.TICKETS) { launchSingleTop = true } },
                     onAfterDeleteAll = {
                         nav.navigate(Routes.ONBOARDING) { popUpTo(0) { inclusive = true } }
                     }
                 )
+            }
+            composable(Routes.TICKETS) {
+                TicketsScreen(vm, onBack = { nav.popBackStack() })
             }
         }
         AppOverlays(

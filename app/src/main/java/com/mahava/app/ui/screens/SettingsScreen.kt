@@ -27,7 +27,7 @@ import com.mahava.app.util.PersianDigits
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onPartner: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}, onPregnancySetup: () -> Unit = {}) {
+fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> Unit, onAccount: () -> Unit = {}, onPartner: () -> Unit = {}, onAfterDeleteAll: () -> Unit = {}, onPregnancySetup: () -> Unit = {}, onTickets: () -> Unit = {}) {
     val state by vm.state.collectAsState()
     val profile = state.profile
     val scope = rememberCoroutineScope()
@@ -112,6 +112,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                     ChoiceChipPill("میلادی", profile?.calendarType == "gregorian") { vm.updateProfile { it.copy(calendarType = "gregorian") } }
                 }
             }
+        }
+
+        SettingsGroup("پشتیبانی") {
+            QuietInfo("سؤال یا مشکل داری؟ تیکت بفرست تا از پنل پشتیبانی جواب بگیری.")
+            SecondaryButton("تیکت و پشتیبانی", modifier = Modifier.testTag("settings_tickets"), onClick = onTickets)
         }
 
         SettingsGroup("قفل و اعلان") {

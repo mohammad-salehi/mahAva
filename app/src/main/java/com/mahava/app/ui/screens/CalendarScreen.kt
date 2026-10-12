@@ -53,18 +53,47 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
     val predictedFertile = mutableSetOf<Long>()
     val pred = state.cycle?.prediction
     if (!pregnancy && pred is PredictionKind.Estimate) {
-        var d = pred.nextPeriodStartEarliest
-        while (!d.isAfter(pred.nextPeriodStartLatest)) {
-            if (d.isAfter(today)) predictedPeriod += d.toEpochDay()
-            d = d.plusDays(1)
+        val bleed = (state.profile?.typicalBleedLength ?: 5).coerceIn(2, 10)
+        val cycleLen = pred.medianCycleLength.coerceIn(15, 90)
+        val horizon = today.plusMonths(6)
+        // Uncertainty band for the next period start, each expanded to full estimated bleed days.
+        var startCursor = pred.nextPeriodStartEarliest
+        while (!startCursor.isAfter(pred.nextPeriodStartLatest)) {
+            for (b in 0 until bleed) {
+                val day = startCursor.plusDays(b.toLong())
+                if (!day.isBefore(today) && !day.isAfter(horizon)) predictedPeriod += day.toEpochDay()
+            }
+            startCursor = startCursor.plusDays(1)
         }
-        if (premium && state.cycle?.showFertility == true) {
-            var f = pred.fertilityEarliest
-            while (!f.isAfter(pred.fertilityLatest)) {
-                if (!f.isBefore(today)) predictedFertile += f.toEpochDay()
+        // Subsequent cycles: full estimated period blocks from the central prediction.
+        var cycle = 1
+        while (true) {
+            val cycleStart = pred.nextPeriodStartCentral.plusDays((cycleLen.toLong() * cycle))
+            if (cycleStart.isAfter(horizon)) break
+            for (b in 0 until bleed) {
+                val day = cycleStart.plusDays(b.toLong())
+                if (!day.isBefore(today) && !day.isAfter(horizon)) predictedPeriod += day.toEpochDay()
+            }
+            // Fertility window for later cycles (anchored ~14 days before next period).
+            val fertEnd = cycleStart.minusDays(12)
+            val fertStart = cycleStart.minusDays(19)
+            var f = fertStart
+            while (!f.isAfter(fertEnd)) {
+                if (!f.isBefore(today) && !f.isAfter(horizon)) predictedFertile += f.toEpochDay()
                 f = f.plusDays(1)
             }
+            cycle++
+            if (cycle > 8) break
         }
+        // Current / nearest fertility estimate from the engine.
+        var f = pred.fertilityEarliest
+        while (!f.isAfter(pred.fertilityLatest)) {
+            if (!f.isBefore(today) && !f.isAfter(horizon)) predictedFertile += f.toEpochDay()
+            f = f.plusDays(1)
+        }
+        // Period markers win over fertility on the same day.
+        predictedFertile.removeAll(predictedPeriod)
+        predictedFertile.removeAll(periodDays)
     }
 
     val days = monthDays(monthAnchor, useJalali)

@@ -30,6 +30,43 @@ data class MahAuthResponse(
     val subscription: MahSubscriptionDto? = null
 )
 
+data class MahOtpResponse(
+    val ok: Boolean = false,
+    val message: String? = null,
+    val phone: String? = null,
+    val purpose: String? = null,
+    val expiresInSec: Int = 600,
+    /** Present when SMS panel is off and OTP is the fixed default. */
+    val debugFixedOtp: Boolean? = null
+)
+
+data class MahOtpVerifyResponse(
+    val ok: Boolean = false,
+    val message: String? = null,
+    val verified: Boolean = false,
+    val purpose: String? = null
+)
+
+data class MahSimpleOkResponse(
+    val ok: Boolean = false,
+    val message: String? = null
+)
+
+data class MahDiscountPreviewDto(
+    val ok: Boolean = false,
+    val message: String? = null,
+    val code: String? = null,
+    val percentOff: Int = 0,
+    val unlimited: Boolean = true,
+    val remaining: Int? = null,
+    val yearlyPriceTomans: Int = 0,
+    val discountedPriceTomans: Int = 0,
+    val freeGrant: Boolean = false,
+    val label: String? = null,
+    val attached: Boolean = false,
+    val pending: MahDiscountPreviewDto? = null
+)
+
 data class MahPlansResponse(
     val ok: Boolean = false,
     val priceYearlyTomans: Int = 585000,
@@ -169,4 +206,27 @@ data class DataPushDto(
     val now: Long = 0L,
     val applied: Int = 0,
     val conflicts: List<SyncRecordDto>? = null
+)
+
+data class MahTicketMessageDto(
+    val by: String = "",
+    val body: String = "",
+    val at: String? = null,
+    val adminName: String = ""
+)
+
+data class MahTicketDto(
+    val id: String = "",
+    val subject: String = "",
+    val status: String = "open",
+    val messages: List<MahTicketMessageDto>? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
+)
+
+data class MahTicketsResponse(
+    val ok: Boolean = false,
+    val tickets: List<MahTicketDto>? = null,
+    val ticket: MahTicketDto? = null,
+    val message: String? = null
 )

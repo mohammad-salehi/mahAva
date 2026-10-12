@@ -81,11 +81,37 @@ class AuthRepository(
         return prefs.serverHasActiveSubscription.first()
     }
 
-    suspend fun register(phone: String, password: String, role: String? = null): MahAuthResponse {
-        val res = api.register(phone, password, role)
+    suspend fun requestOtp(phone: String, purpose: String) = api.requestOtp(phone, purpose)
+
+    suspend fun verifyOtp(phone: String, purpose: String, otp: String) =
+        api.verifyOtp(phone, purpose, otp)
+
+    suspend fun register(
+        phone: String,
+        password: String,
+        role: String? = null,
+        otp: String,
+        acceptedPrivacy: Boolean,
+        acceptedTerms: Boolean,
+        privacyVersion: String,
+        termsVersion: String
+    ): MahAuthResponse {
+        val res = api.register(
+            phone = phone,
+            password = password,
+            role = role,
+            otp = otp,
+            acceptedPrivacy = acceptedPrivacy,
+            acceptedTerms = acceptedTerms,
+            privacyVersion = privacyVersion,
+            termsVersion = termsVersion
+        )
         persistSession(res)
         return res
     }
+
+    suspend fun resetPassword(phone: String, otp: String, newPassword: String) =
+        api.resetPassword(phone, otp, newPassword)
 
     suspend fun login(phone: String, password: String): MahAuthResponse {
         val res = api.login(phone, password)

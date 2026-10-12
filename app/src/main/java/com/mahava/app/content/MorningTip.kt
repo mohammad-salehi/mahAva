@@ -26,16 +26,18 @@ object MorningTip {
             "late_luteal" -> "صبح بخیر — نزدیک پریود"
             else -> "صبح بخیر"
         }
-        // Keep one short science line + one care line so the notif stays scannable.
-        val body = buildString {
-            append(tip)
-            val care = science.careTipsFa.firstOrNull()
-            if (care != null) {
-                append(" ")
-                append(care)
-                if (!care.endsWith(".")) append(".")
+        // Prefer the actionable home tip; fall back to rotating line + care tip.
+        val practical = science.homePracticalFa.trim().ifBlank {
+            buildString {
+                append(tip)
+                science.careTipsFa.firstOrNull()?.let { care ->
+                    append(" ")
+                    append(care)
+                    if (!care.endsWith(".")) append(".")
+                }
             }
         }
+        val body = if (practical.length > 220) practical.take(217) + "…" else practical
         return Tip(title, body)
     }
 

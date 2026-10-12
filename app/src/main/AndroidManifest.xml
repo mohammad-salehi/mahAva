@@ -7,8 +7,22 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Cafe Bazaar billing -->
+    <uses-permission android:name="com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR" />
     <!-- Keep ACCESS_NETWORK_STATE for auth; strip unused FGS merge from WorkManager -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+
+    <!-- Android 11+: must declare Bazaar package + billing service or Poolakey reports "Bazaar is not installed". -->
+    <queries>
+        <package android:name="com.farsitel.bazaar" />
+        <intent>
+            <action android:name="ir.cafebazaar.pardakht.InAppBillingService.BIND" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="bazaar" />
+        </intent>
+    </queries>
 
     <application
         android:name=".MahavaApplication"

@@ -19,14 +19,21 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.mahava.app"
+        applicationId = "com.mah.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 101
-        versionName = "1.0.4"
+        versionCode = 116
+        versionName = "1.1.6"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
+        // Cafe Bazaar IAB (Poolakey). SKU must match the product id in Bazaar developer panel.
+        buildConfigField(
+            "String",
+            "BAZAAR_RSA_PUBLIC_KEY",
+            "\"MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwDbkuDMRsELBkqgL+HS/x0+k8BqwSW9l2gK6NBvar7EFyzmHPjlUZZiBiLBxY3+PzsXVqEF/x4ZRr/pWXOlzjIs8gMJsVUZJymjrdKCOiiS9Zf36NIoEyuK1IwGOAOraWOb3afFLlkujew1d42Sdul3abR3UPqL76qQQNvPdxNLg+8WEjtq4gbXEBzlm4ZhclgFDsR2ADyBEtK2uC9NyJ9AXXVjaa5XYXK37a+mwjcCAwEAAQ==\""
+        )
+        buildConfigField("String", "BAZAAR_SKU_YEARLY", "\"mah_yearly\"")
     }
 
     signingConfigs {
@@ -128,6 +135,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     implementation("com.google.code.gson:gson:2.11.0")
+
+    // Cafe Bazaar In-App Billing
+    implementation("com.github.cafebazaar.Poolakey:poolakey:2.2.0")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 

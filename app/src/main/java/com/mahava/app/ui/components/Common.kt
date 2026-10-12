@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -35,16 +34,15 @@ fun MahavaCard(
     containerColor: Color = MahavaSurface,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        color = containerColor,
-        border = BorderStroke(1.dp, MahavaBorder.copy(alpha = 0.65f)),
-        shadowElevation = 0.5.dp,
-        tonalElevation = 0.dp
-    ) {
-        Column(Modifier.padding(16.dp), content = content)
-    }
+    // Flat fill only — Material Surface elevation/outline looked like a thick border on device.
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(containerColor)
+            .padding(16.dp),
+        content = content
+    )
 }
 
 @Composable
@@ -67,10 +65,10 @@ fun SecondaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> 
         onClick = onClick,
         modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, MahavaBorder),
+        border = BorderStroke(0.dp, Color.Transparent),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = MahavaPrimaryDeep,
-            containerColor = MahavaPrimarySoft.copy(alpha = 0.45f)
+            containerColor = MahavaPrimarySoft.copy(alpha = 0.55f)
         )
     ) { Text(text) }
 }
@@ -123,20 +121,19 @@ fun ChoiceChipPill(
     tag: String? = null,
     onClick: () -> Unit
 ) {
-    val bg = if (selected) MahavaPrimarySoft else MahavaBackground
+    val bg = if (selected) selectedColor.copy(alpha = 0.22f) else Color(0xFFF4F0F8)
     val fg = if (selected) MahavaPrimaryDeep else MahavaTextPrimary
     Box(
         modifier = Modifier
             .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(bg)
-            .border(1.dp, if (selected) selectedColor else MahavaBorder, RoundedCornerShape(12.dp))
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (tag != null) Modifier.testTag(tag) else Modifier)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(label, color = fg, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = fg, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
     }
 }
 
@@ -209,7 +206,8 @@ fun DateStepper(
     val picking = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     fun set(d: java.time.LocalDate) { onChange(if (d.isAfter(max)) max else if (d.isBefore(min)) min else d) }
     OutlinedButton(onClick = { picking.value = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("${testTagPrefix}_pick"),
-        shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, MahavaBorder)) {
+        shape = RoundedCornerShape(16.dp), border = BorderStroke(0.dp, Color.Transparent),
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFF4F0F8), contentColor = MahavaTextPrimary)) {
         MahavaIcon(com.mahava.app.R.drawable.design_calendar, MahavaPrimaryDeep)
         Spacer(Modifier.width(10.dp))
         Text(DatePickerMath.formatFa(date, jalali), modifier = Modifier.weight(1f).testTag("${testTagPrefix}_value"))

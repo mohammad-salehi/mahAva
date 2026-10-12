@@ -144,31 +144,61 @@ fun TodayScreen(
             }
             if (!pregnant) {
                 MahavaCard(Modifier.testTag("phase_science_card").clickable(onClick = onScience)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.Top) {
                         Column(Modifier.weight(1f)) {
                             SectionLabel("در بدنت چه می‌گذرد؟")
-                            Text(science.teaserFa)
-                            QuietInfo("اطلاعات عمومی دربارهٔ مرحلهٔ تخمینی؛ گزارش علائم تو نیست.")
-                            Text("توضیح و منابع علمی ‹", color = MahavaPrimaryDeep)
+                            Text(science.teaserFa, style = MaterialTheme.typography.titleMedium, color = MahavaPrimaryDeep)
+                            Spacer(Modifier.height(6.dp))
+                            Text(science.homePracticalFa.ifBlank { science.bodyFa.take(160) })
+                            Spacer(Modifier.height(8.dp))
+                            QuietInfo("توضیح عمومی مرحلهٔ تخمینی است، نه تشخیص پزشکی.")
+                            Text("جزئیات و منابع علمی ‹", color = MahavaPrimaryDeep)
                         }
                         Illustration(R.drawable.design_uterus_botanical, Modifier.width(90.dp).height(100.dp))
                     }
                 }
                 MahavaCard {
                     SectionLabel("پیشنهادهای امروز")
-                    CompanionAction("ثبت خواب و حال بدنت", "ثبت‌های واقعی به شناخت الگوی خودت کمک می‌کنند.", R.drawable.design_bed, onDailyLog)
-                    CompanionAction("مراقبت متناسب با حالت", if ("pain" in symptoms) "راهنمای درد و زمان مراجعه را بخوان." else "راهنمای حرکت، استراحت و مراقبت روزانه.", R.drawable.design_leaf) { onCareDetail(vm.careToday().item.id) }
+                    science.foodTipsFa.firstOrNull()?.let { tip ->
+                        CompanionAction("تغذیهٔ امروز", tip, R.drawable.design_leaf, onFoodTips)
+                    }
+                    science.careTipsFa.firstOrNull()?.let { tip ->
+                        CompanionAction(
+                            if ("pain" in symptoms) "مراقبت از درد" else "مراقبت امروز",
+                            tip,
+                            R.drawable.design_calm
+                        ) { onCareDetail(vm.careToday().item.id) }
+                    }
+                    CompanionAction("ثبت خواب و حال بدنت", "ثبت واقعی، الگوی خودت را از حدس جدا می‌کند.", R.drawable.design_bed, onDailyLog)
                 }
                 HealthContextNote(HealthNote.GENERAL)
-                val tomorrow = cycle?.let { com.mahava.app.cycle.CycleDayContextResolver.resolveOn(it, today.plusDays(1)) }
-                MahavaCard(Modifier.testTag("phase_forecast_card").clickable(onClick = onForecast), containerColor = MahavaMenstruationSoft.copy(alpha = 0.6f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                val tomorrowCtx = cycle?.let { com.mahava.app.cycle.CycleDayContextResolver.resolveOn(it, today.plusDays(1)) }
+                val forecast = remember(tomorrowCtx, state.dailyLogs) {
+                    tomorrowCtx?.let {
+                        com.mahava.app.content.PhaseForecastEngine.build(it.subWindow, cycle?.phase, state.dailyLogs.takeLast(14))
+                    }
+                }
+                MahavaCard(Modifier.testTag("phase_forecast_card").clickable(onClick = onForecast), containerColor = MahavaMenstruationSoft.copy(alpha = 0.55f)) {
+                    Row(verticalAlignment = Alignment.Top) {
                         MahavaIcon(R.drawable.design_sun, MahavaAccentPeach, 30.dp)
                         Spacer(Modifier.width(12.dp))
                         Column {
                             SectionLabel("فردا چه خبر؟")
-                            Text(tomorrow?.subWindow?.titleFa ?: "برای تخمین فردا، سابقهٔ کافی نداریم.")
-                            QuietInfo("مرحله از تاریخ‌ها تخمین زده می‌شود؛ حال و علائم فردا قابل پیش‌گویی نیست.")
+                            Text(forecast?.phaseTitleFa ?: tomorrowCtx?.subWindow?.titleFa ?: "برای تخمین فردا، سابقهٔ کافی نداریم.", color = MahavaPrimaryDeep)
+                            Spacer(Modifier.height(4.dp))
+                            if (forecast != null) {
+                                Text(forecast.moodLineFa)
+                                Spacer(Modifier.height(4.dp))
+                                QuietInfo(forecast.tipFa)
+                                forecast.cravingLineFa.takeIf { it.isNotBlank() }?.let {
+                                    Spacer(Modifier.height(4.dp))
+                                    QuietInfo(it)
+                                }
+                            } else {
+                                QuietInfo("با ثبت چند پریود، پیشنهاد فردا کاربردی‌تر می‌شود.")
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text("راهنمای کامل فردا ‹", color = MahavaPrimaryDeep)
                         }
                     }
                 }
@@ -192,7 +222,7 @@ private fun QuickFeelings(log: com.mahava.app.data.db.DailyLogEntity?, symptoms:
             androidx.compose.material3.Surface(onClick = { onToggle(key) }, modifier = Modifier.weight(1f).heightIn(min = 76.dp).testTag("quick_$key"),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                 color = if (selected) MahavaPrimarySoft else when(key) { "happy" -> androidx.compose.ui.graphics.Color(0xFFEAF4EF); "pain" -> MahavaMenstruationSoft; else -> MahavaPrimarySoft.copy(alpha=0.5f) },
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MahavaPrimary else androidx.compose.ui.graphics.Color.Transparent)) {
+                shadowElevation = if (selected) 2.dp else 0.dp) {
                 Column(Modifier.padding(8.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     MahavaIcon(icon, MahavaPrimaryDeep)
                     Text(title, style=MaterialTheme.typography.bodySmall, color=MahavaTextPrimary)

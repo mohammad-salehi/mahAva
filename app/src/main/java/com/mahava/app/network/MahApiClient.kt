@@ -24,12 +24,54 @@ class MahApiClient(
 
     fun currentBaseUrl(): String = baseUrl.trimEnd('/')
 
-    suspend fun register(phone: String, password: String, role: String? = null): MahAuthResponse =
-        post("/api/mah/auth/register", mapOf(
-            "phone" to phone,
-            "password" to password,
-            "role" to (role ?: "")
-        ))
+    suspend fun requestOtp(phone: String, purpose: String): MahOtpResponse {
+        val raw = request("POST", "/api/mah/auth/otp/request", mapOf("phone" to phone, "purpose" to purpose), null)
+        return gson.fromJson(raw, MahOtpResponse::class.java)
+    }
+
+    suspend fun verifyOtp(phone: String, purpose: String, otp: String): MahOtpVerifyResponse {
+        val raw = request(
+            "POST",
+            "/api/mah/auth/otp/verify",
+            mapOf("phone" to phone, "purpose" to purpose, "otp" to otp),
+            null
+        )
+        return gson.fromJson(raw, MahOtpVerifyResponse::class.java)
+    }
+
+    suspend fun register(
+        phone: String,
+        password: String,
+        role: String? = null,
+        otp: String,
+        acceptedPrivacy: Boolean,
+        acceptedTerms: Boolean,
+        privacyVersion: String,
+        termsVersion: String
+    ): MahAuthResponse =
+        post(
+            "/api/mah/auth/register",
+            mapOf(
+                "phone" to phone,
+                "password" to password,
+                "role" to (role ?: ""),
+                "otp" to otp,
+                "acceptedPrivacy" to acceptedPrivacy,
+                "acceptedTerms" to acceptedTerms,
+                "privacyVersion" to privacyVersion,
+                "termsVersion" to termsVersion
+            )
+        )
+
+    suspend fun resetPassword(phone: String, otp: String, newPassword: String): MahSimpleOkResponse {
+        val raw = request(
+            "POST",
+            "/api/mah/auth/password/reset",
+            mapOf("phone" to phone, "otp" to otp, "newPassword" to newPassword),
+            null
+        )
+        return gson.fromJson(raw, MahSimpleOkResponse::class.java)
+    }
 
     suspend fun login(phone: String, password: String): MahAuthResponse =
         post("/api/mah/auth/login", mapOf("phone" to phone, "password" to password))
@@ -64,6 +106,32 @@ class MahApiClient(
     suspend fun plans(): MahPlansResponse {
         val raw = request("GET", "/api/mah/subscription/plans", null, null)
         return gson.fromJson(raw, MahPlansResponse::class.java)
+    }
+
+    /** Activate yearly plan after Cafe Bazaar IAB purchase (server verifies RSA signature). */
+    suspend fun claimBazaarPurchase(token: String, purchase: Map<String, Any?>): JsonObject {
+        val raw = request("POST", "/api/mah/subscription/bazaar/claim", purchase, token)
+        return gson.fromJson(raw, JsonObject::class.java)
+    }
+
+    suspend fun discountPending(token: String): MahDiscountPreviewDto {
+        val raw = request("GET", "/api/mah/subscription/discount/pending", null, token)
+        return gson.fromJson(raw, MahDiscountPreviewDto::class.java)
+    }
+
+    suspend fun attachDiscount(token: String, code: String): MahDiscountPreviewDto {
+        val raw = request("POST", "/api/mah/subscription/discount/attach", mapOf("code" to code), token)
+        return gson.fromJson(raw, MahDiscountPreviewDto::class.java)
+    }
+
+    suspend fun clearDiscount(token: String): MahSimpleOkResponse {
+        val raw = request("POST", "/api/mah/subscription/discount/clear", emptyMap(), token)
+        return gson.fromJson(raw, MahSimpleOkResponse::class.java)
+    }
+
+    suspend fun redeemDiscount(token: String, code: String): JsonObject {
+        val raw = request("POST", "/api/mah/subscription/discount/redeem", mapOf("code" to code), token)
+        return gson.fromJson(raw, JsonObject::class.java)
     }
 
     suspend fun appConfig(versionCode: Int): MahAppConfigResponse {
@@ -188,6 +256,36 @@ class MahApiClient(
 
     suspend fun deleteAccount(token: String, password: String) {
         request("POST", "/api/mah/auth/delete-account", mapOf("password" to password), token)
+    }
+
+    suspend fun listTickets(token: String): MahTicketsResponse =
+        gson.fromJson(request("GET", "/api/mah/tickets", null, token), MahTicketsResponse::class.java)
+
+    suspend fun createTicket(token: String, subject: String, body: String): MahTicketsResponse =
+        gson.fromJson(
+            request("POST", "/api/mah/tickets", mapOf("subject" to subject, "body" to body), token),
+            MahTicketsResponse::class.java
+        )
+
+    suspend fun replyTicket(token: String, id: String, body: String): MahTicketsResponse =
+        gson.fromJson(
+            request("POST", "/api/mah/tickets/$id/reply", mapOf("body" to body), token),
+            MahTicketsResponse::class.java
+        )
+
+    suspend fun reportAppLog(token: String, message: String, detail: String = "", level: String = "error") {
+        request(
+            "POST",
+            "/api/mah/tickets/logs",
+            mapOf(
+                "message" to message,
+                "detail" to detail,
+                "level" to level,
+                "source" to "android",
+                "appVersion" to BuildConfig.VERSION_NAME
+            ),
+            token
+        )
     }
 
     private suspend fun post(path: String, body: Map<String, Any?>, token: String? = null): MahAuthResponse {

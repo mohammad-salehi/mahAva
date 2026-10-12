@@ -1,19 +1,28 @@
 package com.mahava.app.ui.screens
 
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.mahava.app.BuildConfig
 import com.mahava.app.ui.AppViewModel
 import com.mahava.app.ui.components.*
 import com.mahava.app.ui.theme.MahavaPrimary
@@ -40,7 +49,7 @@ fun LoginScreen(
     ) {
         ScreenHeader("ورود", onBack = onBack)
         Text("با شماره موبایل وارد شو", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان می‌گیره. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شه و با گوشی جدید برمی‌گرده. اگه به همسرت وصل شی، اون چیزایی که ثبت می‌کنی رو می‌بینه.")
+        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان می‌گیره. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شه و با گوشی جدید برمی‌گرده.")
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = phone,
@@ -68,7 +77,7 @@ fun LoginScreen(
             scope.launch {
                 val msg = vm.login(phone, password)
                 busy = false
-                if (msg == null) { onSuccess() } else error = msg
+                if (msg == null) onSuccess() else error = msg
             }
         }
         TextButton(onClick = onForgotPassword, modifier = Modifier.testTag("go_password_recovery")) {
@@ -82,11 +91,21 @@ fun LoginScreen(
 }
 
 @Composable
-fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, onSuccess: () -> Unit = onBack) {
+fun RegisterScreen(
+    vm: AppViewModel,
+    onBack: () -> Unit,
+    onGoLogin: () -> Unit,
+    onOpenPrivacy: () -> Unit,
+    onOpenTerms: () -> Unit,
+    onSuccess: () -> Unit = onBack
+) {
     val scope = rememberCoroutineScope()
+    var step by remember { mutableIntStateOf(0) } // 0 phone, 1 otp, 2 password+legal
     var role by remember { mutableStateOf("female") }
     var phone by remember { mutableStateOf("") }
+    var otp by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var acceptedLegal by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
@@ -94,45 +113,126 @@ fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("register_screen")
     ) {
-        ScreenHeader("ثبت‌نام", onBack = onBack)
+        ScreenHeader("ثبت‌نام", onBack = {
+            when (step) {
+                0 -> onBack()
+                else -> { step -= 1; error = null }
+            }
+        })
         Text("ساخت حساب ماه", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("با ثبت‌نام، یک ماه اشتراک رایگان فعال می‌شه. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شه و با گوشی جدید برمی‌گرده. اگه به همسرت وصل شی، اون چیزایی که ثبت می‌کنی رو می‌بینه.")
+        QuietInfo(
+            when (step) {
+                0 -> "شماره موبایل را وارد کن تا کد تأیید برایت صادر شود."
+                1 -> "کد ۶ رقمی را وارد کن. تا راه‌اندازی پیامک، کد پیش‌فرض ۰۰۰۰۰۰ است."
+                else -> "رمز عبور بگذار و سیاست حریم خصوصی و شرایط استفاده را بپذیر."
+            }
+        )
         Spacer(Modifier.height(12.dp))
-        Text("این حساب برای کیست؟", style = MaterialTheme.typography.titleSmall)
-        Spacer(Modifier.height(6.dp))
-        ChipsFlow(
-            listOf("female" to "خانم هستم", "male" to "آقا هستم (همسر)"),
-            role, tagPrefix = "register_role"
-        ) { role = it }
-        if (role == "male") QuietInfo("حساب آقا وضعیت همسرش را می‌بیند. بعد از ثبت‌نام، کد اتصال را از همسرت بگیر.")
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = phone,
-            onValueChange = { phone = it },
-            label = { Text("شماره موبایل") },
-            placeholder = { Text("09xxxxxxxxx") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("register_phone")
-        )
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("رمز عبور (حداقل ۶ کاراکتر)") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("register_password")
-        )
+
+        when (step) {
+            0 -> {
+                Text("این حساب برای کیست؟", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(6.dp))
+                ChipsFlow(
+                    listOf("female" to "خانم هستم", "male" to "آقا هستم (همسر)"),
+                    role, tagPrefix = "register_role"
+                ) { role = it }
+                if (role == "male") QuietInfo("حساب آقا وضعیت همسرش را می‌بیند. بعد از ثبت‌نام، کد اتصال را از همسرت بگیر.")
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("شماره موبایل") },
+                    placeholder = { Text("09xxxxxxxxx") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("register_phone")
+                )
+            }
+            1 -> {
+                QuietInfo("کد برای ${PersianDigits.toPersian(phone)} ارسال شد.")
+                OutlinedTextField(
+                    value = otp,
+                    onValueChange = { if (it.length <= 6) otp = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("کد تأیید") },
+                    placeholder = { Text("000000") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("register_otp")
+                )
+            }
+            else -> {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("رمز عبور (حداقل ۶ کاراکتر)") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("register_password")
+                )
+                Spacer(Modifier.height(12.dp))
+                LegalAcceptRow(
+                    accepted = acceptedLegal,
+                    onAcceptedChange = { acceptedLegal = it },
+                    onOpenPrivacy = onOpenPrivacy,
+                    onOpenTerms = onOpenTerms
+                )
+            }
+        }
+
         error?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
         info?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MahavaPrimary) }
         Spacer(Modifier.height(12.dp))
-        PrimaryButton(if (busy) "صبر کن…" else "ثبت‌نام", enabled = !busy, modifier = Modifier.testTag("register_submit")) {
-            busy = true; error = null; info = null
-            scope.launch {
-                val msg = vm.register(phone, password, role)
-                busy = false
-                if (msg == null) onSuccess() else error = msg
+
+        when (step) {
+            0 -> PrimaryButton(if (busy) "صبر کن…" else "ارسال کد", enabled = !busy, modifier = Modifier.testTag("register_send_otp")) {
+                busy = true; error = null; info = null
+                scope.launch {
+                    val msg = vm.requestOtp(phone, "register")
+                    busy = false
+                    if (msg == null) {
+                        info = "کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن."
+                        step = 1
+                    } else error = msg
+                }
+            }
+            1 -> {
+                PrimaryButton(if (busy) "صبر کن…" else "تأیید کد", enabled = !busy && otp.length == 6, modifier = Modifier.testTag("register_verify_otp")) {
+                    busy = true; error = null; info = null
+                    scope.launch {
+                        val msg = vm.verifyOtp(phone, "register", otp)
+                        busy = false
+                        if (msg == null) step = 2 else error = msg
+                    }
+                }
+                TextButton(enabled = !busy, onClick = {
+                    busy = true; error = null
+                    scope.launch {
+                        val msg = vm.requestOtp(phone, "register")
+                        busy = false
+                        info = if (msg == null) "کد دوباره آماده شد." else null
+                        if (msg != null) error = msg
+                    }
+                }) { Text("ارسال دوباره کد") }
+            }
+            else -> PrimaryButton(
+                if (busy) "صبر کن…" else "ثبت‌نام",
+                enabled = !busy && acceptedLegal && password.length >= 6,
+                modifier = Modifier.testTag("register_submit")
+            ) {
+                busy = true; error = null; info = null
+                scope.launch {
+                    val msg = vm.register(
+                        phone = phone,
+                        password = password,
+                        role = role,
+                        otp = otp,
+                        acceptedPrivacy = acceptedLegal,
+                        acceptedTerms = acceptedLegal
+                    )
+                    busy = false
+                    if (msg == null) onSuccess() else error = msg
+                }
             }
         }
         TextButton(onClick = onGoLogin) { Text("قبلاً ثبت‌نام کردی؟ ورود") }
@@ -140,43 +240,157 @@ fun RegisterScreen(vm: AppViewModel, onBack: () -> Unit, onGoLogin: () -> Unit, 
     }
 }
 
-/**
- * Password recovery UI only. Not wired to any backend / SMS OTP yet
- * (planned for after Bazaar publish).
- */
 @Composable
-fun PasswordRecoveryScreen(onBack: () -> Unit) {
+fun PasswordRecoveryScreen(vm: AppViewModel, onBack: () -> Unit, onDone: () -> Unit = onBack) {
+    val scope = rememberCoroutineScope()
+    var step by remember { mutableIntStateOf(0) }
     var phone by remember { mutableStateOf("") }
-    var submitted by remember { mutableStateOf(false) }
+    var otp by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var info by remember { mutableStateOf<String?>(null) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("password_recovery_screen")
     ) {
-        ScreenHeader("بازیابی رمز", onBack = onBack)
+        ScreenHeader("بازیابی رمز", onBack = {
+            when (step) {
+                0 -> onBack()
+                else -> { step -= 1; error = null }
+            }
+        })
         Text("رمز را فراموش کردی؟", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("به‌زودی با پیامک کد یک‌بارمصرف (OTP) می‌توانی رمز را عوض کنی. فعلاً این بخش به سرور وصل نیست.")
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = phone,
-            onValueChange = { phone = it; submitted = false },
-            label = { Text("شماره موبایل") },
-            placeholder = { Text("09xxxxxxxxx") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("recovery_phone")
+        QuietInfo(
+            when (step) {
+                0 -> "شماره موبایل حسابت را وارد کن."
+                1 -> "کد ۶ رقمی را وارد کن. تا راه‌اندازی پیامک، کد پیش‌فرض ۰۰۰۰۰۰ است."
+                else -> "رمز عبور جدید را وارد کن."
+            }
         )
         Spacer(Modifier.height(12.dp))
-        PrimaryButton("ارسال کد", modifier = Modifier.testTag("recovery_submit")) {
-            submitted = true
+        when (step) {
+            0 -> OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("شماره موبایل") },
+                placeholder = { Text("09xxxxxxxxx") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("recovery_phone")
+            )
+            1 -> OutlinedTextField(
+                value = otp,
+                onValueChange = { if (it.length <= 6) otp = it.filter { ch -> ch.isDigit() } },
+                label = { Text("کد تأیید") },
+                placeholder = { Text("000000") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("recovery_otp")
+            )
+            else -> OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("رمز عبور جدید (حداقل ۶ کاراکتر)") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("recovery_password")
+            )
         }
-        if (submitted) {
-            Spacer(Modifier.height(12.dp))
-            MahavaCard {
-                Text("به‌زودی فعال می‌شود", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
-                QuietInfo("بازیابی رمز با پیامک هنوز راه نیفتاده. فعلاً اگر رمز را یادت نیست، از پشتیبانی ماه کمک بگیر یا بعداً دوباره سر بزن.")
+        error?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
+        info?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MahavaPrimary) }
+        Spacer(Modifier.height(12.dp))
+        when (step) {
+            0 -> PrimaryButton(if (busy) "صبر کن…" else "ارسال کد", enabled = !busy, modifier = Modifier.testTag("recovery_send_otp")) {
+                busy = true; error = null; info = null
+                scope.launch {
+                    val msg = vm.requestOtp(phone, "reset")
+                    busy = false
+                    if (msg == null) {
+                        info = "اگر شماره ثبت شده باشد، کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن."
+                        step = 1
+                    } else error = msg
+                }
+            }
+            1 -> {
+                PrimaryButton(if (busy) "صبر کن…" else "تأیید کد", enabled = !busy && otp.length == 6, modifier = Modifier.testTag("recovery_verify_otp")) {
+                    busy = true; error = null
+                    scope.launch {
+                        val msg = vm.verifyOtp(phone, "reset", otp)
+                        busy = false
+                        if (msg == null) step = 2 else error = msg
+                    }
+                }
+                TextButton(enabled = !busy, onClick = {
+                    busy = true; error = null
+                    scope.launch {
+                        val msg = vm.requestOtp(phone, "reset")
+                        busy = false
+                        info = if (msg == null) "کد دوباره آماده شد." else null
+                        if (msg != null) error = msg
+                    }
+                }) { Text("ارسال دوباره کد") }
+            }
+            else -> PrimaryButton(
+                if (busy) "صبر کن…" else "تغییر رمز",
+                enabled = !busy && password.length >= 6,
+                modifier = Modifier.testTag("recovery_submit")
+            ) {
+                busy = true; error = null
+                scope.launch {
+                    val msg = vm.resetPassword(phone, otp, password)
+                    busy = false
+                    if (msg == null) {
+                        info = "رمز عوض شد. حالا وارد شو."
+                        onDone()
+                    } else error = msg
+                }
             }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun LegalAcceptRow(
+    accepted: Boolean,
+    onAcceptedChange: (Boolean) -> Unit,
+    onOpenPrivacy: () -> Unit,
+    onOpenTerms: () -> Unit
+) {
+    Row(verticalAlignment = Alignment.Top, modifier = Modifier.testTag("register_legal_row")) {
+        Checkbox(
+            checked = accepted,
+            onCheckedChange = onAcceptedChange,
+            modifier = Modifier.testTag("register_legal_check")
+        )
+        val linkStyle = SpanStyle(color = MahavaPrimary, textDecoration = TextDecoration.Underline)
+        val text = buildAnnotatedString {
+            append("سیاست حفظ حریم خصوصی و شرایط استفاده را خواندم و می‌پذیرم. ")
+            withStyle(linkStyle) { append("حریم خصوصی") }
+            append(" · ")
+            withStyle(linkStyle) { append("شرایط استفاده") }
+        }
+        Column(Modifier.padding(top = 12.dp)) {
+            Text(text, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "مشاهده حریم خصوصی",
+                    color = MahavaPrimary,
+                    style = MaterialTheme.typography.bodySmall,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable(onClick = onOpenPrivacy).testTag("open_privacy")
+                )
+                Text(
+                    "مشاهده شرایط استفاده",
+                    color = MahavaPrimary,
+                    style = MaterialTheme.typography.bodySmall,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable(onClick = onOpenTerms).testTag("open_terms")
+                )
+            }
+        }
     }
 }
 
@@ -301,10 +515,90 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
         Spacer(Modifier.height(12.dp))
         MahavaCard {
             Text("اشتراک سالانه", style = MaterialTheme.typography.titleMedium)
-            Text("${PersianDigits.toPersian(price.toString())} تومان / سال")
-            QuietInfo("درگاه پرداخت هنوز آماده نیست.")
+            var pendingDisc by remember { mutableStateOf<com.mahava.app.network.MahDiscountPreviewDto?>(null) }
+            var discountInput by remember { mutableStateOf("") }
+            var applyingDisc by remember { mutableStateOf(false) }
+            LaunchedEffect(phone) {
+                if (!phone.isNullOrBlank()) pendingDisc = vm.loadPendingDiscount()
+            }
+            val payPrice = pendingDisc?.discountedPriceTomans?.takeIf { it >= 0 } ?: price
+            Text("${PersianDigits.toPersian(payPrice.toString())} تومان / سال")
+            pendingDisc?.let { d ->
+                QuietInfo(
+                    "کد ${d.code} · ${PersianDigits.toPersian(d.percentOff)}٪ تخفیف" +
+                        if (d.freeGrant) " · فعال‌سازی رایگان" else ""
+                )
+            }
+            QuietInfo("پرداخت از طریق کافه‌بازار. محصول: ${BuildConfig.BAZAAR_SKU_YEARLY}")
+            if (!phone.isNullOrBlank()) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = discountInput,
+                    onValueChange = { discountInput = it.uppercase() },
+                    label = { Text("کد تخفیف") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("discount_code")
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    SecondaryButton(
+                        if (applyingDisc) "صبر کن…" else "اعمال کد",
+                        modifier = Modifier.weight(1f).testTag("discount_apply")
+                    ) {
+                        if (discountInput.isBlank() || applyingDisc) return@SecondaryButton
+                        applyingDisc = true
+                        scope.launch {
+                            val (err, preview) = vm.applyDiscountCode(discountInput)
+                            applyingDisc = false
+                            if (err != null) status = err
+                            else {
+                                pendingDisc = preview
+                                status = if (preview?.freeGrant == true) {
+                                    "کد رایگان اعمال شد و اشتراک سالانه فعال شد."
+                                } else {
+                                    "کد اعمال شد. هنگام خرید ثبت می‌شود."
+                                }
+                            }
+                        }
+                    }
+                    if (pendingDisc != null) {
+                        SecondaryButton("حذف کد", modifier = Modifier.weight(1f)) {
+                            scope.launch {
+                                val err = vm.clearDiscountCode()
+                                if (err == null) {
+                                    pendingDisc = null
+                                    discountInput = ""
+                                    status = "کد تخفیف برداشته شد."
+                                } else status = err
+                            }
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("خرید سالانه — به‌زودی", enabled = false) { }
+            val registryOwner = LocalActivityResultRegistryOwner.current
+            var buying by remember { mutableStateOf(false) }
+            val buyEnabled = !phone.isNullOrBlank() && !buying && registryOwner != null && pendingDisc?.freeGrant != true
+            PrimaryButton(
+                if (buying) "صبر کن…" else if (active) "تمدید اشتراک سالانه" else "خرید سالانه از بازار",
+                enabled = buyEnabled,
+                modifier = Modifier.testTag("buy_yearly_bazaar")
+            ) {
+                val registry = registryOwner?.activityResultRegistry ?: return@PrimaryButton
+                buying = true
+                scope.launch {
+                    val err = vm.purchaseYearlyWithBazaar(registry)
+                    buying = false
+                    if (err == null) pendingDisc = null
+                    status = err ?: "اشتراک سالانه فعال شد."
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            SecondaryButton("بازیابی خرید قبلی بازار") {
+                scope.launch {
+                    status = vm.restoreBazaarPurchases()
+                }
+            }
         }
         if (status.isNotBlank()) {
             Spacer(Modifier.height(8.dp))

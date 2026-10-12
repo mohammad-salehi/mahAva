@@ -1,6 +1,6 @@
 package com.mahava.app.ui.screens
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -92,6 +94,7 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
                 Illustration(R.drawable.design_lavender_sprig, Modifier.width(60.dp).height(70.dp))
             }
         }
+        Spacer(Modifier.height(20.dp))
         DateStepper(day, max = vm.today(), min = vm.today().minusDays(3650), onChange = onDate)
         if (existing != null) QuietInfo("برای این روز قبلاً ثبت کرده‌ای؛ تغییرها همان ثبت را به‌روز می‌کند.")
         if (isFuture) {
@@ -247,10 +250,11 @@ private fun MoodIconRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .weight(1f)
-                    .border(if (isOn) 2.dp else 1.dp, if (isOn) MahavaPrimary else MahavaBorder, RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (isOn) MahavaPrimarySoft else Color(0xFFF4F0F8))
                     .clickable(role = Role.Button) { onSelect(key) }
                     .testTag("mood_$key")
-                    .padding(vertical = 8.dp, horizontal = 2.dp)
+                    .padding(vertical = 10.dp, horizontal = 2.dp)
             ) {
                 Icon(
                     painter = painterResource(icon),

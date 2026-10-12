@@ -14,9 +14,12 @@ object Routes {
     const val LATE = "late"
     const val CARE = "care"
     const val SETTINGS = "settings"
+    const val TICKETS = "tickets"
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val PASSWORD_RECOVERY = "password_recovery"
+    const val PRIVACY = "privacy"
+    const val TERMS = "terms"
     const val ACCOUNT = "account"
     const val DOCTOR_PDF = "doctor_pdf"
     const val PHASE_DETAIL = "phase/{id}"
@@ -55,7 +58,7 @@ object Routes {
     fun signalDetail(kind: String, key: String) = "signal/$kind/$key"
 
     /** The only screens a logged-out user sees. */
-    val authOnly = setOf(LOGIN, REGISTER, PASSWORD_RECOVERY)
+    val authOnly = setOf(LOGIN, REGISTER, PASSWORD_RECOVERY, PRIVACY, TERMS)
 
     /** Cycle-owner screens a male (partner) account should not land on. */
     val womanMain = setOf(TODAY, CALENDAR, LOG_HUB, REPORTS, BODY)
