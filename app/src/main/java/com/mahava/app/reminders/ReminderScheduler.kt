@@ -69,16 +69,19 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         val sp = applicationContext.getSharedPreferences("mahava_reminders", Context.MODE_PRIVATE)
         val pending = mutableListOf<Triple<Int, String, String>>() // id, title, text
 
-        // Morning science tip: every day around 8 for women, based on today's phase.
+        // Always put the real tip/message in the notification (not a vague "you have a reminder").
+        // privateNotifications only softens the title on the lock screen.
+        fun titleOf(full: String): String =
+            if (private) applicationContext.getString(R.string.app_name) else full
+
+        // Morning tip: every day around 8 for women, based on today's phase.
         run {
             val already = sp.getLong("morning_tip_day", -1L) == today.toEpochDay()
             if (!already && nowHour >= 8) {
                 val periods = app.database.periodDao().getAll()
                 val cycle = app.repository.computeCycle(profile, periods)
                 val tip = com.mahava.app.content.MorningTip.forCycle(cycle, today)
-                val title = if (private) applicationContext.getString(R.string.app_name) else tip.title
-                val text = if (private) applicationContext.getString(R.string.notification_private_text) else tip.body
-                pending += Triple(1005, title, text)
+                pending += Triple(1005, titleOf(tip.title), tip.body)
                 sp.edit().putLong("morning_tip_day", today.toEpochDay()).apply()
             }
         }
@@ -89,9 +92,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             if (!already && !logged && nowHour >= pref.hour) {
                 pending += Triple(
                     1001,
-                    applicationContext.getString(R.string.app_name),
-                    if (private) applicationContext.getString(R.string.notification_private_text)
-                    else applicationContext.getString(R.string.notification_daily_text)
+                    titleOf("ثبت حال امروز"),
+                    applicationContext.getString(R.string.notification_daily_text)
                 )
                 sp.edit().putLong("daily_notified_day", today.toEpochDay()).apply()
             }
@@ -106,9 +108,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
                 if (sp.getLong("period_notified_central", -1L) != key) {
                     pending += Triple(
                         1002,
-                        applicationContext.getString(R.string.app_name),
-                        if (private) applicationContext.getString(R.string.notification_private_text)
-                        else applicationContext.getString(R.string.notification_period_text)
+                        titleOf("نزدیک پریود"),
+                        applicationContext.getString(R.string.notification_period_text)
                     )
                     sp.edit().putLong("period_notified_central", key).apply()
                 }
@@ -119,9 +120,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             if (!already && nowHour >= pref.hour) {
                 pending += Triple(
                     1003,
-                    applicationContext.getString(R.string.app_name),
-                    if (private) applicationContext.getString(R.string.notification_private_text)
-                    else applicationContext.getString(R.string.notification_water_text)
+                    titleOf("یادآوری آب"),
+                    applicationContext.getString(R.string.notification_water_text)
                 )
                 sp.edit().putLong("water_notified_day", today.toEpochDay()).apply()
             }
@@ -132,9 +132,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             if (!already && nowHour >= hour) {
                 pending += Triple(
                     1004,
-                    applicationContext.getString(R.string.app_name),
-                    if (private) applicationContext.getString(R.string.notification_private_text)
-                    else applicationContext.getString(R.string.notification_sleep_text)
+                    titleOf("وقت استراحت"),
+                    applicationContext.getString(R.string.notification_sleep_text)
                 )
                 sp.edit().putLong("sleep_notified_day", today.toEpochDay()).apply()
             }

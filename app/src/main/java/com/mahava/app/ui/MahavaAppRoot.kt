@@ -76,7 +76,7 @@ fun MahavaAppRoot(
     val loggedIn by vm.isLoggedIn.collectAsState()
     val nav = rememberNavController()
     val goAccountOrLogin: () -> Unit = {
-        if (loggedIn) nav.navigate(Routes.ACCOUNT) { launchSingleTop = true }
+        if (loggedIn) nav.navigate(Routes.SETTINGS) { launchSingleTop = true }
         else nav.navigate(Routes.LOGIN) { launchSingleTop = true }
     }
     val accountRole by vm.accountRole.collectAsState()
@@ -222,6 +222,16 @@ fun MahavaAppRoot(
         bottomBar = {
             if (showBottom) {
                 com.mahava.app.ui.components.MainNavigation(route) { target ->
+                    // Leave overlay screens (settings, tickets, …) so bottom tabs always work.
+                    val mainTabs = setOf(
+                        Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.BODY
+                    )
+                    var guard = 0
+                    while (guard++ < 12) {
+                        val r = nav.currentBackStackEntry?.destination?.route ?: break
+                        if (r in mainTabs) break
+                        if (!nav.popBackStack()) break
+                    }
                     nav.navigate(target) {
                         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
@@ -466,12 +476,13 @@ fun MahavaAppRoot(
                 TermsOfUseScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.ACCOUNT) {
-                AccountScreen(
-                    vm,
-                    onBack = { nav.popBackStack() },
-                    onLogin = { nav.navigate(Routes.LOGIN) },
-                    onRegister = { nav.navigate(Routes.REGISTER) }
-                )
+                // Legacy route: account UI moved into Settings + renew dialog.
+                LaunchedEffect(Unit) {
+                    nav.navigate(Routes.SETTINGS) {
+                        popUpTo(Routes.ACCOUNT) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             }
             composable(
                 route = Routes.SIGNAL_DETAIL,
@@ -555,7 +566,9 @@ fun MahavaAppRoot(
                     vm, activity,
                     onPregnancySetup = { nav.navigate(Routes.PREGNANCY_SETUP) },
                     onBack = { nav.popBackStack() },
-                    onAccount = { goAccountOrLogin() },
+                    onAccount = {
+                        nav.navigate(Routes.LOGIN) { launchSingleTop = true }
+                    },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
                     onTickets = { nav.navigate(Routes.TICKETS) { launchSingleTop = true } },
                     onAfterDeleteAll = {

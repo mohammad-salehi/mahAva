@@ -7,11 +7,11 @@
     <string name="nav_reports">گزارش‌ها</string>
     <string name="nav_body">شناخت بدن</string>
     <string name="notification_channel_reminders">یادآوری‌ها</string>
-    <string name="notification_private_text">یک یادآوری از ماه داری</string>
-    <string name="notification_daily_text">امروز حالت چطور است؟ چند ثانیه وقت بگذار و ثبتش کن.</string>
-    <string name="notification_period_text">پریود بعدی‌ات ممکن است در چند روز آینده شروع شود.</string>
-    <string name="notification_water_text">یک لیوان آب بنوش؛ بدن امروز به آب کافی نیاز دارد.</string>
-    <string name="notification_sleep_text">وقت استراحت است؛ خواب منظم به چرخه‌ات کمک می‌کند.</string>
+    <string name="notification_private_text">یک پیام از ماه داری</string>
+    <string name="notification_daily_text">امروز حالت چطوره؟ چند ثانیه وقت بذار و تو ماه ثبتش کن.</string>
+    <string name="notification_period_text">پریود بعدی‌ات شاید تا چند روز دیگه شروع بشه. پد یا دارو رو آماده کن.</string>
+    <string name="notification_water_text">یه لیوان آب بخور. بدنت امروز به آب نیاز داره.</string>
+    <string name="notification_sleep_text">وقت استراحته. خواب خوب به حال و چرخه‌ات کمک می‌کنه.</string>
     <string name="lock_title">باز کردن ماه</string>
     <string name="lock_subtitle">با اثر انگشت یا رمز گوشی قفل را باز کن</string>
     <string name="widget_description">وضعیت چرخه و روزهای مانده تا پریود بعدی</string>

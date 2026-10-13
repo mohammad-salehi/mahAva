@@ -26,7 +26,7 @@ data class UserProfileEntity(
     val calendarType: String = "jalali", // jalali | gregorian
     val lockEnabled: Boolean = false,
     val lockTimeoutSeconds: Int = 60,
-    val privateNotifications: Boolean = true,
+    val privateNotifications: Boolean = false,
     val hiddenBodyCategories: String = "", // comma-separated
     val contentVersionShown: String = "1.0.0",
     val qaSampleData: Boolean = false,

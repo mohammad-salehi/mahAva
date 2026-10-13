@@ -105,14 +105,19 @@ fun TodayScreen(
                 MahavaCard(Modifier.testTag("cycle_status_card"), containerColor = MahavaPrimarySoft) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(cycle?.cycleDay?.let { "روز ${PersianDigits.toPersian(it)} چرخه" } ?: "همراه چرخهٔ تو", style = MaterialTheme.typography.headlineLarge)
+                            Text(cycle?.cycleDay?.let { "روز ${PersianDigits.toPersian(it)} از چرخه‌ات" } ?: "چرخهٔ تو", style = MaterialTheme.typography.headlineLarge)
                             Text(ctx.subWindow.titleFa, color = MahavaPrimaryDeep)
                             Spacer(Modifier.height(10.dp))
                             if (pred != null) {
-                                Text("پریود بعدی، تخمینی")
-                                Text(if (pred.nextPeriodStartEarliest == pred.nextPeriodStartLatest) "حوالی ${JalaliDate.from(pred.nextPeriodStartCentral).formatShortFa()}" else "${JalaliDate.from(pred.nextPeriodStartEarliest).formatShortFa()} تا ${JalaliDate.from(pred.nextPeriodStartLatest).formatShortFa()}")
-                                QuietInfo(cycle?.limitsDescriptionFa.orEmpty())
-                            } else QuietInfo(cycle?.basisDescriptionFa ?: "برای شروع، تاریخ پریودت را ثبت کن.")
+                                Text("پریود بعدی (حدودی)")
+                                Text(
+                                    if (pred.nextPeriodStartEarliest == pred.nextPeriodStartLatest)
+                                        "حدود ${JalaliDate.from(pred.nextPeriodStartCentral).formatShortFa()}"
+                                    else
+                                        "از ${JalaliDate.from(pred.nextPeriodStartEarliest).formatShortFa()} تا ${JalaliDate.from(pred.nextPeriodStartLatest).formatShortFa()}"
+                                )
+                                QuietInfo("این فقط یه حدسه؛ تاریخ دقیق ممکنه فرق کنه.")
+                            } else QuietInfo(cycle?.basisDescriptionFa ?: "اول تاریخ آخرین پریودت را ثبت کن.")
                         }
                         Illustration(R.drawable.design_lavender_sprig, Modifier.width(64.dp).height(120.dp))
                     }
@@ -121,10 +126,7 @@ fun TodayScreen(
                         Spacer(Modifier.height(12.dp))
                         androidx.compose.material3.LinearProgressIndicator(progress = { (cycle.cycleDay.toFloat() / length).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(6.dp), color = MahavaPrimary, trackColor = MahavaSurface)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    QuietInfo(vm.predictionBasisShortFa())
-                    if (pred != null) HealthContextNote(HealthNote.PREDICTION)
-                    if (cycle?.isLate == true) androidx.compose.material3.TextButton(onClick = onLate) { Text("پریود دیر کرده؛ راهنمای بررسی") }
+                    if (cycle?.isLate == true) androidx.compose.material3.TextButton(onClick = onLate) { Text("پریود دیر کرده؟ اینجا را ببین") }
                 }
             }
             health?.activeAlerts?.take(2)?.forEach { a ->
@@ -146,32 +148,31 @@ fun TodayScreen(
                 MahavaCard(Modifier.testTag("phase_science_card").clickable(onClick = onScience)) {
                     Row(verticalAlignment = Alignment.Top) {
                         Column(Modifier.weight(1f)) {
-                            SectionLabel("در بدنت چه می‌گذرد؟")
+                            SectionLabel("بدنت امروز")
                             Text(science.teaserFa, style = MaterialTheme.typography.titleMedium, color = MahavaPrimaryDeep)
                             Spacer(Modifier.height(6.dp))
-                            Text(science.homePracticalFa.ifBlank { science.bodyFa.take(160) })
+                            Text(science.homePracticalFa.ifBlank { science.bodyFa.take(140) })
                             Spacer(Modifier.height(8.dp))
-                            QuietInfo("توضیح عمومی مرحلهٔ تخمینی است، نه تشخیص پزشکی.")
-                            Text("جزئیات و منابع علمی ‹", color = MahavaPrimaryDeep)
+                            QuietInfo("این راهنمای کلی است؛ جای پزشک را نمی‌گیرد.")
+                            Text("بیشتر بخوان ‹", color = MahavaPrimaryDeep)
                         }
                         Illustration(R.drawable.design_uterus_botanical, Modifier.width(90.dp).height(100.dp))
                     }
                 }
                 MahavaCard {
-                    SectionLabel("پیشنهادهای امروز")
+                    SectionLabel("پیشنهاد امروز")
                     science.foodTipsFa.firstOrNull()?.let { tip ->
-                        CompanionAction("تغذیهٔ امروز", tip, R.drawable.design_leaf, onFoodTips)
+                        CompanionAction("غذای امروز", tip, R.drawable.design_leaf, onFoodTips)
                     }
                     science.careTipsFa.firstOrNull()?.let { tip ->
                         CompanionAction(
-                            if ("pain" in symptoms) "مراقبت از درد" else "مراقبت امروز",
+                            if ("pain" in symptoms) "کمک به درد" else "مراقبت امروز",
                             tip,
                             R.drawable.design_calm
                         ) { onCareDetail(vm.careToday().item.id) }
                     }
-                    CompanionAction("ثبت خواب و حال بدنت", "ثبت واقعی، الگوی خودت را از حدس جدا می‌کند.", R.drawable.design_bed, onDailyLog)
+                    CompanionAction("ثبت خواب و حالت", "هر چی ثبت کنی، شناختت از بدنت بهتر می‌شه.", R.drawable.design_bed, onDailyLog)
                 }
-                HealthContextNote(HealthNote.GENERAL)
                 val tomorrowCtx = cycle?.let { com.mahava.app.cycle.CycleDayContextResolver.resolveOn(it, today.plusDays(1)) }
                 val forecast = remember(tomorrowCtx, state.dailyLogs) {
                     tomorrowCtx?.let {
@@ -184,7 +185,7 @@ fun TodayScreen(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             SectionLabel("فردا چه خبر؟")
-                            Text(forecast?.phaseTitleFa ?: tomorrowCtx?.subWindow?.titleFa ?: "برای تخمین فردا، سابقهٔ کافی نداریم.", color = MahavaPrimaryDeep)
+                            Text(forecast?.phaseTitleFa ?: tomorrowCtx?.subWindow?.titleFa ?: "هنوز برای حدس فردا دادهٔ کافی نداریم.", color = MahavaPrimaryDeep)
                             Spacer(Modifier.height(4.dp))
                             if (forecast != null) {
                                 Text(forecast.moodLineFa)
@@ -195,18 +196,18 @@ fun TodayScreen(
                                     QuietInfo(it)
                                 }
                             } else {
-                                QuietInfo("با ثبت چند پریود، پیشنهاد فردا کاربردی‌تر می‌شود.")
+                                QuietInfo("با ثبت چند پریود، حدس فردا بهتر می‌شه.")
                             }
                             Spacer(Modifier.height(6.dp))
-                            Text("راهنمای کامل فردا ‹", color = MahavaPrimaryDeep)
+                            Text("بیشتر ببین ‹", color = MahavaPrimaryDeep)
                         }
                     }
                 }
             }
             MahavaCard(Modifier.clickable(onClick = onAssistant), containerColor = MahavaPrimarySoft.copy(alpha = 0.5f)) {
-                CompanionAction("سؤالی داری؟", "راهنمای آفلاین با منابع علمی", R.drawable.design_chat, onAssistant)
+                CompanionAction("سؤالی داری؟", "اینجا جواب ساده بگیر", R.drawable.design_chat, onAssistant)
             }
-            PrimaryButton("＋  ثبت امروز", modifier = Modifier.testTag("today_log_button"), onClick = onDailyLog)
+            PrimaryButton("ثبت امروز", modifier = Modifier.testTag("today_log_button"), onClick = onDailyLog)
             Spacer(Modifier.height(16.dp))
         }
     }

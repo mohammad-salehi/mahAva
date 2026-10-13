@@ -42,35 +42,56 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("settings_screen")) {
         ScreenHeader("تنظیمات و حریم خصوصی", onBack = onBack)
         Illustration(R.drawable.ill_privacy_shield, Modifier.height(100.dp))
-        Text("اطلاعاتت فقط روی سرور نگه داشته می‌شه", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("همهٔ ثبت‌ها و تنظیمات چرخه‌ات روی سرور ماه ذخیره می‌شن؛ این گوشی فقط کشه. با ورود دوباره یا گوشی جدید برمی‌گردن. اگه به همسرت وصل شی، اون چیزایی که ثبت می‌کنی رو می‌بینه. با حذف حساب، همه از سرور پاک می‌شه.")
+        QuietInfo("ثبت‌ها و تنظیماتت روی سرور ماه می‌مونه تا با گوشی جدید هم برگرده.")
 
         val accountPhone by vm.accountPhone.collectAsState()
         val loggedIn by vm.isLoggedIn.collectAsState()
         val accountRole by vm.accountRole.collectAsState()
         val isMale = accountRole == "male"
+        val plan by vm.serverPlan.collectAsState()
+        val ends by vm.serverEndsAt.collectAsState()
+        val subActive by vm.serverHasActiveSubscription.collectAsState()
+        var showRenew by remember { mutableStateOf(false) }
+        LaunchedEffect(loggedIn) {
+            if (loggedIn) vm.refreshAccountFromServer()
+        }
         SettingsGroup("حساب من") {
-            QuietInfo(
-                when {
-                    !loggedIn ->
-                        "برای اشتراک سرور وارد شو. ثبت‌نام جدید یک ماه رایگان می‌گیره. خرید سالانه ۵۸۵ هزار تومان — به‌زودی."
-                    !accountPhone.isNullOrBlank() ->
-                        "وارد شده‌ای (${PersianDigits.toPersian(accountPhone!!)}). وضعیت اشتراک از سرور خونده می‌شه."
-                    else ->
-                        "وارد شده‌ای. وضعیت اشتراک از سرور خونده می‌شه."
+            if (!loggedIn) {
+                QuietInfo("هنوز وارد نشدی. برای ذخیره روی سرور و خرید اشتراک وارد شو.")
+                PrimaryButton("ورود / ثبت‌نام", onClick = onAccount)
+            } else {
+                if (!accountPhone.isNullOrBlank()) {
+                    Text("شماره: ${PersianDigits.toPersian(accountPhone!!)}", style = MaterialTheme.typography.titleMedium)
                 }
-            )
-            SecondaryButton("حساب کاربری و اشتراک", onClick = onAccount)
-            if (loggedIn) {
-                Spacer(Modifier.height(4.dp))
-                PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
+                Text(
+                    "نوع اشتراک: ${planLabelFa(plan, subActive)}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    "پایان اشتراک: ${endsAtJalaliFa(ends)}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(Modifier.height(8.dp))
+                PrimaryButton(
+                    if (subActive) "تمدید اشتراک" else "خرید اشتراک",
+                    modifier = Modifier.testTag("settings_renew")
+                ) { showRenew = true }
+                Spacer(Modifier.height(8.dp))
+                SecondaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
                         status = "داره خارج می‌شه…"
                         vm.logoutAccount()
-                        status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
+                        status = "خارج شدی."
                     }
                 }
             }
+        }
+        if (showRenew) {
+            SubscriptionRenewDialog(
+                vm = vm,
+                onDismiss = { showRenew = false },
+                onNeedLogin = { showRenew = false; onAccount() }
+            )
         }
 
         if (!isMale) SettingsGroup("همسر") {
@@ -143,11 +164,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 MahavaIcon(R.drawable.ic_bell); Spacer(Modifier.width(8.dp))
-                Text("متن اعلان‌ها خصوصی باشه", Modifier.weight(1f))
-                Switch(profile?.privateNotifications != false, { v -> vm.updateProfile { it.copy(privateNotifications = v) } }, modifier = Modifier.testTag("set_private_notif"))
+                Text("روی صفحهٔ قفل فقط اسم «ماه» دیده بشه", Modifier.weight(1f))
+                Switch(profile?.privateNotifications == true, { v -> vm.updateProfile { it.copy(privateNotifications = v) } }, modifier = Modifier.testTag("set_private_notif"))
             }
             if (!isMale) {
-                QuietInfo("هر صبح یه توصیهٔ کوتاه بر اساس مرحلهٔ چرخه‌ات برات می‌فرستیم.")
+                QuietInfo("هر صبح خودِ توصیه را برات می‌فرستیم، نه فقط «یادآوری داری».")
                 ReminderToggle(vm, "daily_log", "یادآوری روزانه برای ثبت حال", state.reminders, "set_rem_daily") {
                     if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
@@ -188,6 +209,116 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
 
         Spacer(Modifier.height(32.dp))
     }
+}
+
+private fun planLabelFa(plan: String?, active: Boolean): String = when {
+    !active -> "ندارد"
+    plan == "free_trial" -> "آزمایشی رایگان"
+    plan == "yearly" -> "سالانه"
+    else -> plan ?: "—"
+}
+
+private fun endsAtJalaliFa(endsAt: String?): String {
+    if (endsAt.isNullOrBlank()) return "—"
+    return try {
+        val instant = java.time.Instant.parse(endsAt)
+        val day = java.time.LocalDate.ofInstant(instant, java.time.ZoneId.systemDefault())
+        com.mahava.app.util.JalaliDate.from(day).formatFa()
+    } catch (_: Throwable) {
+        try {
+            val day = java.time.LocalDate.parse(endsAt.take(10))
+            com.mahava.app.util.JalaliDate.from(day).formatFa()
+        } catch (_: Throwable) {
+            endsAt
+        }
+    }
+}
+
+@Composable
+fun SubscriptionRenewDialog(
+    vm: AppViewModel,
+    onDismiss: () -> Unit,
+    onNeedLogin: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val price by vm.yearlyPriceTomans.collectAsState()
+    val active by vm.serverHasActiveSubscription.collectAsState()
+    val phone by vm.accountPhone.collectAsState()
+    val registryOwner = androidx.activity.compose.LocalActivityResultRegistryOwner.current
+    var discountInput by remember { mutableStateOf("") }
+    var pendingDisc by remember { mutableStateOf<com.mahava.app.network.MahDiscountPreviewDto?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var msg by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        if (!phone.isNullOrBlank()) pendingDisc = vm.loadPendingDiscount()
+    }
+    val pay = pendingDisc?.discountedPriceTomans?.takeIf { it >= 0 } ?: price
+    AlertDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = { Text(if (active) "تمدید اشتراک" else "خرید اشتراک") },
+        text = {
+            Column {
+                Text("اشتراک سالانه ماه")
+                Text("${PersianDigits.toPersian(pay.toString())} تومان برای یک سال")
+                QuietInfo("پرداخت از کافه‌بازار انجام می‌شود.")
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = discountInput,
+                    onValueChange = { discountInput = it.uppercase() },
+                    label = { Text("کد تخفیف (اختیاری)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                pendingDisc?.let {
+                    QuietInfo("کد ${it.code} · ${PersianDigits.toPersian(it.percentOff)}٪ تخفیف")
+                }
+                msg?.let { Text(it, color = MahavaPrimary) }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !busy,
+                onClick = {
+                    if (phone.isNullOrBlank()) {
+                        onNeedLogin(); return@TextButton
+                    }
+                    busy = true
+                    scope.launch {
+                        if (discountInput.isNotBlank()) {
+                            val (err, preview) = vm.applyDiscountCode(discountInput)
+                            if (err != null) {
+                                busy = false
+                                msg = err
+                                return@launch
+                            }
+                            pendingDisc = preview
+                            if (preview?.freeGrant == true) {
+                                busy = false
+                                msg = "اشتراک با کد رایگان فعال شد."
+                                onDismiss()
+                                return@launch
+                            }
+                        }
+                        val registry = registryOwner?.activityResultRegistry
+                        if (registry == null) {
+                            busy = false
+                            msg = "الان نمی‌شود خرید را باز کرد."
+                            return@launch
+                        }
+                        val err = vm.purchaseYearlyWithBazaar(registry)
+                        busy = false
+                        if (err == null) {
+                            msg = "اشتراک فعال شد."
+                            onDismiss()
+                        } else msg = err
+                    }
+                }
+            ) { Text(if (busy) "صبر کن…" else if (pendingDisc?.freeGrant == true) "فعال‌سازی رایگان" else "ادامه خرید") }
+        },
+        dismissButton = {
+            TextButton(enabled = !busy, onClick = onDismiss) { Text("بستن") }
+        }
+    )
 }
 
 @Composable
