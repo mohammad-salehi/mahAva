@@ -80,6 +80,12 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             }
+            com.mahava.app.update.AppUpdateOverlay(
+                baseUrl = BuildConfig.MAH_API_BASE_URL,
+                path = "/api/mah/app/version",
+                versionCode = BuildConfig.VERSION_CODE,
+                versionName = BuildConfig.VERSION_NAME
+            )
         }
     }
 

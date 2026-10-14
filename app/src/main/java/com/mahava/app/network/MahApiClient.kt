@@ -326,6 +326,8 @@ class MahApiClient(
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             if (!token.isNullOrBlank()) setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty(com.mahava.app.update.AppUpdateState.HEADER_CODE, BuildConfig.VERSION_CODE.toString())
+            setRequestProperty(com.mahava.app.update.AppUpdateState.HEADER_NAME, BuildConfig.VERSION_NAME)
             doInput = true
             if (bodyJson != null) {
                 doOutput = true
@@ -335,6 +337,7 @@ class MahApiClient(
         val code = conn.responseCode
         val stream = if (code in 200..299) conn.inputStream else conn.errorStream
         val text = stream?.use { BufferedReader(InputStreamReader(it, Charsets.UTF_8)).readText() } ?: "{}"
+        if (code == 426) com.mahava.app.update.AppUpdateState.onUpgradeRequired(text)
         if (code !in 200..299) {
             val msg = try {
                 gson.fromJson(text, JsonObject::class.java).get("message")?.asString

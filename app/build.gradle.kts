@@ -22,8 +22,8 @@ android {
         applicationId = "com.mah.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 117
-        versionName = "1.1.7"
+        versionCode = 119
+        versionName = "1.1.9"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
@@ -33,7 +33,7 @@ android {
             "BAZAAR_RSA_PUBLIC_KEY",
             "\"MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwDbkuDMRsELBkqgL+HS/x0+k8BqwSW9l2gK6NBvar7EFyzmHPjlUZZiBiLBxY3+PzsXVqEF/x4ZRr/pWXOlzjIs8gMJsVUZJymjrdKCOiiS9Zf36NIoEyuK1IwGOAOraWOb3afFLlkujew1d42Sdul3abR3UPqL76qQQNvPdxNLg+8WEjtq4gbXEBzlm4ZhclgFDsR2ADyBEtK2uC9NyJ9AXXVjaa5XYXK37a+mwjcCAwEAAQ==\""
         )
-        buildConfigField("String", "BAZAAR_SKU_YEARLY", "\"mah_yearly\"")
+        buildConfigField("String", "BAZAAR_SKU_YEARLY", "\"mah_yearly_onetime\"")
     }
 
     signingConfigs {
