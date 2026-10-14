@@ -925,7 +925,10 @@ class AppViewModel(
             billing.connect().getOrElse {
                 return it.message ?: com.mahava.app.billing.BazaarBilling.friendlyBazaarError(it)
             }
-            val purchase = billing.purchaseYearly(registry).getOrElse {
+            // Recover an owned-but-unconsumed purchase first (e.g. app killed before claim);
+            // otherwise Bazaar refuses a new purchase of the same product.
+            val owned = billing.queryOwnedYearly().firstOrNull()
+            val purchase = (if (owned != null) Result.success(owned) else billing.purchaseYearly(registry)).getOrElse {
                 return it.message ?: "خرید انجام نشد."
             }
             authRepository.withToken { token ->
