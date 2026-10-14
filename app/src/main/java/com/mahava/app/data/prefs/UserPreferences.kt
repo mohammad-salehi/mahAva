@@ -61,7 +61,8 @@ class UserPreferences(private val context: Context) {
     val serverHasActiveSubscription: Flow<Boolean> = store.data.map { it[KEY_SERVER_ACTIVE] ?: false }
     val serverPlan: Flow<String?> = store.data.map { it[KEY_SERVER_PLAN] }
     val serverEndsAt: Flow<String?> = store.data.map { it[KEY_SERVER_ENDS] }
-    val yearlyPriceTomans: Flow<Int> = store.data.map { it[KEY_YEARLY_PRICE] ?: 585000 }
+    /** Last yearly price received from the server (admin-managed); 0 = never fetched yet. */
+    val yearlyPriceTomans: Flow<Int> = store.data.map { it[KEY_YEARLY_PRICE] ?: 0 }
     val apiBaseUrlFlow: Flow<String?> = store.data.map { it[KEY_API_BASE] }
     val accountRole: Flow<String> = store.data.map { it[KEY_ROLE] ?: "" }
     val intendedRole: Flow<String> = store.data.map { it[KEY_INTENDED_ROLE] ?: "" }
@@ -154,8 +155,12 @@ class UserPreferences(private val context: Context) {
             it[KEY_SERVER_ACTIVE] = active
             if (plan.isNullOrBlank()) it.remove(KEY_SERVER_PLAN) else it[KEY_SERVER_PLAN] = plan
             if (endsAt.isNullOrBlank()) it.remove(KEY_SERVER_ENDS) else it[KEY_SERVER_ENDS] = endsAt
-            if (yearlyPrice != null) it[KEY_YEARLY_PRICE] = yearlyPrice
+            if (yearlyPrice != null && yearlyPrice > 0) it[KEY_YEARLY_PRICE] = yearlyPrice
         }
+    }
+
+    suspend fun setYearlyPrice(price: Int) {
+        if (price > 0) store.edit { it[KEY_YEARLY_PRICE] = price }
     }
 
     suspend fun setApiBaseUrl(url: String?) {

@@ -13,7 +13,7 @@ data class MahSubscriptionDto(
     val hasActiveSubscription: Boolean = false,
     val endsAt: String? = null,
     val plan: String = "none",
-    val priceYearlyTomans: Int = 585000,
+    val priceYearlyTomans: Int = 0,
     val paymentGatewayReady: Boolean = false,
     /** True when the user's OWN subscription is active. */
     val ownSubscriptionActive: Boolean = false,
@@ -69,7 +69,7 @@ data class MahDiscountPreviewDto(
 
 data class MahPlansResponse(
     val ok: Boolean = false,
-    val priceYearlyTomans: Int = 585000,
+    val priceYearlyTomans: Int = 0,
     val paymentGatewayReady: Boolean = false,
     val message: String? = null
 )
@@ -85,6 +85,7 @@ data class MahForceUpdateDto(
 
 data class MahAppConfigResponse(
     val ok: Boolean = false,
+    val yearlyPriceTomans: Int = 0,
     val forceUpdate: MahForceUpdateDto? = null
 )
 

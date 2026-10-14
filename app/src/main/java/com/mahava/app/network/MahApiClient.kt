@@ -95,7 +95,7 @@ class MahApiClient(
             hasActiveSubscription = obj.get("hasActiveSubscription")?.asBoolean ?: false,
             endsAt = obj.get("endsAt")?.takeIf { !it.isJsonNull }?.asString,
             plan = obj.get("plan")?.asString ?: "none",
-            priceYearlyTomans = obj.get("priceYearlyTomans")?.asInt ?: 585000,
+            priceYearlyTomans = obj.get("priceYearlyTomans")?.takeIf { !it.isJsonNull }?.asInt ?: 0,
             paymentGatewayReady = obj.get("paymentGatewayReady")?.asBoolean ?: false,
             ownSubscriptionActive = obj.get("ownSubscriptionActive")?.takeIf { !it.isJsonNull }?.asBoolean
                 ?: (obj.get("hasActiveSubscription")?.asBoolean ?: false),

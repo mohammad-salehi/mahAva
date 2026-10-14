@@ -412,6 +412,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
 
     val inbox by vm.inboxItems.collectAsState()
     LaunchedEffect(Unit) {
+        vm.refreshPricing()
         vm.refreshAccountFromServer()
         vm.refreshInbox()
     }
@@ -522,7 +523,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 if (!phone.isNullOrBlank()) pendingDisc = vm.loadPendingDiscount()
             }
             val payPrice = pendingDisc?.discountedPriceTomans?.takeIf { it >= 0 } ?: price
-            Text("${PersianDigits.toPersian(payPrice.toString())} تومان / سال")
+            Text(if (pendingDisc == null && payPrice <= 0) "قیمت در حال دریافت از سرور…" else "${PersianDigits.toPersian(payPrice.toString())} تومان / سال")
             pendingDisc?.let { d ->
                 QuietInfo(
                     "کد ${d.code} · ${PersianDigits.toPersian(d.percentOff)}٪ تخفیف" +

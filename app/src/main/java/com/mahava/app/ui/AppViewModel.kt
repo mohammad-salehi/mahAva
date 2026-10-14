@@ -94,7 +94,7 @@ class AppViewModel(
     val serverEndsAt: StateFlow<String?> = prefs.serverEndsAt
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val yearlyPriceTomans: StateFlow<Int> = prefs.yearlyPriceTomans
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 585000)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     private val checkerJson: StateFlow<String?> = prefs.lastCheckerJson
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -338,9 +338,21 @@ class AppViewModel(
             val cfg = app.apiClient.appConfig(com.mahava.app.BuildConfig.VERSION_CODE)
             val fu = cfg.forceUpdate
             _forceUpdate.value = if (fu != null && fu.mustUpdate) fu else null
+            prefs.setYearlyPrice(cfg.yearlyPriceTomans)
         } catch (_: Throwable) {
             // Offline: do not block the app.
         }
+    }
+
+    /** Re-reads the admin-managed yearly price (public app-config, plus status when logged in). */
+    fun refreshPricing() = viewModelScope.launch {
+        try {
+            val cfg = app.apiClient.appConfig(com.mahava.app.BuildConfig.VERSION_CODE)
+            prefs.setYearlyPrice(cfg.yearlyPriceTomans)
+        } catch (_: Throwable) {
+            // offline: keep the last server price
+        }
+        try { authRepository.refreshSubscription() } catch (_: Throwable) { }
     }
 
     fun refreshInbox() = viewModelScope.launch {

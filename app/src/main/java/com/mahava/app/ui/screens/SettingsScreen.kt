@@ -250,6 +250,7 @@ fun SubscriptionRenewDialog(
     var busy by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
+        vm.refreshPricing()
         if (!phone.isNullOrBlank()) pendingDisc = vm.loadPendingDiscount()
     }
     val pay = pendingDisc?.discountedPriceTomans?.takeIf { it >= 0 } ?: price
@@ -259,7 +260,7 @@ fun SubscriptionRenewDialog(
         text = {
             Column {
                 Text("اشتراک سالانه ماه")
-                Text("${PersianDigits.toPersian(pay.toString())} تومان برای یک سال")
+                Text(if (pendingDisc == null && pay <= 0) "قیمت در حال دریافت از سرور…" else "${PersianDigits.toPersian(pay.toString())} تومان برای یک سال")
                 QuietInfo("پرداخت از کافه‌بازار انجام می‌شود.")
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
