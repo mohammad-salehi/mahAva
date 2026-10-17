@@ -260,25 +260,33 @@ private fun HomeToolCards(vm: AppViewModel, onTool: (String) -> Unit) {
     val state by vm.state.collectAsState()
     val records by vm.toolRecords.collectAsState()
     val today = vm.today().toEpochDay()
-    val lengths = com.mahava.app.health.CycleStats.completeLengths(state.periods, today).takeLast(6)
-    val from = today - 13
-    val mood = com.mahava.app.health.CycleStats.daily(state.dailyLogs, from, today) { com.mahava.app.health.CycleStats.mood(it) }
-    val energy = com.mahava.app.health.CycleStats.daily(state.dailyLogs, from, today) { com.mahava.app.health.CycleStats.energy(it) }
-    val pain = com.mahava.app.health.CycleStats.daily(state.dailyLogs, from, today) { it.painScore?.toFloat() }
+    // Every mini chart covers her whole history (first entry → today), squeezed into ≤ 12 points.
+    val TR = com.mahava.app.health.TimeRange
+    val allLengths = com.mahava.app.health.CycleStats.completeLengths(state.periods, today)
+    val lengths = TR.compress(allLengths.map { it.toFloat() }, 12)
+    val first = rememberFirstEntryDay(vm)
+    val plan = remember(first, today) { TR.plan(first ?: today, today, maxPoints = 12) }
+    val mood = TR.average(state.dailyLogs, plan) { com.mahava.app.health.CycleStats.mood(it) }
+    val energy = TR.average(state.dailyLogs, plan) { com.mahava.app.health.CycleStats.energy(it) }
+    val pain = TR.average(state.dailyLogs, plan) { it.painScore?.toFloat() }
+    val painDays = state.dailyLogs.count { it.epochDay in (first ?: today)..today && (it.painScore ?: 0) > 0 }
+    val sinceFa = first?.let { f ->
+        val j = JalaliDate.from(java.time.LocalDate.ofEpochDay(f))
+        "از " + j.formatFa(withYear = j.year != JalaliDate.from(java.time.LocalDate.ofEpochDay(today)).year)
+    } ?: ""
     val insights = records.filter { it.type == "insight" && it.deletedAt == null }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.testTag("home_tool_cards")) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HomeCard("الگوی چرخه", if (lengths.isEmpty()) "با ثبت پریودها کامل می‌شود" else "میانگین ${PersianDigits.toPersian(Math.round(lengths.average()).toInt())} روز",
+            HomeCard("الگوی چرخه", if (allLengths.isEmpty()) "با ثبت پریودها کامل می‌شود" else "میانگین ${PersianDigits.toPersian(Math.round(allLengths.average()).toInt())} روز، ${PersianDigits.toPersian(allLengths.size)} چرخه",
                 MahavaPrimary, R.drawable.design_cycle, Modifier.weight(1f).fillMaxHeight(), "home_card_cycle", { onTool("tools/cycle") }) {
-                BarChart(lengths.map { it.toFloat() }, MahavaPrimary, height = 56.dp, maxValue = (lengths.maxOrNull() ?: 30) + 3f)
+                BarChart(lengths, MahavaPrimary, height = 56.dp, maxValue = (lengths.maxOrNull() ?: 30f) + 3f)
             }
-            HomeCard("حال و انرژی", "۱۴ روز اخیر", MahavaAccentGold, R.drawable.design_smile, Modifier.weight(1f).fillMaxHeight(), "home_card_mood", { onTool("tools/mood_energy") }) {
+            HomeCard("حال و انرژی", if (mood.all { it == null } && energy.all { it == null }) "هنوز ثبتی نیست" else "$sinceFa تا امروز", MahavaAccentGold, R.drawable.design_smile, Modifier.weight(1f).fillMaxHeight(), "home_card_mood", { onTool("tools/mood_energy") }) {
                 LineChart(listOf(mood to MahavaPrimary, energy to MahavaAccentGold), height = 56.dp, minValue = 1f, maxValue = 5f)
             }
         }
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val painDays = pain.count { (it ?: 0f) > 0f }
-            HomeCard("ردیاب درد", if (painDays == 0) "در ۱۴ روز اخیر دردی ثبت نشده" else "${PersianDigits.toPersian(painDays)} روز درد در ۱۴ روز",
+            HomeCard("ردیاب درد", if (painDays == 0) "از اولین ثبت دردی ثبت نشده" else "${PersianDigits.toPersian(painDays)} روز درد، $sinceFa",
                 MahavaMenstruation, R.drawable.design_pain, Modifier.weight(1f).fillMaxHeight(), "home_card_pain", { onTool("tools/pain") }) {
                 BarChart(pain, MahavaMenstruation, height = 56.dp, maxValue = 10f)
             }

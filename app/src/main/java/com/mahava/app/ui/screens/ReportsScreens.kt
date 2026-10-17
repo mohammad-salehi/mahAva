@@ -48,40 +48,21 @@ fun ReportsScreen(
 ) {
     val state by vm.state.collectAsState()
     val premium by vm.isPremium.collectAsState()
-    var months by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(3) }
-    var custom by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
-    var fromEpoch by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(vm.today().minusMonths(3).toEpochDay()) }
-    var toEpoch by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(vm.today().toEpochDay()) }
-    val from = LocalDate.ofEpochDay(fromEpoch)
-    val to = LocalDate.ofEpochDay(toEpoch)
     val today = vm.today().toEpochDay()
-    val cycles = CycleStats.cycles(state.periods, today).filter { it.start in fromEpoch..toEpoch }
-    val lengths = cycles.mapNotNull { it.length }
-    val bleedLens = cycles.mapNotNull { it.bleedDays }
-    val logs = state.dailyLogs.filter { it.epochDay in fromEpoch..toEpoch }
     val pregnant = state.health?.appMode == com.mahava.app.health.models.AppHealthMode.PREGNANCY
-    fun range(m: Int) { months = m; custom = false; fromEpoch = vm.today().minusMonths(m.toLong()).toEpochDay(); toEpoch = vm.today().toEpochDay() }
-    // Weekly buckets keep long ranges readable.
-    val weeks = ((toEpoch - fromEpoch) / 7 + 1).toInt().coerceIn(1, 53)
-    fun weekly(metric: (com.mahava.app.data.db.DailyLogEntity) -> Float?): List<Float?> = (0 until weeks).map { w ->
-        val a = toEpoch - (weeks - w) * 7 + 1; val b = a + 6
-        logs.filter { it.epochDay in a..b }.mapNotNull(metric).takeIf { it.isNotEmpty() }?.average()?.toFloat()
-    }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).testTag("reports_screen")) {
         ScreenHeader("گزارش‌های من", onSettings = onSettings)
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ChoiceChipPill("۱ ماه", !custom && months == 1, tag = "range_1") { range(1) }
-                ChoiceChipPill("۳ ماه", !custom && months == 3, tag = "range_3") { range(3) }
-                ChoiceChipPill("۶ ماه", !custom && months == 6, tag = "range_6") { range(6) }
-                ChoiceChipPill("۱ سال", !custom && months == 12, tag = "range_12") { range(12) }
-                ChoiceChipPill("دلخواه", custom, tag = "range_custom") { custom = !custom }
-            }
-            if (custom) {
-                DateStepper(from, max=to, min=vm.today().minusYears(10), onChange={ fromEpoch=it.toEpochDay() }, testTagPrefix="analytics_from")
-                DateStepper(to, max=vm.today(), min=from, onChange={ toEpoch=it.toEpochDay() }, testTagPrefix="analytics_to")
-            }
-            QuietInfo("از ${JalaliDate.from(from).formatFa()} تا ${JalaliDate.from(to).formatFa()}")
+            // Default «از اولین ثبت»: from her first ever entry to today.
+            val range = rememberReportRange(vm, "reports")
+            val fromEpoch = range.from; val toEpoch = range.to
+            val cycles = CycleStats.cycles(state.periods, today).filter { it.start in fromEpoch..toEpoch }
+            val lengths = cycles.mapNotNull { it.length }
+            val bleedLens = cycles.mapNotNull { it.bleedDays }
+            val logs = state.dailyLogs.filter { it.epochDay in fromEpoch..toEpoch }
+            // Day / week / month buckets depending on how long the range is.
+            val plan = remember(fromEpoch, toEpoch) { com.mahava.app.health.TimeRange.plan(fromEpoch, toEpoch) }
+            fun series(metric: (com.mahava.app.data.db.DailyLogEntity) -> Float?) = com.mahava.app.health.TimeRange.average(logs, plan, metric)
             if (!premium) {
                 PremiumPaywallCard(vm, "گزارش‌ها و الگوها", "تحلیل ثبت‌های واقعی و گزارش پزشک با اشتراک ماه باز می‌شود.", onAccount)
             } else {
@@ -111,13 +92,18 @@ fun ReportsScreen(
                 }
                 if (!pregnant && lengths.isNotEmpty()) MahavaCard(Modifier.testTag("reports_lengths")) {
                     SectionLabel("طول چرخه‌ها")
-                    val shown = cycles.filter { it.length != null }.takeLast(10)
-                    BarChart(shown.map { it.length!!.toFloat() }, MahavaPrimary, maxValue = (lengths.max() + 4).toFloat(), labels = shown.map { JalaliDate.from(LocalDate.ofEpochDay(it.start)).formatShortFa().substringAfter(" ") }, showValues = true)
+                    val shown = cycles.filter { it.length != null }
+                    ChartFrame(shown.size, minSlot = 40.dp) {
+                        BarChart(shown.map { it.length!!.toFloat() }, MahavaPrimary, maxValue = (lengths.max() + 4).toFloat(), labels = shown.map { cycleLabel(it.start) }, showValues = shown.size <= 12)
+                    }
                     QuietInfo("چرخهٔ جاری چون تمام نشده در میانگین نیست.")
                 }
                 if (!pregnant && bleedLens.isNotEmpty()) MahavaCard(Modifier.testTag("reports_period_lengths")) {
                     SectionLabel("مدت پریودها")
-                    BarChart(cycles.mapNotNull { it.bleedDays?.toFloat() }.takeLast(10), MahavaMenstruation, height = 90.dp, maxValue = 10f, showValues = true)
+                    val withBleed = cycles.filter { it.bleedDays != null }
+                    ChartFrame(withBleed.size, minSlot = 40.dp) {
+                        BarChart(withBleed.map { it.bleedDays!!.toFloat() }, MahavaMenstruation, height = 90.dp, maxValue = 10f, labels = withBleed.map { cycleLabel(it.start) }, showValues = withBleed.size <= 12)
+                    }
                 }
                 if (cycles.isNotEmpty()) MahavaCard(Modifier.testTag("reports_cycle_table")) {
                     SectionLabel("جدول چرخه‌ها")
@@ -135,23 +121,23 @@ fun ReportsScreen(
                     QuietInfo("${PersianDigits.toPersian(logs.size)} روز دارای ثبت؛ نبود ثبت به معنی نبود علامت نیست.")
                     Text("الگوهای تکرارشونده ‹", color=MahavaPrimaryDeep)
                 }
-                val painW = weekly { it.painScore?.toFloat() }
+                val painW = series { it.painScore?.toFloat() }
                 if (painW.any { it != null }) MahavaCard(Modifier.testTag("reports_pain")) {
-                    SectionLabel("درد (میانگین هفتگی، ۰ تا ۱۰)")
-                    BarChart(painW, MahavaMenstruation, height = 100.dp, maxValue = 10f)
+                    SectionLabel("درد (میانگین ${plan.unitFa}، ۰ تا ۱۰)")
+                    ChartFrame(plan.size) { BarChart(painW, MahavaMenstruation, height = 100.dp, maxValue = 10f); TimeAxis(plan.labels) }
                     val locs = logs.flatMap { it.painLocations.orEmpty().split(',').filter { s -> s.isNotBlank() } }.groupingBy { it }.eachCount().toList().sortedByDescending { it.second }.take(4)
                     if (locs.isNotEmpty()) { Spacer(Modifier.height(8.dp)); HorizontalBars(locs.map { LogLabels.painLocationFa(it.first) to it.second.toFloat() }, MahavaMenstruation, " روز") }
                 }
-                val moodW = weekly { CycleStats.mood(it) }; val energyW = weekly { CycleStats.energy(it) }
+                val moodW = series { CycleStats.mood(it) }; val energyW = series { CycleStats.energy(it) }
                 if (moodW.any { it != null } || energyW.any { it != null }) MahavaCard(Modifier.testTag("reports_mood")) {
-                    SectionLabel("حال و انرژی (میانگین هفتگی)")
-                    LineChart(listOf(moodW to MahavaPrimary, energyW to MahavaAccentGold), minValue = 1f, maxValue = 5f)
+                    SectionLabel("حال و انرژی (میانگین ${plan.unitFa})")
+                    ChartFrame(plan.size) { LineChart(listOf(moodW to MahavaPrimary, energyW to MahavaAccentGold), minValue = 1f, maxValue = 5f); TimeAxis(plan.labels, centered = false) }
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) { LegendDot(MahavaPrimary, "حال"); LegendDot(MahavaAccentGold, "انرژی") }
                 }
-                val sleepW = weekly { CycleStats.sleepHours(it) }
+                val sleepW = series { CycleStats.sleepHours(it) }
                 if (sleepW.any { it != null }) MahavaCard(Modifier.testTag("reports_sleep")) {
-                    SectionLabel("خواب (میانگین هفتگی، ساعت)")
-                    BarChart(sleepW, MahavaPrimaryDeep, height = 100.dp, maxValue = 12f)
+                    SectionLabel("خواب (میانگین ${plan.unitFa}، ساعت)")
+                    ChartFrame(plan.size) { BarChart(sleepW, MahavaPrimaryDeep, height = 100.dp, maxValue = 12f); TimeAxis(plan.labels) }
                 }
                 if (!pregnant) {
                     val m = CycleStats.byPhase(logs, state.periods, today) { CycleStats.mood(it) }.associateBy { it.first }
@@ -178,6 +164,12 @@ fun ReportsScreen(
     }
 }
 
+/** Month of a cycle start, with the year when the list spans years ("مهر ۰۵"). */
+private fun cycleLabel(start: Long): String {
+    val j = JalaliDate.from(LocalDate.ofEpochDay(start))
+    return JalaliDate.monthNameFa(j.month) + " " + PersianDigits.toPersian(j.year % 100).padStart(2, '۰')
+}
+
 private fun bleedFa(v: String?) = bleedingFa(v) ?: "-"
 private fun testFa(v: String?) = when (v) { "positive" -> "مثبت"; "negative" -> "منفی"; "invalid" -> "نامعتبر"; else -> "-" }
 
@@ -194,14 +186,19 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
     val state by vm.state.collectAsState()
     val records by vm.toolRecords.collectAsState()
     val ctx = LocalContext.current
-    var from by remember { mutableStateOf(vm.today().minusDays(180)) }
-    var to by remember { mutableStateOf(vm.today()) }
     var includeNotes by remember { mutableStateOf(false) }
     var includeIntimate by remember { mutableStateOf(false) }
     var includeTests by remember { mutableStateOf(true) }
     var includeQuestions by remember { mutableStateOf(true) }
     var status by remember { mutableStateOf("") }
     var lastFile by remember { mutableStateOf<java.io.File?>(null) }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("doctor_screen"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ScreenHeader("گزارش برای پزشک", onBack = onBack)
+        // Default «از اولین ثبت»: the report covers everything she has recorded.
+        val range = rememberReportRange(vm, "doctor", tagPrefix = "rep")
+        val from = LocalDate.ofEpochDay(range.from)
+        val to = LocalDate.ofEpochDay(range.to)
 
     fun data() = DoctorReportData(
         from = from, to = to, today = vm.today().toEpochDay(), allPeriods = state.periods, logs = state.dailyLogs,
@@ -247,16 +244,6 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
     val logs = state.dailyLogs.filter { it.epochDay in fromE..toE }
     val cycles = CycleStats.cycles(state.periods, vm.today().toEpochDay()).filter { it.start in fromE..toE }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("doctor_screen"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        ScreenHeader("گزارش برای پزشک", onBack = onBack)
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ChoiceChipPill("۳ ماه", from == vm.today().minusDays(90)) { from = vm.today().minusDays(90); to = vm.today() }
-            ChoiceChipPill("۶ ماه", from == vm.today().minusDays(180)) { from = vm.today().minusDays(180); to = vm.today() }
-            ChoiceChipPill("۱ سال", from == vm.today().minusDays(365)) { from = vm.today().minusDays(365); to = vm.today() }
-        }
-        QuietInfo("یا بازهٔ دلخواه:")
-        DateStepper(from, max = to, min = vm.today().minusDays(3650), onChange = { from = it }, testTagPrefix = "rep_from")
-        DateStepper(to, max = vm.today(), min = from, onChange = { to = it }, testTagPrefix = "rep_to")
         MahavaCard(Modifier.testTag("doctor_preview_card"), containerColor = softTint(MahavaPrimary)) {
             SectionLabel("چه چیزهایی در گزارش هست")
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -265,7 +252,7 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
                 StatTile("روز درد", PersianDigits.toPersian(logs.count { (it.painScore ?: 0) > 0 }), "روز", MahavaMenstruation, Modifier.weight(1f).fillMaxHeight())
             }
             Spacer(Modifier.height(6.dp))
-            QuietInfo("خلاصه • جدول چرخه‌ها • علائم پرتکرار • جدول درد • حال، انرژی و خواب در مراحل چرخه • ثبت‌های روزانه")
+            QuietInfo("خلاصه • خلاصهٔ ماه‌به‌ماه • جدول چرخه‌ها • علائم پرتکرار • جدول درد • حال، انرژی و خواب در مراحل چرخه • ثبت‌های روزانه")
         }
         Row(verticalAlignment = Alignment.CenterVertically) { androidx.compose.material3.Checkbox(includeQuestions, { includeQuestions = it }); Text("سؤال‌هایم از پزشک هم بیاید") }
         Row(verticalAlignment = Alignment.CenterVertically) { androidx.compose.material3.Checkbox(includeNotes, { includeNotes = it }); Text("یادداشت‌ها هم بیاید") }

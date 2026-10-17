@@ -75,6 +75,7 @@ private fun ToolRecord.fields(): JsonObject = runCatching { JsonParser.parseStri
 private fun JsonObject.text(key: String) = get(key)?.takeUnless { it.isJsonNull }?.asString.orEmpty()
 private fun JsonObject.flag(key: String) = runCatching { get(key)?.asBoolean == true }.getOrDefault(false)
 private fun shortDay(d: Long) = JalaliDate.from(LocalDate.ofEpochDay(d)).formatShortFa()
+private fun monthYear(d: Long) = JalaliDate.from(LocalDate.ofEpochDay(d)).let { JalaliDate.monthNameFa(it.month) + " " + PersianDigits.toPersian(it.year % 100).padStart(2, '۰') }
 
 @Composable
 fun ToolTile(e: ToolEntry, modifier: Modifier = Modifier, onClick: () -> Unit) {
@@ -145,13 +146,18 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
             when (id) {
                 "mood_energy" -> {
                     MoodEnergyForm(vm, run)
-                    val from = today - 29
-                    MahavaCard {
-                        SectionLabel("۳۰ روز اخیر")
-                        LineChart(listOf(CycleStats.daily(state.dailyLogs, from, today) { CycleStats.mood(it) } to MahavaPrimary,
-                            CycleStats.daily(state.dailyLogs, from, today) { CycleStats.energy(it) } to MahavaAccentGold), minValue = 1f, maxValue = 5f)
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) { LegendDot(MahavaPrimary, "حال (۱ تا ۵)"); LegendDot(MahavaAccentGold, "انرژی (۱ تا ۵)") }
-                        QuietInfo("راست = قدیمی‌تر، چپ = امروز. روزهای بدون ثبت خالی مانده‌اند.")
+                    MahavaCard(Modifier.testTag("tool_chart_mood_energy")) {
+                        val r = rememberReportRange(vm, "tool_mood_energy", months = listOf(1, 3, 6, 12), allowCustom = false, tagPrefix = "tool_range")
+                        val plan = remember(r.from, r.to) { TimeRange.plan(r.from, r.to) }
+                        val mood = TimeRange.average(state.dailyLogs, plan) { CycleStats.mood(it) }
+                        val energy = TimeRange.average(state.dailyLogs, plan) { CycleStats.energy(it) }
+                        SectionLabel("حال و انرژی (میانگین ${plan.unitFa})")
+                        if (mood.all { it == null } && energy.all { it == null }) EmptyChartNote("هنوز حال یا انرژی‌ای ثبت نشده؛ از فرم بالا شروع کن.")
+                        else {
+                            ChartFrame(plan.size) { LineChart(listOf(mood to MahavaPrimary, energy to MahavaAccentGold), minValue = 1f, maxValue = 5f); TimeAxis(plan.labels, centered = false) }
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) { LegendDot(MahavaPrimary, "حال (۱ تا ۵)"); LegendDot(MahavaAccentGold, "انرژی (۱ تا ۵)") }
+                            QuietInfo("راست = قدیمی‌تر، چپ = امروز. بازه‌های بدون ثبت خالی مانده‌اند.")
+                        }
                     }
                     PhaseBars("میانگین انرژی در هر مرحلهٔ چرخه", CycleStats.byPhase(state.dailyLogs, state.periods, today) { CycleStats.energy(it) }, MahavaAccentGold, 5f)
                     PhaseBars("میانگین حال در هر مرحلهٔ چرخه", CycleStats.byPhase(state.dailyLogs, state.periods, today) { CycleStats.mood(it) }, MahavaPrimary, 5f)
@@ -159,11 +165,13 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                 }
                 "sleep" -> {
                     SleepForm(vm, run)
-                    val from = today - 29
-                    MahavaCard {
-                        SectionLabel("ساعت خواب در ۳۰ روز اخیر")
-                        BarChart(CycleStats.daily(state.dailyLogs, from, today) { CycleStats.sleepHours(it) }, MahavaPrimaryDeep, maxValue = 12f)
-                        val vals = state.dailyLogs.filter { it.epochDay in from..today }.mapNotNull { CycleStats.sleepHours(it) }
+                    MahavaCard(Modifier.testTag("tool_chart_sleep")) {
+                        val r = rememberReportRange(vm, "tool_sleep", months = listOf(1, 3, 6, 12), allowCustom = false, tagPrefix = "tool_range")
+                        val plan = remember(r.from, r.to) { TimeRange.plan(r.from, r.to) }
+                        val sleep = TimeRange.average(state.dailyLogs, plan) { CycleStats.sleepHours(it) }
+                        SectionLabel("ساعت خواب (میانگین ${plan.unitFa})")
+                        if (sleep.any { it != null }) ChartFrame(plan.size) { BarChart(sleep, MahavaPrimaryDeep, maxValue = 12f); TimeAxis(plan.labels) }
+                        val vals = state.dailyLogs.filter { it.epochDay in r.from..r.to }.mapNotNull { CycleStats.sleepHours(it) }
                         QuietInfo(if (vals.isEmpty()) "هنوز خوابی ثبت نشده." else "میانگین ${PersianDigits.toPersian(fmt(vals.average().toFloat()))} ساعت در ${PersianDigits.toPersian(vals.size)} شب ثبت‌شده")
                     }
                     PhaseBars("میانگین خواب در هر مرحلهٔ چرخه (ساعت)", CycleStats.byPhase(state.dailyLogs, state.periods, today) { CycleStats.sleepHours(it) }, MahavaPrimaryDeep, 10f)
@@ -171,11 +179,13 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                 }
                 "pain" -> {
                     PainForm(vm, run)
-                    val from = today - 59
-                    MahavaCard {
-                        SectionLabel("شدت درد در ۶۰ روز اخیر (۰ تا ۱۰)")
-                        BarChart(CycleStats.daily(state.dailyLogs, from, today) { l -> CycleStats.pain(l)?.toFloat() }, MahavaMenstruation, maxValue = 10f)
-                        val painDays = state.dailyLogs.filter { it.epochDay in from..today && (it.painScore ?: 0) > 0 }
+                    MahavaCard(Modifier.testTag("tool_chart_pain")) {
+                        val r = rememberReportRange(vm, "tool_pain", months = listOf(1, 3, 6, 12), allowCustom = false, tagPrefix = "tool_range")
+                        val plan = remember(r.from, r.to) { TimeRange.plan(r.from, r.to) }
+                        val pain = TimeRange.average(state.dailyLogs, plan) { l -> CycleStats.pain(l)?.toFloat() }
+                        SectionLabel("شدت درد (میانگین ${plan.unitFa}، ۰ تا ۱۰)")
+                        if (pain.any { it != null }) ChartFrame(plan.size) { BarChart(pain, MahavaMenstruation, maxValue = 10f); TimeAxis(plan.labels) }
+                        val painDays = state.dailyLogs.filter { it.epochDay in r.from..r.to && (it.painScore ?: 0) > 0 }
                         QuietInfo("${PersianDigits.toPersian(painDays.size)} روز با درد ثبت شده${if (painDays.isNotEmpty()) "؛ میانگین شدت ${PersianDigits.toPersian(fmt(painDays.mapNotNull { it.painScore }.average().toFloat()))}" else ""}")
                     }
                     PhaseBars("میانگین درد در هر مرحله", CycleStats.byPhase(state.dailyLogs, state.periods, today) { l -> CycleStats.pain(l)?.toFloat() }, MahavaMenstruation, 10f)
@@ -259,9 +269,10 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                 }
                 "cycle", "comparison" -> CycleTool(vm, id == "comparison")
                 "symptoms" -> {
-                    val logged = state.dailyLogs.filter { it.epochDay in (today - 89)..today }
+                    val r = rememberReportRange(vm, "tool_symptoms", months = listOf(1, 3, 6, 12), allowCustom = false, tagPrefix = "tool_range")
+                    val logged = state.dailyLogs.filter { it.epochDay in r.from..r.to }
                     MahavaCard {
-                        SectionLabel("علائم ۹۰ روز اخیر")
+                        SectionLabel("علائم پرتکرار")
                         val counts = CycleStats.symptomCounts(logged).take(8)
                         if (counts.isEmpty()) QuietInfo("هنوز علامتی ثبت نشده.") else HorizontalBars(counts.map { LogLabels.symptomFa(it.first) to it.second.toFloat() }, MahavaAccentPeach, " روز")
                         QuietInfo("${PersianDigits.toPersian(logged.size)} روز دارای ثبت؛ روزهای بدون ثبت حساب نشده‌اند.")
@@ -332,7 +343,7 @@ private fun CycleTool(vm: AppViewModel, comparison: Boolean) {
     val state by vm.state.collectAsState()
     val today = vm.today().toEpochDay()
     val cycles = CycleStats.cycles(state.periods, today)
-    val complete = cycles.filter { it.length != null }.takeLast(8)
+    val complete = cycles.filter { it.length != null }
     if (cycles.isEmpty()) { QuietInfo("اول تاریخ پریودهایت را ثبت کن."); return }
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         val lens = complete.mapNotNull { it.length }
@@ -343,18 +354,23 @@ private fun CycleTool(vm: AppViewModel, comparison: Boolean) {
     }
     if (complete.isNotEmpty()) MahavaCard {
         SectionLabel("طول چرخه‌ها")
-        BarChart(complete.map { it.length!!.toFloat() }, MahavaPrimary, maxValue = (complete.maxOf { it.length!! } + 4).toFloat(), labels = complete.map { shortDay(it.start).substringBefore(" ") }, showValues = true)
+        QuietInfo("همهٔ چرخه‌ها از اولین پریود ثبت‌شده (${shortDay(cycles.first().start)})")
+        ChartFrame(complete.size, minSlot = 40.dp) {
+            BarChart(complete.map { it.length!!.toFloat() }, MahavaPrimary, maxValue = (complete.maxOf { it.length!! } + 4).toFloat(), labels = complete.map { monthYear(it.start) }, showValues = complete.size <= 12)
+        }
     }
-    val withBleed = cycles.filter { it.bleedDays != null }.takeLast(8)
+    val withBleed = cycles.filter { it.bleedDays != null }
     if (withBleed.isNotEmpty()) MahavaCard {
         SectionLabel("مدت پریودها")
-        BarChart(withBleed.map { it.bleedDays!!.toFloat() }, MahavaMenstruation, height = 90.dp, maxValue = 10f, showValues = true)
+        ChartFrame(withBleed.size, minSlot = 40.dp) {
+            BarChart(withBleed.map { it.bleedDays!!.toFloat() }, MahavaMenstruation, height = 90.dp, maxValue = 10f, labels = withBleed.map { monthYear(it.start) }, showValues = withBleed.size <= 12)
+        }
     }
     val last = cycles.last()
     MahavaCard { Text("چرخهٔ فعلی: روز ${PersianDigits.toPersian((today - last.start + 1).toInt())}", style = MaterialTheme.typography.titleMedium); QuietInfo("طول چرخهٔ فعلی هنوز معلوم نیست و در میانگین حساب نمی‌شود.") }
     if (comparison) MahavaCard {
         SectionLabel("مقایسهٔ چرخه‌ها")
-        val rows = cycles.takeLast(8).reversed().map { c ->
+        val rows = cycles.reversed().map { c ->
             val logs = state.dailyLogs.filter { it.epochDay >= c.start && it.epochDay < (c.next ?: (today + 1)) }
             val painAvg = logs.mapNotNull { it.painScore?.takeIf { p -> p > 0 } }.takeIf { it.isNotEmpty() }?.average()?.toFloat()
             listOf(shortDay(c.start), c.length?.let { PersianDigits.toPersian(it) } ?: "جاری", c.bleedDays?.let { PersianDigits.toPersian(it) } ?: "—",

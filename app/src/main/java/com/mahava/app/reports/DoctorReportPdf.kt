@@ -100,6 +100,20 @@ object DoctorReportPdf {
         }
         d.pregnancyLine?.let { p.section("بارداری"); p.paragraph(it) }
 
+        // Whole range at a glance: one row per Jalali month (several months per row for very long spans).
+        if (logs.isNotEmpty() || cycles.isNotEmpty()) {
+            val plan = com.mahava.app.health.TimeRange.monthPlan(fromE, toE, maxPoints = 36)
+            p.section(if (plan.monthsPerBucket == 1) "خلاصهٔ ماه‌به‌ماه" else "خلاصهٔ ${plan.unitFa}")
+            p.table(listOf("ماه", "روز ثبت", "روز درد", "میانگین درد", "حال", "انرژی", "خواب"), listOf(1.3f, 0.8f, 0.8f, 0.9f, 0.7f, 0.7f, 0.8f),
+                plan.buckets.map { bk ->
+                    val inB = logs.filter { it.epochDay in bk.start..bk.end }
+                    fun avg(m: (DailyLogEntity) -> Float?) = inB.mapNotNull(m).takeIf { it.isNotEmpty() }?.average()?.let { fa(it) } ?: "—"
+                    val pd = inB.filter { (it.painScore ?: 0) > 0 }
+                    listOf(bk.label, fa(inB.size), fa(pd.size), pd.mapNotNull { it.painScore }.takeIf { it.isNotEmpty() }?.average()?.let { fa(it) } ?: "—",
+                        avg { CycleStats.mood(it) }, avg { CycleStats.energy(it) }, avg { CycleStats.sleepHours(it) })
+                })
+        }
+
         p.section("چرخه‌ها")
         if (cycles.isEmpty()) p.paragraph("در این بازه شروع پریودی ثبت نشده.")
         else p.table(listOf("شروع پریود", "پایان", "مدت پریود", "طول چرخه"), listOf(1.4f, 1.4f, 1f, 1f),
@@ -118,7 +132,7 @@ object DoctorReportPdf {
         p.section("درد")
         if (painDays.isEmpty()) p.paragraph("در این بازه دردی ثبت نشده.")
         else p.table(listOf("روز", "شدت", "جا", "نوع", "اقدام / نتیجه"), listOf(1.2f, 0.6f, 1.3f, 1f, 1.5f),
-            painDays.takeLast(25).map { l ->
+            painDays.map { l ->
                 listOf(day(l.epochDay), "${fa(l.painScore ?: 0)}/۱۰",
                     l.painLocations.orEmpty().split(',').filter { it.isNotBlank() }.joinToString("، ") { LogLabels.painLocationFa(it) }.ifBlank { "—" },
                     LogLabels.labelOf(LogLabels.PAIN_TYPES, l.painType).ifBlank { "—" },

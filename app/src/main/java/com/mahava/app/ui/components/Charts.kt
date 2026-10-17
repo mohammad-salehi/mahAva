@@ -95,8 +95,11 @@ fun LineChart(
         }
         series.forEach { (values, color) ->
             if (values.isEmpty()) return@forEach
-            val step = if (values.size > 1) size.width / (values.size - 1) else 0f
-            fun pt(i: Int, v: Float) = Offset(size.width - i * step,
+            // Small inset so the first and last dots are not cut off at the edges.
+            val inset = 5.dp.toPx()
+            val usable = size.width - 2 * inset
+            val step = if (values.size > 1) usable / (values.size - 1) else 0f
+            fun pt(i: Int, v: Float) = Offset(if (values.size > 1) size.width - inset - i * step else size.width / 2,
                 size.height - ((v - minValue) / (maxValue - minValue)).coerceIn(0f, 1f) * size.height)
             var path: Path? = null
             values.forEachIndexed { i, v ->
