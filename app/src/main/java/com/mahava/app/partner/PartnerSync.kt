@@ -51,6 +51,7 @@ object PartnerSync {
     }
 
     fun ensurePeriodic(context: Context) {
+        if (com.mahava.app.BuildConfig.MAH_DEMO) return // offline demo: no server jobs
         val req = PeriodicWorkRequestBuilder<PartnerSyncWorker>(15, TimeUnit.MINUTES)
             .setConstraints(network)
             .build()
@@ -62,6 +63,7 @@ object PartnerSync {
     }
 
     fun syncNow(context: Context) {
+        if (com.mahava.app.BuildConfig.MAH_DEMO) return // offline demo: no server jobs
         val req = OneTimeWorkRequestBuilder<PartnerSyncWorker>().setConstraints(network).build()
         WorkManager.getInstance(context).enqueueUniqueWork(NOW, ExistingWorkPolicy.REPLACE, req)
     }

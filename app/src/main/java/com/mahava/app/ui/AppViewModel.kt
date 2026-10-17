@@ -3,7 +3,7 @@ package com.mahava.app.ui
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewModelScope as lifecycleViewModelScope
 import com.mahava.app.MahavaApplication
 import com.mahava.app.content.ContentItem
 import com.mahava.app.content.ContentRepository
@@ -73,6 +73,18 @@ class AppViewModel(
 ) : ViewModel() {
 
     val tools = app.toolsRepository
+    /**
+     * Every coroutine this view model starts runs here: the normal view-model scope plus
+     * [com.mahava.app.util.NetworkGuard], so a failed server call (offline, timeout) can never
+     * crash the app. Declared as a member so it takes over every `viewModelScope` use below.
+     */
+    private val viewModelScope: kotlinx.coroutines.CoroutineScope by lazy {
+        kotlinx.coroutines.CoroutineScope(lifecycleViewModelScope.coroutineContext + com.mahava.app.util.NetworkGuard.handler)
+    }
+
+    /** The offline demo build never talks to a server. */
+    private val offline get() = com.mahava.app.BuildConfig.MAH_DEMO
+
     val toolRecords = tools.records.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val _message = MutableStateFlow<String?>(null)
     private val _locked = MutableStateFlow(false)
@@ -261,6 +273,7 @@ class AppViewModel(
             _locked.value = p.lockEnabled
             reminderScheduler.ensurePeriodic()
             authRepository.loadApiBaseUrl()
+            if (offline) return@launch
             refreshAccountFromServer()
             if (authRepository.hasSessionTokens()) {
                 // Woman's durable data lives on the server — restore cache on cold start.
@@ -322,7 +335,7 @@ class AppViewModel(
             if (elapsedSec >= p.lockTimeoutSeconds) _locked.value = true
         }
         // Soft session check so expired tokens don't keep premium features open.
-        viewModelScope.launch {
+        if (!offline) viewModelScope.launch {
             checkForceUpdate()
             if (authRepository.hasSessionTokens()) {
                 authRepository.verifySessionOrClear()
@@ -337,6 +350,7 @@ class AppViewModel(
     }
 
     fun checkForceUpdate() = viewModelScope.launch {
+        if (offline) return@launch
         try {
             val cfg = app.apiClient.appConfig(com.mahava.app.BuildConfig.VERSION_CODE)
             val fu = cfg.forceUpdate
@@ -349,6 +363,7 @@ class AppViewModel(
 
     /** Re-reads the admin-managed yearly price (public app-config, plus status when logged in). */
     fun refreshPricing() = viewModelScope.launch {
+        if (offline) return@launch
         try {
             val cfg = app.apiClient.appConfig(com.mahava.app.BuildConfig.VERSION_CODE)
             prefs.setYearlyPrice(cfg.yearlyPriceTomans)
@@ -359,6 +374,7 @@ class AppViewModel(
     }
 
     fun refreshInbox() = viewModelScope.launch {
+        if (offline) return@launch
         try {
             val token = prefs.getAccessToken() ?: return@launch
             val res = app.apiClient.inbox(token)
@@ -745,7 +761,7 @@ class AppViewModel(
      * this phone had before (first login: upload once and merge). Never blocks login on failure.
      */
     private suspend fun restoreFromServer(): String? {
-        if (prefs.getAccountRole() == "male") return null
+        if (offline || prefs.getAccountRole() == "male") return null
         val outcome = kotlinx.coroutines.withTimeoutOrNull(30_000) { app.dataSync.sync() }
         com.mahava.app.sync.DataSync.ensurePeriodic(app)
         if (outcome !is com.mahava.app.sync.SyncOutcome.Ok && outcome !is com.mahava.app.sync.SyncOutcome.Skipped) {
@@ -869,9 +885,16 @@ class AppViewModel(
     }
 
     suspend fun refreshAccountFromServer(): Boolean {
-        val me = authRepository.fetchMe()
-        val sub = authRepository.refreshSubscription()
-        return me != null || sub != null
+        if (offline) return false
+        return try {
+            val me = authRepository.fetchMe()
+            val sub = authRepository.refreshSubscription()
+            me != null || sub != null
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            throw c
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     suspend fun loadPendingDiscount(): com.mahava.app.network.MahDiscountPreviewDto? {
@@ -1081,7 +1104,7 @@ class AppViewModel(
     }
 
     /** Refresh pairing status + (for husband) her shared snapshot. Returns an error message or null. */
-    suspend fun partnerRefresh(): String? = partnerCall {
+    suspend fun partnerRefresh(): String? = if (offline) null else partnerCall {
         val st = partnerRepo.refreshStatus()
         if (st.role.isNotBlank()) prefs.setAccountRole(st.role)
         if (st.pair != null) com.mahava.app.partner.PartnerSync.ensurePeriodic(app)
@@ -1157,6 +1180,7 @@ class AppViewModel(
      * dialogs within seconds. Returns how long to wait before the next poll.
      */
     suspend fun partnerForegroundPoll(): Long {
+        if (offline) return 60_000
         if (!com.mahava.app.notice.AppNotices.foreground || !authRepository.hasSessionTokens()) return 10_000
         try {
             val poll = partnerRepo.pollChanges()

@@ -417,6 +417,7 @@ class DataSyncRepository(
     }
 
     private suspend fun canSync(): String? {
+        if (com.mahava.app.BuildConfig.MAH_DEMO) return null // offline demo never syncs
         if (!auth.hasSessionTokens()) return null
         if (prefs.getAccountRole() == "male") return null
         if (db.profileDao().get()?.qaSampleData == true) return null // debug sample data never syncs

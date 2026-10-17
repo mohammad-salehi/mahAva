@@ -43,6 +43,7 @@ class AuthRepository(
      */
     suspend fun verifySessionOrClear(): Boolean {
         if (!hasSessionTokens()) return false
+        if (BuildConfig.MAH_DEMO) return true // offline demo: the seeded session is always valid
         return try {
             val me = fetchMe()
             if (me != null) {
@@ -132,6 +133,7 @@ class AuthRepository(
     }
 
     suspend fun refreshIfNeeded(): Boolean {
+        if (BuildConfig.MAH_DEMO) return false
         val refresh = prefs.getRefreshToken() ?: return false
         return try {
             val res = api.refresh(refresh)
@@ -143,6 +145,7 @@ class AuthRepository(
     }
 
     suspend fun fetchMe(): MahAuthResponse? {
+        if (BuildConfig.MAH_DEMO) return null
         val access = prefs.getAccessToken() ?: return null
         return try {
             val res = api.me(access)
@@ -150,15 +153,22 @@ class AuthRepository(
             res
         } catch (e: MahApiException) {
             if (e.status == 401 && refreshIfNeeded()) {
-                val again = prefs.getAccessToken() ?: return null
-                val res = api.me(again)
-                persistSession(res, keepTokens = true)
-                res
+                try {
+                    val again = prefs.getAccessToken() ?: return null
+                    val res = api.me(again)
+                    persistSession(res, keepTokens = true)
+                    res
+                } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (_: Throwable) { null }
             } else null
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            throw c
+        } catch (_: Throwable) {
+            null // offline / timeout / bad response: keep the cached account
         }
     }
 
     suspend fun refreshSubscription(): MahSubscriptionDto? {
+        if (BuildConfig.MAH_DEMO) return null
         var access = prefs.getAccessToken() ?: return null
         return try {
             val s = api.subscriptionStatus(access)
@@ -167,12 +177,18 @@ class AuthRepository(
             s
         } catch (e: MahApiException) {
             if (e.status == 401 && refreshIfNeeded()) {
-                access = prefs.getAccessToken() ?: return null
-                val s = api.subscriptionStatus(access)
-                prefs.setServerSubscription(s.hasActiveSubscription, s.plan, s.endsAt, s.priceYearlyTomans)
-                prefs.setSubscriptionShare(s.ownSubscriptionActive, s.sharedFromPartner)
-                s
+                try {
+                    access = prefs.getAccessToken() ?: return null
+                    val s = api.subscriptionStatus(access)
+                    prefs.setServerSubscription(s.hasActiveSubscription, s.plan, s.endsAt, s.priceYearlyTomans)
+                    prefs.setSubscriptionShare(s.ownSubscriptionActive, s.sharedFromPartner)
+                    s
+                } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (_: Throwable) { null }
             } else null
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            throw c
+        } catch (_: Throwable) {
+            null // offline / timeout / bad response: keep the cached subscription
         }
     }
 

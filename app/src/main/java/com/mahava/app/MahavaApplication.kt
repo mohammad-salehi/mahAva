@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 open class MahavaApplication : Application() {
     val toolsRepository by lazy { com.mahava.app.health.ToolsRepository(this) }
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default + com.mahava.app.util.NetworkGuard.handler)
 
     override fun onTerminate() {
         // Emulated processes call onTerminate; stop collectors before their database is disposed.

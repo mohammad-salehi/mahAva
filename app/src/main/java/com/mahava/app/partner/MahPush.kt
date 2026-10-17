@@ -15,6 +15,7 @@ import java.util.UUID
 /** Push is a wake-up hint only. Health text is fetched from the authenticated server after consent checks. */
 object MahPush {
     fun initialize(app:MahavaApplication) {
+        if (BuildConfig.MAH_DEMO) return
         if(BuildConfig.MAH_FCM_APP_ID.isBlank()) return
         if(FirebaseApp.getApps(app).isEmpty()) FirebaseApp.initializeApp(app,FirebaseOptions.Builder()
             .setApplicationId(BuildConfig.MAH_FCM_APP_ID).setApiKey(BuildConfig.MAH_FCM_API_KEY)
@@ -25,6 +26,7 @@ object MahPush {
         }
     }
     fun schedule(context:Context,eventId:String?=null,recipientId:String?=null) {
+        if (BuildConfig.MAH_DEMO) return // offline demo: no push registration
         val data=workDataOf("eventId" to eventId,"recipientId" to recipientId)
         WorkManager.getInstance(context).enqueueUniqueWork("mah_push_${eventId ?: "register"}",ExistingWorkPolicy.KEEP,
             OneTimeWorkRequestBuilder<MahPushWorker>().setInputData(data)

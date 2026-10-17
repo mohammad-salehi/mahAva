@@ -25,6 +25,7 @@ object DataSync {
     private val network = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
     fun syncNow(context: Context) {
+        if (com.mahava.app.BuildConfig.MAH_DEMO) return // offline demo: no server jobs
         val req = OneTimeWorkRequestBuilder<DataSyncWorker>()
             .setConstraints(network)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
@@ -33,6 +34,7 @@ object DataSync {
     }
 
     fun ensurePeriodic(context: Context) {
+        if (com.mahava.app.BuildConfig.MAH_DEMO) return // offline demo: no server jobs
         val req = PeriodicWorkRequestBuilder<DataSyncWorker>(6, TimeUnit.HOURS)
             .setConstraints(network)
             .build()
