@@ -157,6 +157,8 @@ data class PartnerSnapshotDto(
     val energy: String? = null,
     val needsSupport: Boolean? = null,
     val pregnancyWeek: Int? = null,
+    /** Server: "<key>_<estimatedDueEpochDay>" while she is pregnant. */
+    val pregnancyKey: String? = null,
     val supportText: String? = null,
     val today: PartnerTodayDto? = null
 )

@@ -109,7 +109,7 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when {
                 pair == null -> {
-                    PartnerHero("💞", "به همسرت وصل شو", "کد را بساز و برای همسرت بفرست. او کد را در اپ ماه می‌زند و تو تأیید می‌کنی؛ تمام.")
+                    PartnerHero("💞", "به همسرت وصل شو", "کد را بساز و برای همسرت بفرست. او کد را در برنامهٔ ماه می‌زند و تو تأیید می‌کنی؛ تمام.")
                     MahavaCard(Modifier.testTag("partner_code_card")) {
                         val c = code
                         if (c == null) {
@@ -142,7 +142,7 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
                                 PrimaryButton("فرستادن", Modifier.weight(1f)) {
                                     val send = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, "کد اتصال من در اپ ماه: $c")
+                                        putExtra(Intent.EXTRA_TEXT, "کد اتصال من در برنامهٔ ماه: $c")
                                     }
                                     context.startActivity(Intent.createChooser(send, "فرستادن کد").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                                 }
@@ -153,7 +153,7 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
 
                 pair.status == "pending" -> MahavaCard(Modifier.testTag("partner_request_card")) {
                     CardTitle("درخواست اتصال همسر")
-                    Text("همسرت${if (phone.isNotBlank()) " ($phone)" else ""} می‌خواهد به تو وصل شود.", style = MaterialTheme.typography.bodyLarge)
+                    Text("همسرت${if (phone.isNotBlank()) " (${com.mahava.app.util.FaText.ltr(com.mahava.app.util.PersianDigits.toPersian(phone))})" else ""} می‌خواهد به تو وصل شود.", style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(6.dp))
                     Text(PARTNER_APPROVE_FA, style = MaterialTheme.typography.bodyMedium, color = MahavaTextSecondary)
                     Spacer(Modifier.height(10.dp))
@@ -172,7 +172,7 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Dot(MahavaFertility)
                         Spacer(Modifier.width(8.dp))
-                        CardTitle("به همسرت وصلی${if (phone.isNotBlank()) " ($phone)" else ""}")
+                        CardTitle("به همسرت وصلی${if (phone.isNotBlank()) " (${com.mahava.app.util.FaText.ltr(com.mahava.app.util.PersianDigits.toPersian(phone))})" else ""}")
                     }
                     Text("همسرت همهٔ چیزهایی را که ثبت می‌کنی می‌بیند.", style = MaterialTheme.typography.bodyMedium)
                     if (shared) {
@@ -228,7 +228,7 @@ fun PartnerHomeScreen(
             when {
                 pair == null -> MahavaCard(Modifier.testTag("partner_redeem_card")) {
                     CardTitle("کد همسرت را بزن")
-                    QuietInfo("همسرت توی اپ ماه، از «اتصال به همسر» یه کد ۶ حرفی می‌سازه.")
+                    QuietInfo("همسرت در برنامهٔ ماه، از بخش «اتصال به همسر» یک کد ۶ حرفی می‌سازد.")
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = codeInput,
@@ -252,7 +252,7 @@ fun PartnerHomeScreen(
                         Spacer(Modifier.width(10.dp))
                         CardTitle("منتظر تأیید همسرت")
                     }
-                    QuietInfo("وقتی تأیید کنه، همین‌جا باز می‌شه.")
+                    QuietInfo("وقتی تأیید کند، همین‌جا باز می‌شود.")
                 }
 
                 else -> {
@@ -265,7 +265,7 @@ fun PartnerHomeScreen(
                             CardTitle("هنوز وضعیت چرخه‌اش معلوم نیست")
                             QuietInfo(
                                 error
-                                    ?: "به محض اینکه همسرت یه پریود ثبت کنه و اپش آنلاین باشه، روز چرخه و راهنمای امروزش همین‌جا میاد."
+                                    ?: "به محض این‌که همسرت یک پریود ثبت کند و برنامه‌اش آنلاین باشد، روز چرخه و راهنمای امروزش همین‌جا می‌آید."
                             )
                             Spacer(Modifier.height(8.dp))
                             PrimaryButton(if (busy) "صبر کن…" else "به‌روزرسانی",
@@ -458,7 +458,19 @@ private fun PartnerDashboard(
                 Text(advice.statusFa, color = accent, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
             }
             Spacer(Modifier.height(8.dp))
-            PeriodCycleWidget(
+            val week = snap.pregnancyWeek
+            if (week != null) {
+                // Pregnancy mode: no cycle ring; the week and the estimated due date instead.
+                Column(Modifier.testTag("partner_pregnancy"), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("هفتهٔ ${PersianDigits.toPersian(week)} بارداری", style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold, color = accent, textAlign = TextAlign.Center)
+                    com.mahava.app.content.PartnerToolFormat.dueDay(snap.pregnancyKey)?.let { due ->
+                        Text("زمان تخمینی زایمان: ${JalaliDate.from(java.time.LocalDate.ofEpochDay(due)).formatFa()}",
+                            style = MaterialTheme.typography.bodyMedium, color = MahavaTextSecondary, textAlign = TextAlign.Center)
+                    }
+                    QuietInfo("این تاریخ تخمینی است؛ بیشتر زایمان‌ها چند روز زودتر یا دیرتر اتفاق می‌افتند.")
+                }
+            } else PeriodCycleWidget(
                 cycleDay = snap.cycleDay,
                 cycleLengthHint = snap.cycleLength,
                 phase = phaseOf(group),
@@ -564,18 +576,11 @@ private fun PartnerDashboard(
         }
     }
     val tools = (vm.partnerShare.collectAsState().value?.tools).orEmpty()
-        .filter { it.type in setOf("doctor", "appointments") }
-    if (tools.isNotEmpty()) {
-        MahavaCard(Modifier.testTag("partner_tools_card")) {
-            CardTitle("سؤال‌ها و مراجعه‌های پزشکی‌اش")
-            tools.sortedByDescending { it.epochDay ?: 0L }.take(10).forEach { t ->
-                val o = try { com.google.gson.JsonParser.parseString(t.payloadJson).asJsonObject } catch (_: Throwable) { null }
-                val text = try { o?.get("text")?.asString } catch (_: Throwable) { null }.orEmpty()
-                if (text.isBlank()) return@forEach
-                val done = try { o?.get("done")?.asBoolean } catch (_: Throwable) { null } == true
-                val kind = if (t.type == "doctor") "سؤال از پزشک" else "مراجعه"
-                val day = t.epochDay?.let { " · ${shortFa(it)}" }.orEmpty()
-                Text("• $kind$day: $text${if (done) " (انجام شد)" else ""}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
+    com.mahava.app.content.PartnerToolFormat.sections(tools, todayEpoch).forEachIndexed { i, sec ->
+        MahavaCard(Modifier.testTag(if (i == 0) "partner_tools_card" else "partner_tools_card_$i")) {
+            CardTitle(sec.title)
+            sec.lines.forEach { line ->
+                Text(if (line.startsWith("✓") || line.startsWith("○")) line else "• $line", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
             }
         }
     }
