@@ -40,8 +40,8 @@ object TodaySignalContent {
 
     fun label(kind: String, key: String): String = when (kind) {
         "food" -> FoodCravingKeys.labelFa(key)
-        "body" -> physical.find { it.first == key }?.second ?: key
-        else -> moods.find { it.first == key }?.second ?: key
+        "body" -> physical.find { it.first == key }?.second ?: com.mahava.app.health.LogLabels.symptomFa(key)
+        else -> moods.find { it.first == key }?.second ?: com.mahava.app.health.LogLabels.moodFa(key)
     }
 
     fun explain(kind: String, key: String, phaseGroup: String): String =

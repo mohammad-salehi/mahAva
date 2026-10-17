@@ -2,6 +2,7 @@ package com.mahava.app.content
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.mahava.app.health.LogLabels
 import com.mahava.app.util.PersianDigits
 
 /**
@@ -11,11 +12,11 @@ import com.mahava.app.util.PersianDigits
 object PartnerLogFormat {
     data class Line(val label: String, val value: String)
 
-    private val SKIP = setOf("id", "epochDay", "createdAt", "updatedAt", "pregnancyTestEpochDay")
+    private val SKIP = setOf("id", "epochDay", "createdAt", "updatedAt", "pregnancyTestEpochDay", "physicalSymptomSeverities")
 
     private val ORDER = listOf(
-        "bleeding", "clots", "painScore", "painLocations", "painActivityImpact", "noSymptoms", "physicalSymptoms",
-        "moods", "energy", "fatigue", "stress", "focusDifficulty", "sleepQuality", "sleepHours", "foodCravings",
+        "overallFeeling", "bleeding", "clots", "painScore", "painLocations", "painType", "painDurationMinutes", "painAction", "painResult", "painActivityImpact", "noSymptoms", "physicalSymptoms",
+        "moods", "energyScore", "energy", "fatigue", "stress", "focusDifficulty", "sleepQuality", "sleepHours", "sleepMinutes", "appetite", "waterIntakeMl", "foodCravings",
         "discharge", "dischargeConcerns", "intimacyLogged", "intimacyProtected", "desire", "intimacyDiscomfort",
         "bbtCelsius", "ovulationTest", "pregnancyTest", "medicationNote", "weightKg", "note"
     )
@@ -65,6 +66,15 @@ object PartnerLogFormat {
             "physicalSymptoms" -> Line("علائم جسمی", csvLabels(str ?: return null, "body"))
             "moods" -> Line("حال", csvLabels(str ?: return null, "mood"))
             "energy" -> Line("انرژی", lmh(str ?: return null))
+            "energyScore" -> Line("انرژی", "${num(e)} از ۵")
+            "overallFeeling" -> Line("حال کلی", LogLabels.labelOf(LogLabels.FEELINGS, str ?: return null))
+            "appetite" -> Line("اشتها", when (str) { "low" -> "کم"; "normal" -> "معمولی"; "high" -> "زیاد"; else -> str ?: return null })
+            "waterIntakeMl" -> Line("آب", "${num(e)} میلی‌لیتر")
+            "sleepMinutes" -> Line("ساعت خواب", "${PersianDigits.toPersian(fmtHours(e.asDouble / 60.0))} ساعت")
+            "painType" -> Line("نوع درد", LogLabels.labelOf(LogLabels.PAIN_TYPES, str ?: return null))
+            "painDurationMinutes" -> Line("مدت درد", LogLabels.labelOf(LogLabels.PAIN_DURATIONS, e.asInt.toString()))
+            "painAction" -> Line("برای درد", LogLabels.labelOf(LogLabels.PAIN_ACTIONS, str ?: return null))
+            "painResult" -> Line("نتیجه", LogLabels.labelOf(LogLabels.PAIN_RESULTS, str ?: return null))
             "fatigue" -> Line("خستگی", lmh(str ?: return null))
             "stress" -> Line("استرس", lmh(str ?: return null))
             "focusDifficulty" -> if (bool == true) Line("تمرکز", "سخت بود") else null
@@ -93,13 +103,22 @@ object PartnerLogFormat {
         }
     }
 
+    private fun fmtHours(h: Double): String {
+        val r = Math.round(h * 2) / 2.0
+        return if (r == Math.floor(r)) r.toLong().toString() else "%.1f".format(java.util.Locale.US, r)
+    }
+
     private fun testFa(v: String) = when (v) {
         "pos", "positive" -> "مثبت"; "neg", "negative" -> "منفی"; "invalid" -> "نامعتبر"; else -> v
     }
 
     fun lines(log: JsonObject?): List<Line> {
         if (log == null) return emptyList()
-        val keys = log.keySet().filter { it !in SKIP }
+        val keys = log.keySet().filter { it !in SKIP }.let { k ->
+            // One sleep line and one energy line: prefer hours / the 1–5 score when both are present.
+            k.filterNot { (it == "sleepMinutes" && "sleepHours" in k && !log.get("sleepHours").isJsonNull) ||
+                (it == "energy" && "energyScore" in k && !log.get("energyScore").isJsonNull) }
+        }
         val ordered = ORDER.filter { it in keys } + keys.filter { it !in ORDER }.sorted()
         return ordered.mapNotNull { k -> try { lineFor(k, log.get(k)) } catch (_: Throwable) { null } }
     }

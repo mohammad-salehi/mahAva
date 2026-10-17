@@ -52,7 +52,7 @@ object DemoMode {
         return true
     }
 
-    private suspend fun seed(app: MahavaApplication) {
+    internal suspend fun seed(app: MahavaApplication) {
         val repo = app.repository
         val t = app.clock.today()
         val now = System.currentTimeMillis()
@@ -161,7 +161,7 @@ object DemoMode {
     }
 
     /** A paired husband; the "share" is built from her local data exactly like the server would return it. */
-    private suspend fun writePartner(app: MahavaApplication, husband: Boolean) {
+    internal suspend fun writePartner(app: MahavaApplication, husband: Boolean) {
         val pair = PartnerPairDto(id = "demo-pair", status = "active", myRole = if (husband) "male" else "female",
             requestedAt = "2026-05-01T10:00:00Z", approvedAt = "2026-05-01T10:05:00Z", partner = PartnerInfoDto(if (husband) "0912***0000" else "0935***4412"))
         app.prefs.setPartnerStatusJson(gson.toJson(PartnerStatusDto(ok = true, role = if (husband) "male" else "female", pair = pair)))
