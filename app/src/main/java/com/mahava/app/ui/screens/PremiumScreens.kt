@@ -37,7 +37,7 @@ fun DailyInsightScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "بینش روزانه",
-                benefitFa = "متن شخصی‌سازی‌شده بر اساس مرحلهٔ چرخه و ثبت‌هایت با اشتراک ماه باز می‌شه.",
+                benefitFa = "متن شخصی‌سازی‌شده بر اساس مرحلهٔ چرخه و ثبت‌هایت با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
         } else {
@@ -76,7 +76,7 @@ fun CravingDetailScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> U
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "هوس خوراکی و معنی‌اش",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
             return@Column
@@ -123,7 +123,7 @@ fun SymptomPatternsScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () ->
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "الگوی علائم",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
         } else {
@@ -170,7 +170,7 @@ fun CycleTrendsScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Uni
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "روند چرخه",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
         } else {
@@ -281,7 +281,7 @@ fun SymptomCheckerScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> 
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "بررسی آموزشی علائم",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
             QuietInfo(SymptomChecker.DISCLAIMER_FA)
@@ -306,6 +306,8 @@ fun SymptomCheckerScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> 
                 topic = CheckerTopic.ENDO
                 answers.clear()
             }
+            Spacer(Modifier.height(8.dp))
+            QuietInfo("تنبلی تخمدان (PCOS) یعنی اختلالی هورمونی که می‌تواند پریود را نامنظم کند. اندومتریوز یعنی رشد بافتی شبیه پوشش داخلی رحم در بیرون از رحم که اغلب درد پریود شدید می‌دهد.")
         } else if (topic != null && result == null) {
             val t = topic!!
             Text(t.titleFa, style = MaterialTheme.typography.titleLarge)
@@ -383,7 +385,7 @@ fun PhaseForecastScreen(vm: AppViewModel, onBack: () -> Unit, onCravings: () -> 
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "پیش‌بینی خلق و هوس فردا",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
             return@Column
@@ -431,4 +433,4 @@ fun PhaseForecastScreen(vm: AppViewModel, onBack: () -> Unit, onCravings: () -> 
         QuietInfo(forecast.disclaimerFa)
         Spacer(Modifier.height(24.dp))
     }
-}
+}

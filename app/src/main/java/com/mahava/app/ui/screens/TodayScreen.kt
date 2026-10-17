@@ -120,7 +120,7 @@ fun TodayScreen(
                                     else
                                         "از ${JalaliDate.from(pred.nextPeriodStartEarliest).formatShortFa()} تا ${JalaliDate.from(pred.nextPeriodStartLatest).formatShortFa()}"
                                 )
-                                QuietInfo("این فقط یه حدسه؛ تاریخ دقیق ممکنه فرق کنه.")
+                                QuietInfo("این فقط یک حدس است؛ تاریخ دقیق ممکن است فرق کند.")
                             } else QuietInfo(cycle?.basisDescriptionFa ?: "اول تاریخ آخرین پریودت را ثبت کن.")
                         }
                         Illustration(R.drawable.design_lavender_sprig, Modifier.width(64.dp).height(120.dp))
@@ -149,7 +149,7 @@ fun TodayScreen(
                 }
             }
             MahavaCard(Modifier.testTag("quick_feelings")) {
-                SectionLabel("حالت امروز چطوره؟")
+                SectionLabel("امروز حالت چطور است؟")
                 QuickFeelings(log, symptoms) { key ->
                     if (!premium) onAccount()
                     else vm.toggleTodayFeeling(key)
@@ -158,18 +158,19 @@ fun TodayScreen(
             if (!pregnant) HomeToolCards(vm, onTool)
             if (!pregnant) {
                 MahavaCard(Modifier.testTag("phase_science_card").clickable(onClick = onScience)) {
+                    // Only the title shares the row with the picture, so the text keeps full width with large fonts.
                     Row(verticalAlignment = Alignment.Top) {
                         Column(Modifier.weight(1f)) {
                             SectionLabel("وضعیت امروزت")
                             Text(science.teaserFa, style = MaterialTheme.typography.titleMedium, color = MahavaPrimaryDeep)
-                            Spacer(Modifier.height(6.dp))
-                            Text(science.homePracticalFa.ifBlank { science.bodyFa.take(140) })
-                            Spacer(Modifier.height(8.dp))
-                            QuietInfo("این راهنمای کلی است؛ جای پزشک را نمی‌گیرد.")
-                            Text("بیشتر بخوان ‹", color = MahavaPrimaryDeep)
                         }
-                        Illustration(R.drawable.design_uterus_botanical, Modifier.width(90.dp).height(100.dp))
+                        Illustration(R.drawable.design_uterus_botanical, Modifier.width(72.dp).height(80.dp))
                     }
+                    Spacer(Modifier.height(6.dp))
+                    Text(science.homePracticalFa.ifBlank { science.bodyFa.take(140) })
+                    Spacer(Modifier.height(8.dp))
+                    QuietInfo("این راهنمای کلی است؛ جای پزشک را نمی‌گیرد.")
+                    Text("بیشتر بخوان ‹", color = MahavaPrimaryDeep)
                 }
                 MahavaCard {
                     SectionLabel("پیشنهاد امروز")
@@ -207,7 +208,7 @@ fun TodayScreen(
                                     QuietInfo(it)
                                 }
                             } else {
-                                QuietInfo("با ثبت چند پریود، حدس فردا بهتر می‌شه.")
+                                QuietInfo("با ثبت چند پریود، حدس فردا بهتر می‌شود.")
                             }
                             Spacer(Modifier.height(6.dp))
                             Text("بیشتر ببین ‹", color = MahavaPrimaryDeep)
@@ -224,7 +225,10 @@ fun TodayScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuickFeelings(log: com.mahava.app.data.db.DailyLogEntity?, symptoms: Set<String>, onToggle: (String) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Two per row when four would clip the words (small phones / large system font).
+    androidx.compose.foundation.layout.BoxWithConstraints {
+    val perRow = if (maxWidth < 60.dp * 4 * androidx.compose.ui.platform.LocalDensity.current.fontScale) 2 else 4
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = perRow) {
         listOf("happy" to "خوبم", "fatigue" to "خستگی", "pain" to "درد", "bloating" to "نفخ").forEach { (key, title) ->
             val selected = if (key == "happy") log?.moods == key else key in symptoms
             val icon = when(key) { "happy" -> R.drawable.design_smile; "fatigue" -> R.drawable.design_battery; "pain" -> R.drawable.design_energy; else -> R.drawable.design_wind }
@@ -234,10 +238,11 @@ private fun QuickFeelings(log: com.mahava.app.data.db.DailyLogEntity?, symptoms:
                 shadowElevation = if (selected) 2.dp else 0.dp) {
                 Column(Modifier.padding(8.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     MahavaIcon(icon, MahavaPrimaryDeep)
-                    Text(title, style=MaterialTheme.typography.bodySmall, color=MahavaTextPrimary)
+                    Text(title, style=MaterialTheme.typography.bodySmall, color=MahavaTextPrimary, maxLines = 1, softWrap = false)
                 }
             }
         }
+    }
     }
 }
 

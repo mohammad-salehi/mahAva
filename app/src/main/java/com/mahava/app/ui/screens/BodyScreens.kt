@@ -127,7 +127,7 @@ fun BodyCategoryScreen(
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "مطالب شناخت بدن",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
         }

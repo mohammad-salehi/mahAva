@@ -49,7 +49,7 @@ fun LoginScreen(
     ) {
         ScreenHeader("ورود", onBack = onBack)
         Text("با شماره موبایل وارد شو", style = MaterialTheme.typography.headlineLarge)
-        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان می‌گیره. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شه و با گوشی جدید برمی‌گرده.")
+        QuietInfo("برای استفاده از برنامه وارد حسابت شو. ثبت‌نام جدید یک ماه رایگان است. همهٔ اطلاعات چرخه‌ات فقط روی سرور ماه ذخیره می‌شود و با گوشی جدید هم برمی‌گردد.")
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = phone,
@@ -452,7 +452,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                     if (active) "اشتراک فعال (${planLabel(plan)})"
                     else "اشتراک فعال نیست"
                 )
-                ends?.let { QuietInfo("پایان تقریبی: $it") }
+                ends?.let { QuietInfo("پایان اشتراک: ${endsAtJalaliFa(it)}") }
                 QuietInfo(if (premium) "دسترسی ویژه: روشن" else "دسترسی ویژه: خاموش")
                 val sharedSub by vm.sharedFromPartner.collectAsState()
                 if (sharedSub) QuietInfo("اشتراک از همسرت می‌آید. با یک اشتراک، هر دوی شما از امکانات ویژه استفاده می‌کنید.")
@@ -466,15 +466,15 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 Spacer(Modifier.height(8.dp))
                 PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
-                        status = "داره خارج می‌شه…"
-                        status = vm.logoutAccount() ?: "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
+                        status = "در حال خروج…"
+                        status = vm.logoutAccount() ?: "خارج شدی. اطلاعاتت روی سرور می‌ماند و با ورود دوباره برمی‌گردد."
                     }
                 }
             }
             Spacer(Modifier.height(12.dp))
             MahavaCard {
                 Text("حذف حساب", style = MaterialTheme.typography.titleMedium)
-                QuietInfo("با حذف حساب، همهٔ اطلاعاتت از سرور هم پاک می‌شه و اتصال به همسر قطع می‌شه. این کار برگشت نداره.")
+                QuietInfo("با حذف حساب، همهٔ اطلاعاتت از سرور هم پاک می‌شود و اتصال به همسر قطع می‌شود. این کار برگشت ندارد.")
                 Spacer(Modifier.height(8.dp))
                 SecondaryButton("حذف حساب و همهٔ اطلاعات", modifier = Modifier.testTag("delete_account_btn")) { askDelete = true }
             }
@@ -529,7 +529,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                         if (d.freeGrant) " · فعال‌سازی رایگان" else ""
                 )
             }
-            QuietInfo("پرداخت از طریق کافه‌بازار. محصول: ${BuildConfig.BAZAAR_SKU_YEARLY}")
+            QuietInfo("پرداخت از طریق کافه‌بازار انجام می‌شود.")
             if (!phone.isNullOrBlank()) {
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(

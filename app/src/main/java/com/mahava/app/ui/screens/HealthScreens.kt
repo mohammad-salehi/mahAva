@@ -208,8 +208,8 @@ fun PregnancySetupPage(vm: AppViewModel, onBack: () -> Unit, onDone: () -> Unit)
     ) {
         ScreenHeader("تنظیم بارداری", onBack = onBack)
         QuietInfo("فعال‌سازی فقط با انتخاب خودت است. از روی تأخیر پریود بارداری را قطعی فرض نمی‌کنیم.")
-        SecondaryButton("از آخرین پریود (LMP)") { method = "lmp" }
-        SecondaryButton("تاریخ پزشک (EDD)") { method = "clinician_edd" }
+        SecondaryButton("از روز اول آخرین پریود") { method = "lmp" }
+        SecondaryButton("تاریخ زایمانی که پزشک گفته") { method = "clinician_edd" }
         Text(if (method == "lmp") "روش: آخرین پریود" else "روش: تاریخ پزشک (اولویت دارد)", color = MahavaPrimary)
         if (method == "lmp") {
             Text("اولین روز آخرین پریود")
@@ -256,7 +256,7 @@ fun PregnancyPage(
         }
         Text(progress.labelFa, style = MaterialTheme.typography.headlineLarge)
         Text(progress.weekOrdinalLabelFa, color = MahavaTextSecondary)
-        Text("EDD: ${JalaliDate.from(LocalDate.parse(progress.estimatedDueDate)).formatShortFa()}")
+        Text("زمان تخمینی زایمان: ${JalaliDate.from(LocalDate.parse(progress.estimatedDueDate)).formatFa()}")
         LinearProgressIndicator(progress = { progress.progressFraction }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
         val week = progress.contentWeek.coerceAtMost(42)
         val fetal = vm.fetalWeek(week)
@@ -289,67 +289,52 @@ fun HealthAnalyticsPage(vm: AppViewModel, onBack: () -> Unit) {
     val a = state.health?.fullAnalyticsData
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("health_analytics")) {
         ScreenHeader("تحلیل سلامت", onBack = onBack)
+        val months by vm.analyticsRangeMonths.collectAsState()
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(3, 6, 12).forEach { m ->
-                SecondaryButton("${PersianDigits.toPersian(m)} ماه") { vm.setAnalyticsRangeMonths(m) }
+                com.mahava.app.ui.components.ChoiceChipPill("${PersianDigits.toPersian(m)} ماه اخیر", months == m) { vm.setAnalyticsRangeMonths(m) }
             }
         }
+        Spacer(Modifier.height(8.dp))
         if (a == null) {
             QuietInfo("در حال آماده‌سازی…")
             return
         }
         a.emptyReasonFa?.let { QuietInfo(it) }
         Text("چرخه‌های کامل در بازه: ${PersianDigits.toPersian(a.completedCycleCount)}", style = MaterialTheme.typography.titleMedium)
-        QuietInfo("چرخهٔ جاری در میانگین نیست. spotting به‌تنهایی شروع چرخه نیست.")
-        BarChartBlock("طول چرخه‌های کامل (روز)", a.cycleLengths, "روز")
+        QuietInfo("چرخهٔ جاری در میانگین نیست. لکه‌بینی (خون‌ریزی خیلی کم) به‌تنهایی شروع چرخه حساب نمی‌شود.")
+        BarChartBlock("طول چرخه‌های کامل", a.cycleLengths.map { it.toFloat() }, "روز")
         QuietInfo("میانگین ${a.meanCycle?.let { PersianDigits.toPersian(it.toInt()) } ?: "—"}؛ بازه ${a.minCycle?.let { PersianDigits.toPersian(it) } ?: "—"} تا ${a.maxCycle?.let { PersianDigits.toPersian(it) } ?: "—"}.")
-        BarChartBlock("طول خون‌ریزی (روز)", a.bleedLengths, "روز")
+        BarChartBlock("طول خون‌ریزی", a.bleedLengths.map { it.toFloat() }, "روز")
         QuietInfo("میانگین خون‌ریزی: ${a.meanBleed?.let { PersianDigits.toPersian(it.toInt()) } ?: "—"}.")
-        Text("روزهای با درد ≥۴: ${PersianDigits.toPersian(a.symptomPainDays)} از ${PersianDigits.toPersian(a.loggedDaysInRange)} روز ثبت‌شده")
+        Text("روزهایی با درد ۴ یا بیشتر (از ۱۰): ${PersianDigits.toPersian(a.symptomPainDays)} روز از ${PersianDigits.toPersian(a.loggedDaysInRange)} روز ثبت‌شده")
         if (a.sleepTrend.isNotEmpty()) {
-            BarChartBlock("خواب (دقیقه)", a.sleepTrend.map { it.second }, "دقیقه")
+            BarChartBlock("خواب شبانه", a.sleepTrend.map { it.second / 60f }, "ساعت")
             QuietInfo("فقط روزهایی که خواب ثبت شده‌اند.")
         }
         if (a.waterTrend.isNotEmpty()) {
-            BarChartBlock("آب (میلی‌لیتر)", a.waterTrend.map { it.second }, "ml")
+            BarChartBlock("آب روزانه", a.waterTrend.map { it.second.toFloat() }, "میلی‌لیتر")
         }
         QuietInfo("رابطهٔ بین علائم به‌عنوان علت‌ومعلول معرفی نمی‌شود و درصد اطمینان ساختگی نشان داده نمی‌شود.")
     }
 }
 
 @Composable
-private fun BarChartBlock(title: String, values: List<Int>, unit: String) {
+private fun BarChartBlock(title: String, values: List<Float>, unit: String) {
     MahavaCard {
         Text(title, style = MaterialTheme.typography.titleMedium)
         if (values.isEmpty()) {
-            Text("داده‌ای برای رسم نیست.", color = MahavaTextSecondary)
+            Text("هنوز چیزی برای این نمودار ثبت نشده.", color = MahavaTextSecondary)
             return@MahavaCard
         }
-        val max = values.maxOrNull()?.coerceAtLeast(1) ?: 1
-        Row(
-            Modifier.fillMaxWidth().height(120.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            values.forEachIndexed { i, v ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Bottom,
-                    modifier = Modifier.weight(1f).fillMaxHeight()
-                ) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height((100.dp * v / max).coerceAtLeast(4.dp))
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MahavaPrimary)
-                    )
-                    Text(PersianDigits.toPersian(i + 1), color = MahavaTextSecondary)
-                }
-            }
-        }
-        Text("واحد: $unit · تعداد نقطه: ${PersianDigits.toPersian(values.size)}", color = MahavaTextSecondary)
-        Text(values.joinToString("، ") { PersianDigits.toPersian(it) })
+        // Long series are averaged into at most 24 bars so they stay readable.
+        val bars = com.mahava.app.health.TimeRange.compress(values, 24)
+        Spacer(Modifier.height(8.dp))
+        com.mahava.app.ui.components.BarChart(bars, MahavaPrimary, showValues = bars.size <= 8)
+        val avg = values.average().toFloat()
+        val f = { v: Float -> PersianDigits.toPersian(com.mahava.app.ui.components.fmt(Math.round(v * 10f) / 10f)) }
+        QuietInfo("میانگین ${f(avg)} $unit · کمترین ${f(values.min())} · بیشترین ${f(values.max())} · ${PersianDigits.toPersian(values.size)} مورد ثبت‌شده" +
+            if (bars.size < values.size) "؛ هر ستون میانگین چند مورد پشت سر هم است." else "")
     }
 }
 
@@ -400,14 +385,14 @@ fun HealthInsightDetailPage(vm: AppViewModel, id: String, onBack: () -> Unit) {
                 }) {
                     Text(src.publisherFa + " · " + src.titleFa)
                     Text(src.url, color = MahavaPrimary)
-                    Text("بازدید ثبت‌شده در اپ: ${src.accessedAt}", color = MahavaTextSecondary)
+                    Text("تاریخ مراجعه به منبع: ${com.mahava.app.util.DateFa.iso(src.accessedAt.toString())}", color = MahavaTextSecondary)
                 }
             } else {
                 Text(sid, color = MahavaTextSecondary)
             }
             Spacer(Modifier.height(6.dp))
         }
-        Text("بازبینی محتوایی: ${insight.reviewedAt ?: "ثبت نشده"} · بازبینی بالینی مستقل انجام نشده", color = MahavaTextSecondary)
+        Text("بازبینی محتوا: ${insight.reviewedAt?.let { com.mahava.app.util.DateFa.iso(it) } ?: "ثبت نشده"} · هنوز پزشک مستقلی آن را بازبینی نکرده است", color = MahavaTextSecondary)
     }
 }
 
@@ -475,7 +460,7 @@ fun AlertDetailPage(vm: AppViewModel, id: String, onBack: () -> Unit) {
         Text(alert.titleFa, style = MaterialTheme.typography.headlineLarge)
         Text("چه داده‌ای باعث شد؟", style = MaterialTheme.typography.titleMedium)
         Text(alert.plainLanguageExplanationFa)
-        Text("تاریخ‌های مشاهده: ${alert.observedDates.joinToString("، ")}")
+        Text("روزهایی که دیده شد: ${alert.observedDates.joinToString("، ") { com.mahava.app.util.DateFa.iso(it) }}")
         Text("اقدام مناسب", style = MaterialTheme.typography.titleMedium)
         Text(alert.recommendedActionFa)
         QuietInfo("این پیام تشخیص قطعی نیست و دارویی تجویز نمی‌کند.")

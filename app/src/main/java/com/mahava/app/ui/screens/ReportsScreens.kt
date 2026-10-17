@@ -179,7 +179,7 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
     if (!premium) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("doctor_screen")) {
             ScreenHeader("گزارش برای پزشک", onBack = onBack)
-            PremiumPaywallCard(vm = vm, titleFa = "گزارش برای پزشک", benefitFa = "با اشتراک ماه باز می‌شه.", onOpenAccount = onAccount)
+            PremiumPaywallCard(vm = vm, titleFa = "گزارش برای پزشک", benefitFa = "با اشتراک ماه باز می‌شود.", onOpenAccount = onAccount)
         }
         return
     }
@@ -299,7 +299,7 @@ fun LateTestScreen(
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "راهنما و ثبت تست بارداری",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
             return@Column
@@ -347,7 +347,7 @@ fun CareScreen(vm: AppViewModel, onBack: () -> Unit, onOpenItem: (String) -> Uni
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "راهنمای مراقبت",
-                benefitFa = "با اشتراک ماه باز می‌شه.",
+                benefitFa = "با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
             return@Column

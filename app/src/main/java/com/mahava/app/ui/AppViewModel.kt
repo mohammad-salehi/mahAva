@@ -130,6 +130,7 @@ class AppViewModel(
 
 
     private val _analyticsRangeMonths = MutableStateFlow(6)
+    val analyticsRangeMonths: StateFlow<Int> = _analyticsRangeMonths
 
     private data class Core(val profile: UserProfileEntity?, val periods: List<PeriodEventEntity>, val logs: List<DailyLogEntity>, val cycle: CycleEngineResult, val patterns: List<PatternInsight>)
     private val core = combine(
@@ -689,9 +690,9 @@ class AppViewModel(
             refreshRoleAfterAuth()
             restoreFromServer()
         } catch (e: MahApiException) {
-            e.message ?: "ورود ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(e.message, "ورود ناموفق بود.")
         } catch (t: Throwable) {
-            t.message ?: "ورود ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "ورود ناموفق بود.")
         }
     }
 
@@ -700,20 +701,20 @@ class AppViewModel(
             authRepository.requestOtp(phone.trim(), purpose)
             null
         } catch (e: MahApiException) {
-            e.message ?: "ارسال کد ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(e.message, "ارسال کد ناموفق بود.")
         } catch (t: Throwable) {
-            t.message ?: "ارسال کد ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "ارسال کد ناموفق بود.")
         }
     }
 
     suspend fun verifyOtp(phone: String, purpose: String, otp: String): String? {
         return try {
             val res = authRepository.verifyOtp(phone.trim(), purpose, otp.trim())
-            if (res.ok && res.verified) null else res.message ?: "کد تأیید نادرست است."
+            if (res.ok && res.verified) null else com.mahava.app.util.FaText.orFallback(res.message, "کد تأیید نادرست است.")
         } catch (e: MahApiException) {
-            e.message ?: "کد تأیید نادرست است."
+            com.mahava.app.util.FaText.orFallback(e.message, "کد تأیید نادرست است.")
         } catch (t: Throwable) {
-            t.message ?: "کد تأیید نادرست است."
+            com.mahava.app.util.FaText.orFallback(t.message, "کد تأیید نادرست است.")
         }
     }
 
@@ -739,9 +740,9 @@ class AppViewModel(
             refreshRoleAfterAuth()
             restoreFromServer()
         } catch (e: MahApiException) {
-            e.message ?: "ثبت‌نام ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(e.message, "ثبت‌نام ناموفق بود.")
         } catch (t: Throwable) {
-            t.message ?: "ثبت‌نام ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "ثبت‌نام ناموفق بود.")
         }
     }
 
@@ -750,9 +751,9 @@ class AppViewModel(
             authRepository.resetPassword(phone.trim(), otp.trim(), newPassword)
             null
         } catch (e: MahApiException) {
-            e.message ?: "بازیابی رمز ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(e.message, "بازیابی رمز ناموفق بود.")
         } catch (t: Throwable) {
-            t.message ?: "بازیابی رمز ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "بازیابی رمز ناموفق بود.")
         }
     }
 
@@ -777,7 +778,7 @@ class AppViewModel(
     suspend fun syncDataNow(): String = when (val r = app.dataSync.sync()) {
         is com.mahava.app.sync.SyncOutcome.Ok -> "اطلاعاتت با سرور همگام شد."
         is com.mahava.app.sync.SyncOutcome.Skipped -> "برای این حساب همگام‌سازی لازم نیست."
-        is com.mahava.app.sync.SyncOutcome.Failed -> "همگام نشد (${r.message ?: "اینترنت"}). بعداً خودکار دوباره امتحان می‌شود."
+        is com.mahava.app.sync.SyncOutcome.Failed -> "همگام نشد (${r.message?.takeIf { m -> m.any { it in '\u0600'..'\u06FF' } } ?: "اینترنت یا سرور در دسترس نبود"}). بعداً خودکار دوباره امتحان می‌شود."
     }
 
     suspend fun loadTickets(): List<com.mahava.app.network.MahTicketDto> =
@@ -787,18 +788,18 @@ class AppViewModel(
         authRepository.withToken { app.apiClient.createTicket(it, subject, body) }
         null
     } catch (e: MahApiException) {
-        e.message ?: "ارسال تیکت ناموفق بود."
+        com.mahava.app.util.FaText.orFallback(e.message, "ارسال تیکت ناموفق بود.")
     } catch (t: Throwable) {
-        t.message ?: "ارسال تیکت ناموفق بود."
+        com.mahava.app.util.FaText.orFallback(t.message, "ارسال تیکت ناموفق بود.")
     }
 
     suspend fun replyTicket(id: String, body: String): String? = try {
         authRepository.withToken { app.apiClient.replyTicket(it, id, body) }
         null
     } catch (e: MahApiException) {
-        e.message ?: "ارسال پاسخ ناموفق بود."
+        com.mahava.app.util.FaText.orFallback(e.message, "ارسال پاسخ ناموفق بود.")
     } catch (t: Throwable) {
-        t.message ?: "ارسال پاسخ ناموفق بود."
+        com.mahava.app.util.FaText.orFallback(t.message, "ارسال پاسخ ناموفق بود.")
     }
 
     /**
@@ -829,9 +830,9 @@ class AppViewModel(
             clearLocalAfterSignOut()
             null
         } catch (e: MahApiException) {
-            e.message ?: "حذف حساب انجام نشد."
+            com.mahava.app.util.FaText.orFallback(e.message, "حذف حساب انجام نشد.")
         } catch (t: Throwable) {
-            t.message ?: "حذف حساب انجام نشد."
+            com.mahava.app.util.FaText.orFallback(t.message, "حذف حساب انجام نشد.")
         }
     }
 
@@ -917,9 +918,9 @@ class AppViewModel(
                 null to attached
             }
         } catch (e: MahApiException) {
-            (e.message ?: "اعمال کد ناموفق بود.") to null
+            (com.mahava.app.util.FaText.orFallback(e.message, "اعمال کد ناموفق بود.")) to null
         } catch (t: Throwable) {
-            (t.message ?: "اعمال کد ناموفق بود.") to null
+            (com.mahava.app.util.FaText.orFallback(t.message, "اعمال کد ناموفق بود.")) to null
         }
     }
 
@@ -928,9 +929,9 @@ class AppViewModel(
             authRepository.withToken { token -> app.apiClient.clearDiscount(token) }
             null
         } catch (e: MahApiException) {
-            e.message ?: "حذف کد ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(e.message, "حذف کد ناموفق بود.")
         } catch (t: Throwable) {
-            t.message ?: "حذف کد ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "حذف کد ناموفق بود.")
         }
     }
 
@@ -965,9 +966,9 @@ class AppViewModel(
             authRepository.refreshSubscription()
             null
         } catch (e: MahApiException) {
-            e.message ?: "فعال‌سازی اشتراک روی سرور ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(e.message, "فعال‌سازی اشتراک روی سرور ناموفق بود.")
         } catch (t: Throwable) {
-            t.message ?: "خرید ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "خرید ناموفق بود.")
         } finally {
             billing.disconnect()
         }
@@ -1001,7 +1002,7 @@ class AppViewModel(
             authRepository.refreshSubscription()
             if (claimed > 0) "اشتراک از خرید بازار بازیابی شد." else "خرید پیدا شد ولی فعال‌سازی تازه لازم نبود."
         } catch (t: Throwable) {
-            t.message ?: "بازیابی خرید ناموفق بود."
+            com.mahava.app.util.FaText.orFallback(t.message, "بازیابی خرید ناموفق بود.")
         } finally {
             billing.disconnect()
         }
@@ -1100,7 +1101,7 @@ class AppViewModel(
     } catch (_: java.io.IOException) {
         "اینترنت در دسترس نیست. دوباره تلاش کن."
     } catch (t: Throwable) {
-        t.message ?: "خطایی پیش آمد. دوباره تلاش کن."
+        com.mahava.app.util.FaText.orFallback(t.message, "خطایی پیش آمد. دوباره تلاش کن.")
     }
 
     /** Refresh pairing status + (for husband) her shared snapshot. Returns an error message or null. */
@@ -1117,7 +1118,7 @@ class AppViewModel(
                 if (share?.snapshot == null && share?.periods.isNullOrEmpty()) {
                     throw com.mahava.app.network.MahApiException(
                         502,
-                        "هنوز چیزی از همسرت نرسیده. اگه اون پریودش رو ثبت کرده، یک‌بار اپش رو باز کنه تا همگام بشه؛ بعد اینجا به‌روزرسانی بزن."
+                        "هنوز چیزی از همسرت نرسیده. اگر پریودش را ثبت کرده، یک بار برنامهٔ ماه را باز کند تا همگام شود؛ بعد این‌جا «به‌روزرسانی» را بزن."
                     )
                 }
             } else {

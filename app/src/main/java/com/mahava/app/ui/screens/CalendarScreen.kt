@@ -171,16 +171,15 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
                 if (premium) {
                     selLog?.let { log ->
                         val markers=buildList {
-                            if(log.painScore!=null) add("درد: ${log.painScore} از ۱۰")
-                            if("headache" in log.physicalSymptoms.orEmpty().split(',')) add("سردرد")
-                            com.mahava.app.health.ToolsAnalytics.sleep(log)?.let {add("خواب: $it دقیقه")}
-                            com.mahava.app.health.ToolsAnalytics.energy(log)?.let {add("انرژی: $it از ۵")}
-                            if(log.moods!=null || log.overallFeeling!=null) add("حال ثبت‌شده")
+                            // Pain, mood and symptoms are in the line below; here only what it does not say.
+                            com.mahava.app.health.ToolsAnalytics.sleep(log)?.let { m -> add("خواب: " + PersianDigits.toPersian(if (m % 60 == 0) "${m / 60} ساعت" else "${m / 60} ساعت و ${m % 60} دقیقه")) }
+                            com.mahava.app.health.ToolsAnalytics.energy(log)?.let {add("انرژی: ${PersianDigits.toPersian(it)} از ۵")}
+                            log.overallFeeling?.let { f -> com.mahava.app.health.LogLabels.FEELINGS.firstOrNull { it.first == f }?.let { add("حس کلی: ${it.second}") } }
                             if(log.discharge!=null) add("ترشحات ثبت‌شده")
                             if(log.medicationNote!=null) add("دارو ثبت‌شده")
                             if(log.intimacyLogged) add("رابطه ثبت‌شده")
                         }
-                        QuietInfo(markers.joinToString(" · "))
+                        if (markers.isNotEmpty()) QuietInfo(markers.joinToString(" · "))
                     }
                     Text(todayLogLine(selLog).replace("امروز", "این روز").replace("ثبت امروزِ تو", "ثبت این روز"), style = MaterialTheme.typography.bodyMedium)
                     selLog?.note?.takeIf { it.isNotBlank() }?.let { Text("یادداشت: $it", style = MaterialTheme.typography.bodyMedium) }
@@ -189,7 +188,7 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
                     else SecondaryButton(if (selLog == null) "ثبت برای این روز" else "ویرایش ثبت این روز", modifier = Modifier.testTag("cal_edit_day")) { onOpenDay(sel) }
                 } else {
                     Spacer(Modifier.height(8.dp))
-                    QuietInfo("ثبت حال روزانه با اشتراک ماه باز می‌شه. دیدن تقویم و پیش‌بینی پریود رایگان است.")
+                    QuietInfo("ثبت حال روزانه با اشتراک ماه باز می‌شود. دیدن تقویم و پیش‌بینی پریود رایگان است.")
                     SecondaryButton("حساب و اشتراک", modifier = Modifier.testTag("cal_account"), onClick = onAccount)
                 }
             }

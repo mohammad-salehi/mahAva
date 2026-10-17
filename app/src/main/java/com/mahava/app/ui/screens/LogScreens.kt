@@ -46,7 +46,7 @@ fun DailyLogScreen(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, onAccou
             PremiumPaywallCard(
                 vm = vm,
                 titleFa = "ثبت حال روزانه",
-                benefitFa = "ثبت حال، علائم، خواب و هوس خوراکی با اشتراک ماه باز می‌شه.",
+                benefitFa = "ثبت حال، علائم، خواب و هوس خوراکی با اشتراک ماه باز می‌شود.",
                 onOpenAccount = onAccount
             )
         }
@@ -114,7 +114,7 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
         }
         Spacer(Modifier.height(12.dp))
         MahavaCard {
-        SectionLabel("امروز در کل چطوری؟")
+        SectionLabel("امروز در کل چه حسی داری؟")
         ChipsFlow(com.mahava.app.health.LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
         SectionLabel("حالت چطور است؟")
         MoodIconRow(
@@ -169,7 +169,7 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
         SleepHoursPicker(sleepHours) { sleepHours = it }
         }
         Spacer(Modifier.height(12.dp))
-        SectionLabel("آب امروز (میلی‌لیتر — اختیاری؛ خالی = ثبت‌نشده، نه صفر)")
+        SectionLabel("چقدر آب خوردی؟ (اختیاری)")
         Slider(
             value = if (waterMl < 0) 0f else waterMl.toFloat().coerceIn(0f, 4000f),
             onValueChange = { waterMl = it.toInt() },
@@ -178,7 +178,7 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
             modifier = Modifier.testTag("water_ml_slider")
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(if (waterMl < 0) "ثبت نشده" else "${PersianDigits.toPersian(waterMl)} ml", Modifier.weight(1f))
+            Text(if (waterMl < 0) "ثبت نشده" else "${PersianDigits.toPersian(waterMl)} میلی‌لیتر", Modifier.weight(1f))
             if (waterMl >= 0) TextButton(onClick = { waterMl = -1 }) { Text("پاک کردن") }
         }
         SectionLabel("هوس خوراکی (اختیاری — چند مورد)")
@@ -239,7 +239,11 @@ private fun MoodIconRow(
     selected: String?,
     onSelect: (String) -> Unit
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    // Fewer per row when five would break the words (small phones / large system font).
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val perRow = if (maxWidth < 50.dp * options.size * androidx.compose.ui.platform.LocalDensity.current.fontScale) 3 else options.size
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), maxItemsInEachRow = perRow) {
         options.forEach { (key, label, icon) ->
             val isOn = selected == key
             Column(
@@ -259,9 +263,10 @@ private fun MoodIconRow(
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(label, style = MaterialTheme.typography.bodySmall, color = if (isOn) MahavaPrimaryDeep else MahavaTextSecondary)
+                Text(label, style = MaterialTheme.typography.bodySmall, color = if (isOn) MahavaPrimaryDeep else MahavaTextSecondary, maxLines = 1, softWrap = false)
             }
         }
+    }
     }
 }
 

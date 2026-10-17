@@ -130,12 +130,12 @@ class BazaarBilling(context: Context) {
             val raw = (error?.message ?: "").lowercase()
             return when {
                 raw.contains("not installed") || raw.contains("bazaar is not") ->
-                    "کافه‌بازار روی این گوشی پیدا نشد یا در دسترس نیست. اپ بازار را نصب/به‌روز کن، یک‌بار بازش کن و وارد حسابت شو، بعد دوباره از ماه خرید را بزن."
+                    "کافه‌بازار روی این گوشی پیدا نشد یا در دسترس نیست. برنامهٔ بازار را نصب یا به‌روز کن، یک‌بار بازش کن و وارد حسابت شو، بعد دوباره از ماه خرید را بزن."
                 raw.contains("disconnect") || raw.contains("connection") ->
                     "اتصال به سرویس پرداخت بازار برقرار نشد. بازار را باز کن و دوباره امتحان کن."
                 raw.contains("cancel") -> "خرید لغو شد."
                 raw.isBlank() -> "خرید از بازار انجام نشد."
-                else -> error?.message ?: "خرید از بازار انجام نشد."
+                else -> com.mahava.app.util.FaText.orFallback(error?.message, "خرید از بازار انجام نشد.")
             }
         }
     }

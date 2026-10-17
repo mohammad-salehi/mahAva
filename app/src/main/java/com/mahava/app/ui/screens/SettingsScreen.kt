@@ -36,13 +36,13 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
     var status by remember { mutableStateOf("") }
 
     val notifPerm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (!granted) status = "اجازهٔ اعلان داده نشد؛ یادآوری‌ها نمایش داده نمی‌شن."
+        if (!granted) status = "اجازهٔ اعلان داده نشد؛ یادآوری‌ها نمایش داده نمی‌شوند."
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("settings_screen")) {
         ScreenHeader("تنظیمات و حریم خصوصی", onBack = onBack)
         Illustration(R.drawable.ill_privacy_shield, Modifier.height(100.dp))
-        QuietInfo("ثبت‌ها و تنظیماتت روی سرور ماه می‌مونه تا با گوشی جدید هم برگرده.")
+        QuietInfo("ثبت‌ها و تنظیماتت روی سرور ماه می‌ماند تا با گوشی جدید هم برگردد.")
 
         val accountPhone by vm.accountPhone.collectAsState()
         val loggedIn by vm.isLoggedIn.collectAsState()
@@ -79,7 +79,7 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 Spacer(Modifier.height(8.dp))
                 SecondaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
-                        status = "داره خارج می‌شه…"
+                        status = "در حال خروج…"
                         status = vm.logoutAccount() ?: "خارج شدی."
                     }
                 }
@@ -156,14 +156,14 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 }, modifier = Modifier.testTag("set_lock"))
             }
             if (profile?.lockEnabled == true) {
-                Text("چه زمانی دوباره قفل بشه؟", style = MaterialTheme.typography.bodyMedium)
+                Text("چه زمانی دوباره قفل شود؟", style = MaterialTheme.typography.bodyMedium)
                 ChipsFlow(listOf("0" to "بلافاصله", "60" to "بعد از ۱ دقیقه", "300" to "بعد از ۵ دقیقه"), profile.lockTimeoutSeconds.toString(), "lock_to") { k ->
                     vm.updateProfile { it.copy(lockTimeoutSeconds = k.toInt()) }
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 MahavaIcon(R.drawable.ic_bell); Spacer(Modifier.width(8.dp))
-                Text("روی صفحهٔ قفل فقط اسم «ماه» دیده بشه", Modifier.weight(1f))
+                Text("روی صفحهٔ قفل فقط اسم «ماه» دیده شود", Modifier.weight(1f))
                 Switch(profile?.privateNotifications == true, { v -> vm.updateProfile { it.copy(privateNotifications = v) } }, modifier = Modifier.testTag("set_private_notif"))
             }
             if (!isMale) {
@@ -191,8 +191,8 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
         if (confirmDelete) {
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
-                title = { Text("همهٔ اطلاعات پاک بشه؟") },
-                text = { Text("همهٔ پریودها، ثبت‌های روزانه، یادآوری‌ها و تنظیمات از این گوشی و از سرور ماه پاک می‌شن و برنمی‌گردن.") },
+                title = { Text("همهٔ اطلاعات پاک شود؟") },
+                text = { Text("همهٔ پریودها، ثبت‌های روزانه، یادآوری‌ها و تنظیمات از این گوشی و از سرور ماه پاک می‌شوند و برنمی‌گردند.") },
                 confirmButton = {
                     TextButton(onClick = {
                         vm.deleteAll()
@@ -217,7 +217,7 @@ private fun planLabelFa(plan: String?, active: Boolean): String = when {
     else -> plan ?: "—"
 }
 
-private fun endsAtJalaliFa(endsAt: String?): String {
+internal fun endsAtJalaliFa(endsAt: String?): String {
     if (endsAt.isNullOrBlank()) return "—"
     return try {
         val instant = java.time.Instant.parse(endsAt)

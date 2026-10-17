@@ -25,7 +25,13 @@ fun MainNavigation(current: String?, onNavigate: (String) -> Unit) {
             }
             NavigationBarItem(selected = selected, onClick = { onNavigate(route) }, modifier = Modifier.testTag("nav_$route"),
                 icon = { Icon(painterResource(icon),contentDescription=label) },
-                label = { Text(label,style=MaterialTheme.typography.bodySmall) },
+                label = {
+                    // Five labels share a small phone's width: let them grow with the system font only up to 1.15×.
+                    val base = MaterialTheme.typography.bodySmall
+                    val fs = androidx.compose.ui.platform.LocalDensity.current.fontScale
+                    val size = if (fs > 1.15f) base.fontSize * (1.15f / fs) else base.fontSize
+                    Text(label, style = base.copy(fontSize = size), maxLines = 1, softWrap = false)
+                },
                 colors=NavigationBarItemDefaults.colors(selectedIconColor=MahavaPrimaryDeep,selectedTextColor=MahavaPrimaryDeep,
                     unselectedIconColor=MahavaTextSecondary,unselectedTextColor=MahavaTextSecondary,indicatorColor=MahavaPrimarySoft))
         }

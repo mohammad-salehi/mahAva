@@ -27,7 +27,8 @@ private val LightColors = lightColorScheme(
     onSurface = MahavaTextPrimary,
     surfaceVariant = MahavaPrimarySoft,
     onSurfaceVariant = MahavaTextSecondary,
-    outline = Color.Transparent,
+    // Text-field borders and the "off" switch use this; transparent made them invisible.
+    outline = Color(0xFF9D90AD),
     outlineVariant = Color.Transparent,
     error = MahavaDanger
 )

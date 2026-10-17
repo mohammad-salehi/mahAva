@@ -145,9 +145,9 @@ object HealthStore {
 
     private fun phaseFa(p: CyclePhase?): String = when (p) {
         CyclePhase.MENSTRUATION -> "قاعدگی"
-        CyclePhase.FOLLICULAR -> "فولیکولار"
+        CyclePhase.FOLLICULAR -> "بعد از پریود (فاز فولیکولار)"
         CyclePhase.OVULATION_WINDOW -> "بازهٔ تخمینی تخمک‌گذاری"
-        CyclePhase.LUTEAL -> "لوتهال"
+        CyclePhase.LUTEAL -> "نیمهٔ دوم چرخه (فاز لوتئال)"
         else -> "نامشخص"
     }
 

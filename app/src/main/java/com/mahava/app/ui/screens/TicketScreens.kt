@@ -36,7 +36,7 @@ fun TicketsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 tickets = vm.loadTickets()
                 selected = keepSelectedId?.let { id -> tickets.find { it.id == id } }
             } catch (t: Throwable) {
-                status = t.message ?: "بارگذاری تیکت‌ها ناموفق بود"
+                status = com.mahava.app.util.FaText.orFallback(t.message, "بارگذاری تیکت‌ها ناموفق بود")
             } finally {
                 loading = false
             }
@@ -59,7 +59,7 @@ fun TicketsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 PrimaryButton("ارسال تیکت", enabled = subject.isNotBlank() && body.isNotBlank() && !loading) {
                     scope.launch {
-                        status = "داره ارسال می‌شه…"
+                        status = "در حال ارسال…"
                         val err = vm.createTicket(subject.trim(), body.trim())
                         if (err == null) {
                             subject = ""; body = ""; status = "تیکت ثبت شد"

@@ -44,7 +44,7 @@ object ToolCatalog {
             ToolEntry("pain", "ردیاب درد", "جا، شدت، نوع و نتیجه", R.drawable.design_pain, MahavaMenstruation),
             ToolEntry("discharge", "ردیاب ترشحات", "نوع و علائم همراه", R.drawable.design_droplet, MahavaAccentSky),
             ToolEntry("symptoms", "تحلیل علائم", "پرتکرارترین علائمت", R.drawable.design_chart, MahavaAccentPeach),
-            ToolEntry("pms", "PMS من", "روزهای پیش از پریود", R.drawable.design_calendar, MahavaMenstruation),
+            ToolEntry("pms", "پیش از پریود من", "علائم پیش از قاعدگی (PMS)", R.drawable.design_calendar, MahavaMenstruation),
             ToolEntry("comparison", "مقایسهٔ چرخه‌ها", "هر چرخه کنار بقیه", R.drawable.design_chart, MahavaFertility)
         ),
         "حال و خواب" to listOf(
@@ -301,7 +301,7 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                         else HorizontalBars(counts.map { (k, c) -> LogLabels.symptomFa(k) to (100f * c / other.size.coerceAtLeast(1)) }, MahavaPrimary, "٪", 100f)
                     }
                     InsightCards(live, null, prefix = "insight_pms_")
-                    QuietInfo("این مقایسه تشخیص PMS نیست؛ اگر علائم زندگی روزمره‌ات را مختل می‌کند با پزشک صحبت کن.")
+                    QuietInfo("این مقایسه تشخیص سندرم پیش از قاعدگی (PMS) نیست؛ اگر علائم زندگی روزمره‌ات را مختل می‌کند با پزشک صحبت کن.")
                 }
                 "insights" -> {
                     val list = live.filter { it.type == "insight" }
@@ -404,7 +404,7 @@ private fun MoodEnergyForm(vm: AppViewModel, run: (suspend () -> Unit) -> Unit) 
     var saved by remember(date) { mutableStateOf(false) }
     MahavaCard(Modifier.testTag("form_mood_energy")) {
         DayPicker(vm, day) { date = it.toString() }
-        SectionLabel("امروز چطوری؟"); ChipsFlow(LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
+        SectionLabel("امروز چه حسی داری؟"); ChipsFlow(LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
         SectionLabel("حس و حال (چند مورد)")
         val sel = moods.split(',').filter { it.isNotBlank() }.toSet()
         MultiChipsFlow(LogLabels.MOODS, sel, "moods") { k -> moods = (if (k in sel) sel - k else sel + k).joinToString(",") }
@@ -425,7 +425,8 @@ private fun MoodEnergyForm(vm: AppViewModel, run: (suspend () -> Unit) -> Unit) 
 fun SleepHoursPicker(hours: Float?, onChange: (Float?) -> Unit) {
     Text(if (hours == null) "ثبت نشده" else "${PersianDigits.toPersian(fmt(hours))} ساعت", style = MaterialTheme.typography.headlineMedium, color = MahavaPrimaryDeep)
     Slider(value = hours ?: 7f, onValueChange = { onChange((Math.round(it * 2f) / 2f).coerceIn(0f, 14f)) }, valueRange = 0f..14f, steps = 27, modifier = Modifier.testTag("sleep_hours_slider"))
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         listOf(6f, 7f, 8f).forEach { h -> ChoiceChipPill("${PersianDigits.toPersian(fmt(h))} ساعت", hours == h) { onChange(h) } }
         if (hours != null) TextButton(onClick = { onChange(null) }) { Text("پاک کردن") }
     }

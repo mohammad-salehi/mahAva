@@ -118,16 +118,18 @@ object LogLabels {
         "nausea" -> "تهوع"; "cramps" -> "گرفتگی"; "heaviness" -> "سنگینی"; "fatigue" -> "خستگی"
         "severe_headache" -> "سردرد شدید"; "vision_changes" -> "تغییر دید"; "reduced_movement" -> "کاهش حرکت جنین"
         "fluid_leak" -> "خروج مایع"; "fainting" -> "غش"; "other" -> "سایر"
-        else -> k
+        else -> persianOr(k, "علامت دیگر")
     }
+    /** A stored key we have no label for is never shown in English. */
+    private fun persianOr(k: String, fallback: String) = if (k.any { it in 'a'..'z' || it in 'A'..'Z' }) fallback else k
     fun moodFa(k: String): String = when (k) {
         "happy" -> "خوشحال"; "calm" -> "آرام"; "anxious" -> "نگران"; "sensitive" -> "حساس"; "irritable" -> "زودرنج"
         "sad" -> "غمگین"; "bored" -> "بی‌حوصله"; "focused" -> "تمرکز خوب"; "unfocused" -> "تمرکز کم"
-        else -> k
+        else -> persianOr(k, "حال دیگر")
     }
     fun painLocationFa(k: String): String = when (k) {
         "lower_abdomen" -> "زیر شکم"; "back" -> "کمر"; "pelvis" -> "لگن"; "head" -> "سر"; "breast" -> "سینه"
-        "legs" -> "پاها"; "other" -> "جای دیگر"; else -> k
+        "legs" -> "پاها"; "other" -> "جای دیگر"; else -> persianOr(k, "جای دیگر")
     }
     val FEELINGS = listOf("great" to "عالی", "good" to "خوب", "ordinary" to "معمولی", "bad" to "بد", "very_bad" to "خیلی بد")
     val MOODS = listOf("calm", "happy", "anxious", "sensitive", "irritable", "sad", "bored", "focused", "unfocused").map { it to moodFa(it) }

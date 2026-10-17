@@ -22,7 +22,7 @@ import com.mahava.app.ui.theme.MahavaTextSecondary
 @Composable
 fun PremiumPaywallCard(
     titleFa: String,
-    benefitFa: String = "با اشتراک ماه باز می‌شه.",
+    benefitFa: String = "با اشتراک ماه باز می‌شود.",
     isLoggedIn: Boolean = false,
     onOpenAccount: (() -> Unit)? = null,
     onOpenLogin: (() -> Unit)? = null,
@@ -30,7 +30,7 @@ fun PremiumPaywallCard(
     onOpenSettings: (() -> Unit)? = null
 ) {
     MahavaCard(Modifier.testTag("premium_paywall")) {
-        Text("با اشتراک ماه باز می‌شه", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
+        Text("با اشتراک ماه باز می‌شود", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge)
         Text(titleFa, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(6.dp))
         Text(benefitFa, style = MaterialTheme.typography.bodyMedium, color = MahavaTextSecondary)
@@ -61,7 +61,7 @@ fun PremiumPaywallCard(
 @Composable
 fun PremiumTeaserCard(
     titleFa: String,
-    hintFa: String = "با اشتراک ماه باز می‌شه",
+    hintFa: String = "با اشتراک ماه باز می‌شود",
     onClick: () -> Unit
 ) {
     MahavaCard(Modifier.testTag("premium_teaser").clickable(onClick = onClick)) {
@@ -101,7 +101,7 @@ fun PremiumSessionGuard(vm: com.mahava.app.ui.AppViewModel, onNeedLogin: () -> U
 fun PremiumPaywallCard(
     vm: com.mahava.app.ui.AppViewModel,
     titleFa: String,
-    benefitFa: String = "با اشتراک ماه باز می‌شه.",
+    benefitFa: String = "با اشتراک ماه باز می‌شود.",
     onOpenAccount: () -> Unit,
     onUnlockDemo: (() -> Unit)? = null
 ) {

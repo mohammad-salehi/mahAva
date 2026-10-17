@@ -137,7 +137,7 @@ fun TodaySignalsCard(vm: AppViewModel, onOpenSignal: (kind: String, key: String)
         )
         Spacer(Modifier.height(12.dp))
         SignalSection(
-            icon = "💜", title = "حالت چطوره؟", hint = "یکی را انتخاب کن",
+            icon = "💜", title = "حالت چطور است؟", hint = "یکی را انتخاب کن",
             accent = MahavaFertility, soft = MahavaFertilitySoft, tag = "signal_section_mood",
             options = TodaySignalContent.moods, selected = mood?.let { setOf(it) }.orEmpty(), chipTag = "today_mood",
             onToggle = { key -> mood = if (mood == key) null else key; save() },

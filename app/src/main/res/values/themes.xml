@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Mahava" parent="Theme.AppCompat.DayNight.NoActionBar">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The app is designed light-only: never let system or MIUI dark mode recolour it. -->
+    <style name="Theme.Mahava" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">#FCFAFF</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
         <item name="android:windowBackground">#FCFAFF</item>
     </style>
 </resources>

@@ -29,7 +29,9 @@ class PhaseForecastTest {
         val f = PhaseForecastEngine.build(CycleSubWindow.FOLLICULAR_EARLY, CyclePhase.FOLLICULAR)
         val blob = f.scienceMoodFa + f.scienceCravingFa
         assertTrue(blob.contains("استروژن"))
-        assertTrue(blob.contains("estrogen") || blob.contains("estradiol"))
+        // Medical terms are explained in Persian, never left in English.
+        assertTrue(blob.contains("هورمون"))
+        assertTrue(blob.none { it in 'a'..'z' })
     }
 
     @Test

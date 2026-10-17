@@ -71,7 +71,7 @@ fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () ->
         }
         tools.filter {it.type=="appointments" && it.deletedAt==null && (it.epochDay ?: 0)>=vm.today().toEpochDay()}.take(3).forEach { item ->
             val appointment=com.google.gson.JsonParser.parseString(item.payloadJson).asJsonObject
-            QuietInfo("مراجعهٔ ثبت‌شده: ${appointment.get("text").asString} — ${appointment.get("date").asString}")
+            QuietInfo("مراجعهٔ ثبت‌شده: ${appointment.get("text")?.asString.orEmpty()} — ${com.mahava.app.util.DateFa.iso(appointment.get("date")?.asString.orEmpty())}")
         }
         CompanionAction("مرور برنامهٔ مراقبت‌ها", "زمان مراجعه‌ها را با پزشک یا ماما هماهنگ کن.", R.drawable.design_calendar, onPregnancy)
         CompanionAction("ثبت حال و علائم امروز", "علائم مهم را در زمان مناسب پیگیری کن.", R.drawable.design_notes, onDaily)

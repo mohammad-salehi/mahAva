@@ -98,9 +98,9 @@ fun ChartFrame(points: Int, modifier: Modifier = Modifier, minSlot: Dp = 26.dp, 
 @Composable
 fun TimeAxis(labels: List<String>, centered: Boolean = true) {
     if (labels.isEmpty()) return
-    BoxWithConstraints(Modifier.fillMaxWidth().height(18.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().heightIn(min = 18.dp)) {
         val n = labels.size
-        val fit = (maxWidth / 64.dp).toInt().coerceIn(1, n)
+        val fit = (maxWidth / (64.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)).toInt().coerceIn(1, n)
         // Evenly spaced labels that always include the oldest and the newest point.
         val idx = if (fit <= 1) listOf(n - 1) else (0 until fit).map { Math.round(it * (n - 1f) / (fit - 1f)) }.distinct()
         idx.forEach { i ->

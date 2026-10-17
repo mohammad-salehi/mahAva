@@ -113,7 +113,7 @@ object PartnerSync {
         for (e in poll.events) {
             when (e.kind) {
                 "pair_requested" -> AppNotices.add(app, e.kind, "درخواست اتصال همسر",
-                    "همسرت${if (phone.isNotBlank()) " ($phone)" else ""} می‌خواهد به تو وصل شود.", id = "ev-${e.id}")
+                    "همسرت${if (phone.isNotBlank()) " (${com.mahava.app.util.FaText.ltr(com.mahava.app.util.PersianDigits.toPersian(phone))})" else ""} می‌خواهد به تو وصل شود.", id = "ev-${e.id}")
                 "pair_approved" -> {
                     val body = "همسرت اتصال را تأیید کرد. حالا همهٔ چیزهایی را که ثبت می‌کند می‌بینی."
                     AppNotices.add(app, e.kind, "اتصال برقرار شد", body, popup = true, id = "ev-${e.id}")

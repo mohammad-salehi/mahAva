@@ -67,11 +67,17 @@ fun BarChart(
             }
         }
         if (labels.isNotEmpty()) {
-            Row(Modifier.fillMaxWidth()) {
-                labels.forEach {
-                    Text(it, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            // When month names do not fit under every bar (small phone, large font), label every 2nd/3rd bar.
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val need = 52.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale
+                val step = kotlin.math.ceil(need.value / (maxWidth.value / labels.size).coerceAtLeast(1f)).toInt().coerceAtLeast(1)
+                Row(Modifier.fillMaxWidth()) {
+                    labels.forEachIndexed { i, label ->
+                        val show = step == 1 || (labels.size - 1 - i) % step == 0
+                        Text(if (show) label else "", Modifier.weight(1f).wrapContentWidth(unbounded = true), style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    }
                 }
             }
         }
@@ -121,7 +127,8 @@ fun HorizontalBars(items: List<Pair<String, Float>>, color: Color, suffix: Strin
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEach { (label, v) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, Modifier.width(110.dp), style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                Text(label, Modifier.width(110.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceIn(1f, 1.6f)), style = MaterialTheme.typography.bodyMedium, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 Box(Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(7.dp)).background(track)) {
                     Box(Modifier.fillMaxHeight().fillMaxWidth((v / m).coerceIn(0.02f, 1f)).clip(RoundedCornerShape(7.dp)).background(color))
                 }

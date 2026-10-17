@@ -75,7 +75,7 @@ object DailyInsightEngine {
                 tips += "مایعات و آهن غذایی (عدس، گوشت کم‌چرب، سبزی برگ‌دار) را جدی بگیر."
             }
             "follicular" -> {
-                tips += "این دوره معمولاً برای حرکت و کار جدید مناسب‌تر است؛ اگر بدنت آماده‌ست، کمی فعالیت سبک خوب است."
+                tips += "این دوره معمولاً برای حرکت و کار جدید مناسب‌تر است؛ اگر بدنت آماده است، کمی فعالیت سبک خوب است."
                 tips += "وعده‌های منظم انرژی را پایدارتر می‌کند."
             }
             "fertile" -> {
@@ -120,10 +120,7 @@ object DailyInsightEngine {
         )
     }
 
-    private fun moodFa(k: String) = when (k) {
-        "happy" -> "خوشحال"; "calm" -> "آرام"; "sad" -> "غمگین"
-        "anxious" -> "نگران"; "irritable" -> "زودرنج"; else -> k
-    }
+    private fun moodFa(k: String) = com.mahava.app.health.LogLabels.moodFa(k)
     private fun energyFa(k: String) = when (k) {
         "low" -> "کم"; "medium" -> "متوسط"; "high" -> "زیاد"; else -> k
     }

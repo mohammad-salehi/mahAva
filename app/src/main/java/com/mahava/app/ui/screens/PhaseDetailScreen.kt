@@ -52,7 +52,7 @@ fun PhaseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit, onAccoun
                 PremiumPaywallCard(
                     vm = vm,
                     titleFa = "جزئیات و محتوای آموزشی",
-                    benefitFa = "با اشتراک ماه باز می‌شه.",
+                    benefitFa = "با اشتراک ماه باز می‌شود.",
                     onOpenAccount = onAccount
                 )
             }
@@ -306,9 +306,7 @@ fun bleedingFa(v: String?) = when (v) {
     "none" -> "ندارم"; "spotting" -> "لکه‌بینی"; "light" -> "کم"; "medium" -> "متوسط"; "heavy" -> "زیاد"; else -> null
 }
 
-fun moodFa(v: String?) = when (v) {
-    "happy" -> "خوشحال"; "calm" -> "آرام"; "sad" -> "غمگین"; "anxious" -> "نگران"; "irritable" -> "زودرنج"; else -> v
-}
+fun moodFa(v: String?): String? = v?.let { com.mahava.app.health.LogLabels.moodFa(it) }
 
 fun todayLogLine(log: DailyLogEntity?): String {
     if (log == null) return "امروز هنوز چیزی ثبت نکرده‌ای."

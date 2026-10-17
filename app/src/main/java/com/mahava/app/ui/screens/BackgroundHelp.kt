@@ -48,7 +48,7 @@ object BackgroundHelp {
  */
 @Composable
 fun NotificationPermissionCard(
-    reasonFa: String = "برای این‌که وقتی برنامه بسته است هم از ثبت‌های همسرت خبردار شی، اجازهٔ اعلان بده."
+    reasonFa: String = "برای این‌که وقتی برنامه بسته است هم از ثبت‌های همسرت خبردار شوی، اجازهٔ اعلان بده."
 ) {
     if (Build.VERSION.SDK_INT < 33) return
     val context = LocalContext.current

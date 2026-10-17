@@ -6,9 +6,11 @@ object PersianDigits {
 
     fun toPersian(input: String): String {
         val out = StringBuilder(input.length)
-        for (c in input) {
+        for ((i, c) in input.withIndex()) {
             val idx = western.indexOf(c)
-            out.append(if (idx >= 0) persian[idx] else c)
+            // A decimal point between two digits is the Persian decimal separator «٫».
+            val decimal = c == '.' && i > 0 && i < input.length - 1 && input[i - 1].isDigit() && input[i + 1].isDigit()
+            out.append(if (idx >= 0) persian[idx] else if (decimal) '٫' else c)
         }
         return out.toString()
     }

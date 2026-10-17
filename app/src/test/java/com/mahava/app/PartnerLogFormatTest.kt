@@ -25,7 +25,7 @@ class PartnerLogFormatTest {
 
     @Test fun sleepMinutesAloneBecomesHours() {
         val log = JsonParser.parseString("""{"sleepMinutes":390}""").asJsonObject
-        assertEquals("۶.۵ ساعت", PartnerLogFormat.lines(log).single().value)
+        assertEquals("۶٫۵ ساعت", PartnerLogFormat.lines(log).single().value)
     }
 }
 

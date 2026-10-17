@@ -624,7 +624,7 @@ private fun LockScreen(onUnlock: () -> Unit) {
         Illustration(R.drawable.ill_privacy_shield, Modifier.height(160.dp))
         Spacer(Modifier.height(16.dp))
         Text("ماه قفل است", style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center)
-        QuietInfo("برای دیدن اطلاعاتت، با اثر انگشت یا رمز گوشی قفل رو باز کن.")
+        QuietInfo("برای دیدن اطلاعاتت، با اثر انگشت یا رمز گوشی قفل را باز کن.")
         Spacer(Modifier.height(16.dp))
         PrimaryButton("باز کردن قفل", onClick = onUnlock)
     }
@@ -637,7 +637,7 @@ private fun ForceUpdateScreen(info: com.mahava.app.network.MahForceUpdateDto) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("به‌روزرسانی لازم است", style = MaterialTheme.typography.headlineLarge, color = MahavaTextPrimary, textAlign = TextAlign.Center)
             Spacer(Modifier.height(12.dp))
-            QuietInfo(info.messageFa.ifBlank { "نسخهٔ اپ قدیمی است. لطفاً آخرین نسخه را نصب کن." })
+            QuietInfo(info.messageFa.ifBlank { "نسخهٔ برنامه قدیمی است. لطفاً آخرین نسخه را نصب کن." })
             Spacer(Modifier.height(20.dp))
             if (info.updateDownloadUrl.isNotBlank()) {
                 PrimaryButton("دانلود آخرین نسخه") {

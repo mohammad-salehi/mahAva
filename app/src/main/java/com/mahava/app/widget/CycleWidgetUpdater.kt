@@ -133,18 +133,18 @@ object CycleWidgetUpdater {
 
     private fun shortPhaseFa(phase: CyclePhase, sub: CycleSubWindow): String = when (sub) {
         CycleSubWindow.MENSTRUATION_EARLY, CycleSubWindow.MENSTRUATION_LATE -> "پریود"
-        CycleSubWindow.FOLLICULAR_EARLY -> "فولیکولار"
+        CycleSubWindow.FOLLICULAR_EARLY -> "بعد از پریود"
         CycleSubWindow.FOLLICULAR_LATE -> "نزدیک تخمک‌گذاری"
         CycleSubWindow.PERI_OVULATORY -> "تخمک‌گذاری"
-        CycleSubWindow.LUTEAL_EARLY -> "لوتئال"
+        CycleSubWindow.LUTEAL_EARLY -> "نیمهٔ دوم"
         CycleSubWindow.LUTEAL_MID -> "نیمهٔ دوم"
         CycleSubWindow.LUTEAL_LATE_PREMENSTRUAL -> "پیش از پریود"
         CycleSubWindow.LATE_PERIOD -> "تأخیر پریود"
         CycleSubWindow.UNKNOWN -> when (phase) {
             CyclePhase.MENSTRUATION -> "پریود"
-            CyclePhase.FOLLICULAR -> "فولیکولار"
+            CyclePhase.FOLLICULAR -> "بعد از پریود"
             CyclePhase.OVULATION_WINDOW -> "تخمک‌گذاری"
-            CyclePhase.LUTEAL -> "لوتئال"
+            CyclePhase.LUTEAL -> "نیمهٔ دوم"
             CyclePhase.UNKNOWN -> "—"
         }
     }

@@ -146,7 +146,7 @@ fun AppOverlays(vm: AppViewModel, active: Boolean, onOpenPartner: () -> Unit) {
             title = { Text("درخواست اتصال همسر") },
             text = {
                 Column {
-                    Text("همسرت${if (phone.isNotBlank()) " ($phone)" else ""} می‌خواهد به تو وصل شود.")
+                    Text("همسرت${if (phone.isNotBlank()) " (${com.mahava.app.util.FaText.ltr(com.mahava.app.util.PersianDigits.toPersian(phone))})" else ""} می‌خواهد به تو وصل شود.")
                     Spacer(Modifier.height(6.dp))
                     Text(PARTNER_APPROVE_FA, style = MaterialTheme.typography.bodyMedium)
                     error?.let { Spacer(Modifier.height(6.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
