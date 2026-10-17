@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 open class MahavaApplication : Application() {
+    val toolsRepository by lazy { com.mahava.app.health.ToolsRepository(this) }
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onTerminate() {
@@ -92,10 +93,17 @@ open class MahavaApplication : Application() {
         reminderScheduler = ReminderScheduler(this)
         partnerRepository = com.mahava.app.partner.PartnerRepository(apiClient, authRepository, prefs, database, repository, clock)
         dataSync = com.mahava.app.sync.DataSyncRepository(this, database, prefs, apiClient, authRepository, clock)
+        // Debug "demo" package only (BuildConfig.MAH_DEMO); the release stub does nothing.
+        com.mahava.app.demo.DemoMode.onAppStart(this)
         createNotificationChannel()
         com.mahava.app.partner.PartnerSync.createChannel(this)
+        appScope.launch {
+            kotlinx.coroutines.flow.combine(repository.observePeriods(),repository.observeDailyLogs()) { a,b -> a.hashCode() to b.hashCode() }
+                .debounce(750).collectLatest { toolsRepository.regenerateInsights() }
+        }
         startPartnerSharing()
         startDataSync()
+        com.mahava.app.partner.MahPush.initialize(this)
         appScope.launch {
             repository.observeCycleResult().collectLatest {
                 CycleWidgetUpdater.requestUpdate(this@MahavaApplication)
@@ -161,9 +169,10 @@ open class MahavaApplication : Application() {
             }
             val healthTick = kotlinx.coroutines.flow.combine(
                 repository.observePregnancies(),
+                database.toolRecordDao().observeAll(),
                 repository.observeHealthAlerts()
-            ) { pregs, alerts ->
-                listOf(pregs.size, alerts.size, pregs.hashCode(), alerts.hashCode()).hashCode()
+            ) { pregs, tools, alerts ->
+                listOf(pregs.size, alerts.size, pregs.hashCode(), tools.hashCode(), alerts.hashCode()).hashCode()
             }
             kotlinx.coroutines.flow.combine(coreTick, healthTick) { a, b -> 31 * a + b }
                 .distinctUntilChanged()
@@ -185,6 +194,7 @@ open class MahavaApplication : Application() {
          * app update, so partner updates, notifications and the widget keep working with the app closed.
          */
         suspend fun scheduleBackgroundWork(app: MahavaApplication) {
+            if (BuildConfig.MAH_DEMO) return
             if (!app.authRepository.hasSessionTokens()) return
             val role = app.prefs.getAccountRole()
             if (role != "male") com.mahava.app.sync.DataSync.ensurePeriodic(app)

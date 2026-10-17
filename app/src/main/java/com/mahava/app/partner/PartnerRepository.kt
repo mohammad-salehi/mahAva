@@ -153,12 +153,13 @@ class PartnerRepository(
         return try {
             val s = auth.withToken { api.partnerGetShare(it) }
             val todayEpoch = clock.today().toEpochDay()
-            val enriched = PartnerCycleEnrich.enrich(s.snapshot, s.periods.orEmpty(), todayEpoch)
+            val enriched = s.snapshot
             val out = s.copy(snapshot = enriched)
-            if (out.snapshot != null || !out.periods.isNullOrEmpty()) {
+            run {
                 val slim = out.copy(
                     logs = out.logs?.take(30),
-                    periods = out.periods?.take(24)
+                    periods = out.periods?.take(24),
+                    tools = out.tools?.take(60)
                 )
                 prefs.setPartnerSnapshotJson(gson.toJson(slim))
             }

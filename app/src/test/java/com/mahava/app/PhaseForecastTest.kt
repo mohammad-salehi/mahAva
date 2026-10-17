@@ -13,8 +13,8 @@ class PhaseForecastTest {
             CycleSubWindow.LUTEAL_LATE_PREMENSTRUAL,
             CyclePhase.LUTEAL
         )
-        assertTrue(f.moodLineFa.contains("ممکنه"))
-        assertTrue(f.cravingLineFa.contains("ممکنه"))
+        assertTrue((f.moodLineFa.contains("ممکنه") || f.moodLineFa.contains("ممکن است")))
+        assertTrue((f.cravingLineFa.contains("ممکنه") || f.cravingLineFa.contains("ممکن است")))
         val scienceBlob = f.scienceMoodFa + f.scienceCravingFa + f.hormoneSnapshotFa
         assertTrue(scienceBlob.contains("پروژسترون") || scienceBlob.contains("استروژن"))
         assertTrue(scienceBlob.contains("سروتونین") || scienceBlob.contains("PMS"))

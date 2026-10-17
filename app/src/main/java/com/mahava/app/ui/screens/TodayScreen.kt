@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -67,6 +68,7 @@ fun TodayScreen(
     onPartner: () -> Unit = {},
     onNotifications: () -> Unit = {},
     onMore: () -> Unit = onDailyLog,
+    onTool: (String) -> Unit = {},
     onHealthAnalytics: () -> Unit = onTrends,
     onPregnancy: () -> Unit = {},
     onPregnancySetup: () -> Unit = {},
@@ -85,6 +87,8 @@ fun TodayScreen(
     val science = PhaseScienceBank.forContext(ctx.subWindow, cycle?.phase)
     val log = state.dailyLogs.find { it.epochDay == today.toEpochDay() }
     val symptoms = log?.physicalSymptoms?.split(',')?.filter { it.isNotBlank() }?.toSet().orEmpty()
+    val tools by vm.toolRecords.collectAsState()
+    LaunchedEffect(today) { runCatching { vm.tools.ensureRecommendation() } }
     val food = log?.foodCravings?.split(',')?.filter { it.isNotBlank() }?.toSet().orEmpty()
     Column(Modifier.fillMaxSize().background(MahavaBackground).verticalScroll(rememberScrollState()).testTag("today_screen")) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -136,19 +140,27 @@ fun TodayScreen(
                     Text("جزئیات و مبنای راهنما ‹", color = MahavaPrimaryDeep)
                 }
             }
+            tools.find { it.id == "recommendation_${today.toEpochDay()}" && it.deletedAt == null }?.let { record ->
+                val recommendation = com.google.gson.Gson().fromJson(record.payloadJson, com.mahava.app.health.DailyRecommendation::class.java)
+                MahavaCard(Modifier.clickable { onTool("tools/recommendation") }.testTag("today_recommendation"), containerColor = softTint(MahavaFertility)) {
+                    SectionLabel("توصیهٔ امروز")
+                    Text(recommendation.body)
+                    Text("چرا این توصیه؟ و توصیه‌های قبلی ‹", color = MahavaPrimaryDeep)
+                }
+            }
             MahavaCard(Modifier.testTag("quick_feelings")) {
                 SectionLabel("حالت امروز چطوره؟")
                 QuickFeelings(log, symptoms) { key ->
                     if (!premium) onAccount()
                     else vm.toggleTodayFeeling(key)
                 }
-                androidx.compose.material3.TextButton(onClick = onDailyLog) { Text("ثبت کامل علائم ‹", color = MahavaPrimaryDeep) }
             }
+            if (!pregnant) HomeToolCards(vm, onTool)
             if (!pregnant) {
                 MahavaCard(Modifier.testTag("phase_science_card").clickable(onClick = onScience)) {
                     Row(verticalAlignment = Alignment.Top) {
                         Column(Modifier.weight(1f)) {
-                            SectionLabel("بدنت امروز")
+                            SectionLabel("وضعیت امروزت")
                             Text(science.teaserFa, style = MaterialTheme.typography.titleMedium, color = MahavaPrimaryDeep)
                             Spacer(Modifier.height(6.dp))
                             Text(science.homePracticalFa.ifBlank { science.bodyFa.take(140) })
@@ -171,7 +183,6 @@ fun TodayScreen(
                             R.drawable.design_calm
                         ) { onCareDetail(vm.careToday().item.id) }
                     }
-                    CompanionAction("ثبت خواب و حالت", "هر چی ثبت کنی، شناختت از بدنت بهتر می‌شه.", R.drawable.design_bed, onDailyLog)
                 }
                 val tomorrowCtx = cycle?.let { com.mahava.app.cycle.CycleDayContextResolver.resolveOn(it, today.plusDays(1)) }
                 val forecast = remember(tomorrowCtx, state.dailyLogs) {
@@ -203,9 +214,6 @@ fun TodayScreen(
                         }
                     }
                 }
-            }
-            MahavaCard(Modifier.clickable(onClick = onAssistant), containerColor = MahavaPrimarySoft.copy(alpha = 0.5f)) {
-                CompanionAction("سؤالی داری؟", "اینجا جواب ساده بگیر", R.drawable.design_chat, onAssistant)
             }
             PrimaryButton("ثبت امروز", modifier = Modifier.testTag("today_log_button"), onClick = onDailyLog)
             Spacer(Modifier.height(16.dp))
@@ -243,5 +251,59 @@ fun CompanionAction(title: String, subtitle: String, icon: Int, onClick: () -> U
             QuietInfo(subtitle)
         }
         MahavaIcon(R.drawable.design_chevron_left, MahavaTextSecondary, 18.dp)
+    }
+}
+
+/** Four colourful home cards for the tools that read best as pictures. */
+@Composable
+private fun HomeToolCards(vm: AppViewModel, onTool: (String) -> Unit) {
+    val state by vm.state.collectAsState()
+    val records by vm.toolRecords.collectAsState()
+    val today = vm.today().toEpochDay()
+    val lengths = com.mahava.app.health.CycleStats.completeLengths(state.periods, today).takeLast(6)
+    val from = today - 13
+    val mood = com.mahava.app.health.CycleStats.daily(state.dailyLogs, from, today) { com.mahava.app.health.CycleStats.mood(it) }
+    val energy = com.mahava.app.health.CycleStats.daily(state.dailyLogs, from, today) { com.mahava.app.health.CycleStats.energy(it) }
+    val pain = com.mahava.app.health.CycleStats.daily(state.dailyLogs, from, today) { it.painScore?.toFloat() }
+    val insights = records.filter { it.type == "insight" && it.deletedAt == null }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.testTag("home_tool_cards")) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeCard("الگوی چرخه", if (lengths.isEmpty()) "با ثبت پریودها کامل می‌شود" else "میانگین ${PersianDigits.toPersian(Math.round(lengths.average()).toInt())} روز",
+                MahavaPrimary, R.drawable.design_cycle, Modifier.weight(1f).fillMaxHeight(), "home_card_cycle", { onTool("tools/cycle") }) {
+                BarChart(lengths.map { it.toFloat() }, MahavaPrimary, height = 56.dp, maxValue = (lengths.maxOrNull() ?: 30) + 3f)
+            }
+            HomeCard("حال و انرژی", "۱۴ روز اخیر", MahavaAccentGold, R.drawable.design_smile, Modifier.weight(1f).fillMaxHeight(), "home_card_mood", { onTool("tools/mood_energy") }) {
+                LineChart(listOf(mood to MahavaPrimary, energy to MahavaAccentGold), height = 56.dp, minValue = 1f, maxValue = 5f)
+            }
+        }
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val painDays = pain.count { (it ?: 0f) > 0f }
+            HomeCard("ردیاب درد", if (painDays == 0) "در ۱۴ روز اخیر دردی ثبت نشده" else "${PersianDigits.toPersian(painDays)} روز درد در ۱۴ روز",
+                MahavaMenstruation, R.drawable.design_pain, Modifier.weight(1f).fillMaxHeight(), "home_card_pain", { onTool("tools/pain") }) {
+                BarChart(pain, MahavaMenstruation, height = 56.dp, maxValue = 10f)
+            }
+            HomeCard("بینش‌های من", if (insights.isEmpty()) "با ثبت بیشتر پیدا می‌شوند" else "${PersianDigits.toPersian(insights.size)} الگوی تازه",
+                MahavaFertility, R.drawable.design_sun, Modifier.weight(1f).fillMaxHeight(), "home_card_insights", { onTool("tools/insights") }) {
+                val first = insights.firstOrNull()?.let { runCatching { com.google.gson.Gson().fromJson(it.payloadJson, com.mahava.app.health.StoredInsight::class.java).title }.getOrNull() }
+                Text(first ?: "هر چه بیشتر ثبت کنی، الگوهای خودت را بهتر می‌بینی.", style = MaterialTheme.typography.bodySmall, maxLines = 3)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeCard(title: String, subtitle: String, color: androidx.compose.ui.graphics.Color, icon: Int, modifier: Modifier, tag: String,
+                     onClick: () -> Unit, content: @Composable () -> Unit) {
+    Column(modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(22.dp)).background(softTint(color)).clickable(onClick = onClick).padding(14.dp).testTag(tag),
+        verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(32.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).background(color), contentAlignment = Alignment.Center) {
+                MahavaIcon(icon, androidx.compose.ui.graphics.Color.White, 18.dp)
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        }
+        content()
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

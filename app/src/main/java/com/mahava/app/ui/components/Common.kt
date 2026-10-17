@@ -31,7 +31,7 @@ import com.mahava.app.ui.theme.*
 fun MahavaCard(
     modifier: Modifier = Modifier,
     accent: Color = MahavaPrimary,
-    containerColor: Color = MahavaSurface,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     content: @Composable ColumnScope.() -> Unit
 ) {
     // Flat fill only — Material Surface elevation/outline looked like a thick border on device.
@@ -101,7 +101,7 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)? = null, onSettings: (() ->
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                MahavaIcon(com.mahava.app.R.drawable.ic_chevron_right, MahavaTextPrimary)
+                MahavaIcon(com.mahava.app.R.drawable.ic_chevron_right, MaterialTheme.colorScheme.onSurface)
             }
         }
         Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.Start)
@@ -144,7 +144,7 @@ fun SectionLabel(text: String) {
 
 @Composable
 fun QuietInfo(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = MahavaTextSecondary)
+    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** Bullet list; accepts either a list or a text with "• " lines. */

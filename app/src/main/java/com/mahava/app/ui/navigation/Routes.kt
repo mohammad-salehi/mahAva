@@ -2,6 +2,8 @@ package com.mahava.app.ui.navigation
 
 object Routes {
     const val ONBOARDING = "onboarding"
+    const val TOOLS = "tools"
+    const val TOOL_DETAIL = "tools/{tool}"
     const val TODAY = "today"
     const val CALENDAR = "calendar"
     const val LOG_HUB = "log_hub"
@@ -61,5 +63,5 @@ object Routes {
     val authOnly = setOf(LOGIN, REGISTER, PASSWORD_RECOVERY, PRIVACY, TERMS)
 
     /** Cycle-owner screens a male (partner) account should not land on. */
-    val womanMain = setOf(TODAY, CALENDAR, LOG_HUB, REPORTS, BODY)
+    val womanMain = setOf(TODAY, CALENDAR, LOG_HUB, REPORTS, BODY, TOOLS)
 }

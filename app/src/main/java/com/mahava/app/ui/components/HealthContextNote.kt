@@ -21,6 +21,6 @@ fun HealthContextNote(note: HealthNote) {
         text = note.textFa,
         modifier = Modifier.padding(top = 8.dp),
         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 20.sp),
-        color = MahavaTextSecondary
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }

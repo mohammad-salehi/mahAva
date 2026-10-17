@@ -66,20 +66,18 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
     val existing = remember(day) { vm.logFor(day) }
     var bleeding by remember { mutableStateOf(existing?.bleeding) }
     var mood by remember { mutableStateOf(existing?.moods?.split(',')?.firstOrNull { it.isNotBlank() }) }
-    var energy by remember { mutableStateOf(existing?.energy) }
+    val initialMood = existing?.moods?.split(',')?.firstOrNull { it.isNotBlank() }
+    var feeling by remember { mutableStateOf(existing?.overallFeeling) }
+    var energyScore by remember { mutableStateOf(existing?.let { com.mahava.app.health.CycleStats.energy(it)?.toInt()?.toString() }) }
+    var appetite by remember { mutableStateOf(existing?.appetite) }
     var symptoms by remember { mutableStateOf(existing?.physicalSymptoms?.split(',')?.filter { it.isNotBlank() }?.toSet() ?: emptySet()) }
     var noSymptoms by remember { mutableStateOf(existing?.noSymptoms == true) }
     var pain by remember { mutableIntStateOf(existing?.painScore ?: -1) }
     var note by remember { mutableStateOf(existing?.note ?: "") }
     var discharge by remember { mutableStateOf(existing?.discharge) }
     var sleep by remember { mutableStateOf(existing?.sleepQuality) }
-    var sleepMinutes by remember {
-        mutableIntStateOf(
-            existing?.sleepMinutes
-                ?: existing?.sleepHours?.let { (it * 60).toInt() }
-                ?: -1
-        )
-    }
+    // Sleep is chosen in hours (0–14, half-hour steps) and stored as minutes + hours.
+    var sleepHours by remember { mutableStateOf(existing?.let { com.mahava.app.health.CycleStats.sleepHours(it) }?.let { Math.round(it * 2f) / 2f }) }
     var waterMl by remember { mutableIntStateOf(existing?.waterIntakeMl ?: -1) }
     var cravings by remember {
         mutableStateOf(existing?.foodCravings?.split(',')?.filter { it.isNotBlank() }?.toSet() ?: emptySet())
@@ -116,6 +114,8 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
         }
         Spacer(Modifier.height(12.dp))
         MahavaCard {
+        SectionLabel("امروز در کل چطوری؟")
+        ChipsFlow(com.mahava.app.health.LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
         SectionLabel("حالت چطور است؟")
         MoodIconRow(
             listOf(
@@ -128,8 +128,10 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
             mood
         ) { mood = if (mood == it) null else it }
 
-        SectionLabel("سطح انرژی")
-        ChipsFlow(listOf("low" to "کم", "medium" to "متوسط", "high" to "زیاد"), energy, "energy") { energy = if (energy == it) null else it }
+        SectionLabel("انرژی از ۱ تا ۵")
+        ChipsFlow((1..5).map { it.toString() to PersianDigits.toPersian(it) }, energyScore, "energy") { energyScore = if (energyScore == it) null else it }
+        SectionLabel("اشتها")
+        ChipsFlow(listOf("low" to "کم", "normal" to "معمولی", "high" to "زیاد"), appetite, "appetite") { appetite = if (appetite == it) null else it }
 
         }
         Spacer(Modifier.height(12.dp))
@@ -163,18 +165,8 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
         MahavaCard {
         SectionLabel("خواب دیشب (اختیاری)")
         ChipsFlow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), sleep, "sleep") { sleep = if (sleep == it) null else it }
-        SectionLabel("مدت خواب (دقیقه — اختیاری؛ خالی = ثبت‌نشده)")
-        Slider(
-            value = if (sleepMinutes < 0) 0f else sleepMinutes.toFloat().coerceIn(0f, 720f),
-            onValueChange = { sleepMinutes = it.toInt() },
-            valueRange = 0f..720f,
-            steps = 23,
-            modifier = Modifier.testTag("sleep_minutes_slider")
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(if (sleepMinutes < 0) "ثبت نشده" else "${PersianDigits.toPersian(sleepMinutes)} دقیقه", Modifier.weight(1f))
-            if (sleepMinutes >= 0) TextButton(onClick = { sleepMinutes = -1 }) { Text("پاک کردن") }
-        }
+        SectionLabel("چند ساعت خوابیدی؟ (اختیاری)")
+        SleepHoursPicker(sleepHours) { sleepHours = it }
         }
         Spacer(Modifier.height(12.dp))
         SectionLabel("آب امروز (میلی‌لیتر — اختیاری؛ خالی = ثبت‌نشده، نه صفر)")
@@ -219,11 +211,15 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
                     noSymptoms = noSymptoms,
                     painScore = pain.takeIf { it >= 0 },
                     physicalSymptoms = symptoms.joinToString(",").ifBlank { null },
-                    moods = mood,
-                    energy = energy,
+                    // Keep the extra moods the mood tool saved unless the main mood changed.
+                    moods = if (mood == initialMood) existing?.moods else mood,
+                    overallFeeling = feeling,
+                    energyScore = energyScore?.toIntOrNull(),
+                    energy = energyScore?.toIntOrNull()?.let { if (it <= 2) "low" else if (it == 3) "medium" else "high" },
+                    appetite = appetite,
                     sleepQuality = sleep,
-                    sleepMinutes = sleepMinutes.takeIf { it >= 0 },
-                    sleepHours = sleepMinutes.takeIf { it >= 0 }?.let { it / 60f },
+                    sleepMinutes = sleepHours?.let { Math.round(it * 60) },
+                    sleepHours = sleepHours,
                     waterIntakeMl = waterMl.takeIf { it >= 0 },
                     discharge = discharge,
                     foodCravings = cravings.joinToString(",").ifBlank { null },

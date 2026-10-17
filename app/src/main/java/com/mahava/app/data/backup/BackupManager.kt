@@ -19,6 +19,9 @@ data class BackupPayload(
     @SerializedName("profile") val profile: UserProfileEntity?,
     @SerializedName("periods") val periods: List<PeriodEventEntity>,
     @SerializedName("dailyLogs") val dailyLogs: List<DailyLogEntity>,
+    @SerializedName("tools") val tools: List<com.mahava.app.data.db.ToolRecord>? = null,
+    @SerializedName("pregnancies") val pregnancies: List<com.mahava.app.data.db.PregnancyEntity>? = null,
+    @SerializedName("alerts") val alerts: List<com.mahava.app.data.db.HealthAlertEntity>? = null,
     @SerializedName("reminders") val reminders: List<ReminderPrefEntity>
 )
 
@@ -38,7 +41,8 @@ class BackupManager(
             profile = db.profileDao().get(),
             periods = db.periodDao().getAll(),
             dailyLogs = db.dailyLogDao().getAll(),
-            reminders = db.reminderDao().getAll()
+            reminders = db.reminderDao().getAll(), tools = db.toolRecordDao().getAll(),
+            pregnancies = db.pregnancyDao().getAll(), alerts = db.healthAlertDao().getAll()
         )
         val json = gson.toJson(payload).toByteArray(Charsets.UTF_8)
         crypto.encryptBackup(password, json)
@@ -68,6 +72,12 @@ class BackupManager(
                 db.periodDao().clear()
                 db.dailyLogDao().clear()
                 db.reminderDao().clear()
+                db.toolRecordDao().clear()
+                db.pregnancyDao().clear()
+                db.healthAlertDao().clear()
+                payload.tools.orEmpty().forEach { db.toolRecordDao().upsert(it) }
+                payload.pregnancies.orEmpty().forEach { db.pregnancyDao().upsert(it) }
+                payload.alerts.orEmpty().forEach { db.healthAlertDao().upsert(it) }
                 payload.profile?.let { db.profileDao().upsert(it.copy(id = 1)) }
                 payload.periods.forEach { db.periodDao().upsert(it.copy(id = 0)) }
                 payload.dailyLogs.forEach { db.dailyLogDao().upsert(it.copy(id = 0)) }

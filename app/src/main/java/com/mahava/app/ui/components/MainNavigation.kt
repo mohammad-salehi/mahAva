@@ -16,10 +16,10 @@ fun MainNavigation(current: String?, onNavigate: (String) -> Unit) {
             Triple(Routes.CALENDAR,"تقویم",R.drawable.design_calendar),
             Triple(Routes.LOG_HUB,"ثبت",R.drawable.design_plus),
             Triple(Routes.REPORTS,"گزارش‌ها",R.drawable.design_chart),
-            Triple(Routes.BODY,"شناخت بدن",R.drawable.design_book)).forEach { (route,label,icon) ->
+            Triple(Routes.TOOLS,"ابزارها",R.drawable.design_clipboard)).forEach { (route,label,icon) ->
             val selected = current == route || when(route) {
                 Routes.LOG_HUB -> current?.startsWith("daily_log") == true || current in listOf(Routes.PERIOD_LOG,Routes.LATE)
-                Routes.BODY -> current?.startsWith("body_") == true || current?.startsWith("health_insight") == true
+                Routes.TOOLS -> current?.startsWith("tools/") == true || current == Routes.BODY || current?.startsWith("body_") == true || current?.startsWith("health_insight") == true || current in listOf(Routes.PREGNANCY, Routes.PREGNANCY_SETUP)
                 Routes.REPORTS -> current in listOf(Routes.HEALTH_ANALYTICS,Routes.DOCTOR_PDF,Routes.CYCLE_TRENDS,Routes.SYMPTOM_PATTERNS)
                 else -> false
             }

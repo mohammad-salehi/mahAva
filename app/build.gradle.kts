@@ -7,6 +7,17 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Optional public Firebase client config; no Analytics SDK and no health payload in FCM.
+val mahApplicationId = "com.mah.app"
+val mahGoogleFile = rootProject.file("app/google-services.json")
+val mahFirebase = if (mahGoogleFile.exists()) groovy.json.JsonSlurper().parse(mahGoogleFile) as Map<*, *> else emptyMap<Any, Any>()
+val mahProject = mahFirebase["project_info"] as? Map<*, *> ?: emptyMap<Any, Any>()
+val mahClients = mahFirebase["client"] as? List<*> ?: emptyList<Any>()
+val mahClient = mahClients.mapNotNull { it as? Map<*, *> }.find {
+    ((it["client_info"] as? Map<*, *>)?.get("android_client_info") as? Map<*, *>)?.get("package_name") == mahApplicationId
+} ?: emptyMap<Any, Any>()
+fun mahLiteral(value: Any?): String = "\"" + value?.toString().orEmpty().replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
@@ -19,14 +30,20 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.mah.app"
+        applicationId = mahApplicationId
+        buildConfigField("String", "MAH_FCM_APP_ID", mahLiteral((mahClient["client_info"] as? Map<*, *>)?.get("mobilesdk_app_id")))
+        buildConfigField("String", "MAH_FCM_PROJECT_ID", mahLiteral(mahProject["project_id"]))
+        buildConfigField("String", "MAH_FCM_SENDER_ID", mahLiteral(mahProject["project_number"]))
+        buildConfigField("String", "MAH_FCM_API_KEY", mahLiteral(((mahClient["api_key"] as? List<*>)?.firstOrNull() as? Map<*, *>)?.get("current_key")))
         minSdk = 24
         targetSdk = 35
-        versionCode = 121
-        versionName = "1.2.1"
+        versionCode = 122
+        versionName = "1.3.0"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
+        // Only an uncommitted local init script turns this on (debug ".demo" package).
+        buildConfigField("boolean", "MAH_DEMO", "false")
         // Cafe Bazaar IAB (Poolakey). SKU must match the product id in Bazaar developer panel.
         buildConfigField(
             "String",
@@ -104,6 +121,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.firebase:firebase-messaging:25.0.1")
     val composeBom = platform("androidx.compose:compose-bom:2024.09.02")
     implementation(composeBom)
     androidTestImplementation(composeBom)

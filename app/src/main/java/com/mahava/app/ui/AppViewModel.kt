@@ -72,6 +72,8 @@ class AppViewModel(
     private val prefs: UserPreferences = app.prefs
 ) : ViewModel() {
 
+    val tools = app.toolsRepository
+    val toolRecords = tools.records.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     private val _message = MutableStateFlow<String?>(null)
     private val _locked = MutableStateFlow(false)
 
@@ -310,6 +312,7 @@ class AppViewModel(
 
     /** Called from Activity.onStart: lock again when the app was away longer than the chosen timeout. */
     fun onAppForegrounded() {
+        com.mahava.app.partner.MahPush.schedule(app)
         repo.refreshCalendarDay()
         val p = state.value.profile
         val since = backgroundedAt
@@ -613,7 +616,8 @@ class AppViewModel(
                 kotlinx.coroutines.withTimeoutOrNull(15_000) { app.dataSync.sync() }
                 authRepository.withToken { app.apiClient.dataWipe(it) }
             } catch (_: Throwable) {
-                // Still clear the phone; retries may apply if wipe failed.
+                _message.value = "حذف از سرور انجام نشد؛ اطلاعات حفظ شد. با اتصال اینترنت دوباره تلاش کن."
+                return@launch
             }
         }
         app.dataSync.clearLocalCache()
@@ -787,11 +791,10 @@ class AppViewModel(
      */
     suspend fun logoutAccount(force: Boolean = true): String? {
         if (prefs.getAccountRole() != "male") {
-            try {
-                kotlinx.coroutines.withTimeoutOrNull(12_000) { app.dataSync.sync() }
-            } catch (_: Throwable) { }
-            // Best-effort: never block exit if a push is still pending.
-            try { app.dataSync.clearPendingForLogout() } catch (_: Throwable) { }
+            val outcome = try { kotlinx.coroutines.withTimeoutOrNull(12_000) { app.dataSync.sync() } } catch (_: Exception) { null }
+            if (outcome !is com.mahava.app.sync.SyncOutcome.Ok && app.dataSync.pendingCount() > 0) {
+                return "تغییرهای ذخیره‌نشده در سرور داری؛ برای حفظ اطلاعات، پیش از خروج به اینترنت وصل شو و همگام‌سازی را کامل کن."
+            }
         }
         com.mahava.app.partner.PartnerSync.cancel(app)
         com.mahava.app.sync.DataSync.cancel(app)

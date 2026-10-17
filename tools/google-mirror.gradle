@@ -1,0 +1,10 @@
+// Optional local workaround when Google's Android Maven endpoint is blocked.
+// Normal builds keep using the official repositories from settings.gradle.kts.
+settingsEvaluated { settings ->
+    def repos = settings.dependencyResolutionManagement.repositories
+    def mirror = repos.maven { name = 'MahLocalGoogleMirror'; url = uri('https://maven.aliyun.com/repository/google') }
+    repos.exclusiveContent {
+        forRepositories(mirror)
+        filter { includeGroupByRegex('com\\.google\\.(firebase|android).*') }
+    }
+}

@@ -139,8 +139,8 @@ object PartnerSync {
                 // surfaces them when the user opens / retries.
                 val share = try { partner.fetchShare() } catch (_: Throwable) { null }
                 if (updates.isNotEmpty()) {
-                    val changes = updates.flatMap { it.changes.orEmpty() }.toSet()
-                    val line = PartnerAdvice.changeLineFa(changes, share?.snapshot)
+                    val changes = updates.flatMap { it.changes.orEmpty() }.toList()
+                    val line = share?.snapshot?.let { PartnerAdvice.changeLineFa(changes, it) } ?: "همسرت چیز تازه‌ای ثبت کرد."
                     val day = app.clock.today().toEpochDay()
                     AppNotices.add(app, "update", "وضعیت تازهٔ همسرت", line, id = "upd-$day")
                     if (system) notify(app, 2, "وضعیت تازهٔ همسرت", line)
@@ -173,6 +173,7 @@ class PartnerSyncWorker(appContext: Context, params: WorkerParameters) : Corouti
             return Result.success()
         }
         return try {
+            MahPush.register(app)
             val poll = app.partnerRepository.pollChanges()
             PartnerSync.process(app, poll)
             if (poll.status.pair == null && !PartnerSync.isAwaiting(app)) PartnerSync.cancel(app)

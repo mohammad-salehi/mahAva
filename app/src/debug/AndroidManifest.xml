@@ -11,6 +11,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="mahava" android:host="qa" />
             </intent-filter>
+            <!-- Debug-only demo controls; they do something only in the local ".demo" build -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="mahava" android:host="demo" />
+            </intent-filter>
             <!-- Debug-only navigation shortcuts (no data changes) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

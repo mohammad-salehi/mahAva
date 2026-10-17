@@ -13,10 +13,13 @@ import com.mahava.app.ui.components.*
 import com.mahava.app.ui.theme.*
 import com.mahava.app.util.JalaliDate
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 @Composable
 fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () -> Unit, onDaily: () -> Unit, onInsight: (String) -> Unit) {
     val state by vm.state.collectAsState()
+    val tools by vm.toolRecords.collectAsState()
+    val scope = rememberCoroutineScope()
     val health = state.health
     val p = health?.pregnancyProgress
     MahavaCard(containerColor = MahavaMenstruationSoft) {
@@ -54,6 +57,22 @@ fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () ->
     }
     MahavaCard {
         SectionLabel("کارهای مهم این هفته")
+        val checklistId="pregnancy_checklist_${p.estimatedDueDate.replace("-", "")}_$week"
+        val record=tools.find {it.id==checklistId && it.deletedAt==null}
+        val fields=record?.let { com.google.gson.JsonParser.parseString(it.payloadJson).asJsonObject } ?: com.google.gson.JsonObject()
+        listOf("care" to "برنامهٔ مراقبت این هفته را مرور کردم", "questions" to "سؤال‌هایم برای پزشک یا ماما را یادداشت کردم").forEach { (key,label) ->
+            Row(verticalAlignment=Alignment.CenterVertically) {
+                Checkbox(fields.get(key)?.asBoolean==true,{checked -> scope.launch {
+                    fields.addProperty(key,checked)
+                    vm.tools.save(checklistId,"pregnancy_checklist",fields,vm.today().toEpochDay())
+                }})
+                Text(label,modifier=Modifier.weight(1f))
+            }
+        }
+        tools.filter {it.type=="appointments" && it.deletedAt==null && (it.epochDay ?: 0)>=vm.today().toEpochDay()}.take(3).forEach { item ->
+            val appointment=com.google.gson.JsonParser.parseString(item.payloadJson).asJsonObject
+            QuietInfo("مراجعهٔ ثبت‌شده: ${appointment.get("text").asString} — ${appointment.get("date").asString}")
+        }
         CompanionAction("مرور برنامهٔ مراقبت‌ها", "زمان مراجعه‌ها را با پزشک یا ماما هماهنگ کن.", R.drawable.design_calendar, onPregnancy)
         CompanionAction("ثبت حال و علائم امروز", "علائم مهم را در زمان مناسب پیگیری کن.", R.drawable.design_notes, onDaily)
         HealthContextNote(HealthNote.GENERAL)

@@ -29,20 +29,42 @@ class ReminderScheduler(private val context: Context) {
     companion object {
         const val CHANNEL_ID = "mahava_reminders"
         const val WORK_NAME = "mahava_daily_reminder_tick"
+        const val MORNING_WORK = "mahava_recommendation_0800"
+        /** The daily recommendation always goes out at 08:00 local time; there is no setting. */
+        const val RECOMMENDATION_HOUR = 8
+
+        /** Milliseconds from [now] to the next 08:00 (tomorrow when it is already 08:00 or later). */
+        fun delayUntilNextMorning(now: java.time.ZonedDateTime): Long {
+            var next = now.toLocalDate().atTime(RECOMMENDATION_HOUR, 0).atZone(now.zone)
+            if (!next.isAfter(now)) next = now.toLocalDate().plusDays(1).atTime(RECOMMENDATION_HOUR, 0).atZone(now.zone)
+            return java.time.Duration.between(now, next).toMillis()
+        }
+    }
+
+    /** One exact-ish job at the next 08:00; re-planned after every run, on boot and on clock changes. */
+    fun scheduleMorning(policy: androidx.work.ExistingWorkPolicy = androidx.work.ExistingWorkPolicy.REPLACE) {
+        val delay = delayUntilNextMorning(java.time.ZonedDateTime.now())
+        val req = androidx.work.OneTimeWorkRequestBuilder<ReminderWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .addTag(MORNING_WORK)
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(MORNING_WORK, policy, req)
     }
 
     fun ensurePeriodic() {
         // Check a few times a day so the morning tip / daily recommendation fires reliably.
-        val req = PeriodicWorkRequestBuilder<ReminderWorker>(6, TimeUnit.HOURS).build()
+        val req = PeriodicWorkRequestBuilder<ReminderWorker>(15, TimeUnit.MINUTES).build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,
             req
         )
+        scheduleMorning()
     }
 
     fun cancelAll() {
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        WorkManager.getInstance(context).cancelUniqueWork(MORNING_WORK)
         NotificationManagerCompat.from(context).cancelAll()
     }
 
@@ -57,6 +79,8 @@ class ReminderScheduler(private val context: Context) {
 class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext as MahavaApplication
+        // The 08:00 job plans tomorrow's run first (appended, so it doesn't cancel this run).
+        if (tags.contains(ReminderScheduler.MORNING_WORK)) runCatching { app.reminderScheduler.scheduleMorning(androidx.work.ExistingWorkPolicy.APPEND_OR_REPLACE) }
         if (!app.reminderScheduler.canPostNotifications()) return Result.success()
         val profile = app.database.profileDao().get() ?: return Result.success()
         if (!profile.onboardingDone) return Result.success()
@@ -74,22 +98,31 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         fun titleOf(full: String): String =
             if (private) applicationContext.getString(R.string.app_name) else full
 
-        // Morning tip: every day around 8 for women, based on today's phase.
-        run {
-            val already = sp.getLong("morning_tip_day", -1L) == today.toEpochDay()
-            if (!already && nowHour >= 8) {
-                val periods = app.database.periodDao().getAll()
-                val cycle = app.repository.computeCycle(profile, periods)
-                val tip = com.mahava.app.content.MorningTip.forCycle(cycle, today)
-                pending += Triple(1005, titleOf(tip.title), tip.body)
-                sp.edit().putLong("morning_tip_day", today.toEpochDay()).apply()
+        val tools = app.toolsRepository
+        val localTime = java.time.Instant.ofEpochMilli(app.clock.nowMillis()).atZone(app.clock.zoneId()).toLocalTime()
+        // Fixed 08:00; the 15-minute tick only catches up if the phone was off at 8.
+        if (localTime.hour >= ReminderScheduler.RECOMMENDATION_HOUR) {
+            val item = tools.ensureRecommendation()
+            val recommendation = com.google.gson.Gson().fromJson(item.payloadJson,com.mahava.app.health.DailyRecommendation::class.java)
+            if (!recommendation.shown) {
+                val message=if(private) "توصیهٔ امروز در ماه آماده است." else recommendation.body
+                val intent=Intent(Intent.ACTION_VIEW,android.net.Uri.parse("mahava://screen/recommendation"),applicationContext,MainActivity::class.java)
+                val pi=PendingIntent.getActivity(applicationContext,1005,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                val note=NotificationCompat.Builder(applicationContext,ReminderScheduler.CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_bell).setContentTitle(if(private) "ماه" else "توصیه امروز")
+                    .setContentText(message).setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setContentIntent(pi).setAutoCancel(true).build()
+                try {
+                    NotificationManagerCompat.from(applicationContext).notify(1005,note)
+                    tools.save(item.id,item.type,recommendation.copy(shown=true),item.epochDay)
+                } catch (_: SecurityException) { }
             }
         }
 
         reminders["daily_log"]?.let { pref ->
             val already = sp.getLong("daily_notified_day", -1L) == today.toEpochDay()
             val logged = app.database.dailyLogDao().getByDay(today.toEpochDay()) != null
-            if (!already && !logged && nowHour >= pref.hour) {
+            if (!already && !logged && localTime.hour*60+localTime.minute >= pref.hour*60+pref.minute) {
                 pending += Triple(
                     1001,
                     titleOf("ثبت حال امروز"),
@@ -103,7 +136,7 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             val result = app.repository.computeCycle(profile, periods)
             val est = result.prediction as? com.mahava.app.cycle.PredictionKind.Estimate
             val days = result.daysUntilCentralPeriod
-            if (est != null && days != null && days in 0..2 && !result.periodOngoing) {
+            if (est != null && days != null && days in 0..2 && !result.periodOngoing && localTime.hour*60+localTime.minute>=it.hour*60+it.minute) {
                 val key = est.nextPeriodStartCentral.toEpochDay()
                 if (sp.getLong("period_notified_central", -1L) != key) {
                     pending += Triple(
@@ -117,7 +150,7 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         }
         reminders["water"]?.let { pref ->
             val already = sp.getLong("water_notified_day", -1L) == today.toEpochDay()
-            if (!already && nowHour >= pref.hour) {
+            if (!already && localTime.hour*60+localTime.minute >= pref.hour*60+pref.minute) {
                 pending += Triple(
                     1003,
                     titleOf("یادآوری آب"),
@@ -128,14 +161,20 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         }
         reminders["sleep"]?.let { pref ->
             val already = sp.getLong("sleep_notified_day", -1L) == today.toEpochDay()
-            val hour = if (pref.hour == 9) 21 else pref.hour
-            if (!already && nowHour >= hour) {
+            val hour = pref.hour
+            if (!already && localTime.hour*60+localTime.minute >= hour*60+pref.minute) {
                 pending += Triple(
                     1004,
                     titleOf("وقت استراحت"),
                     applicationContext.getString(R.string.notification_sleep_text)
                 )
                 sp.edit().putLong("sleep_notified_day", today.toEpochDay()).apply()
+            }
+        }
+        reminders["medication"]?.let { pref ->
+            if (sp.getLong("medication_day",-1)!=today.toEpochDay() && localTime.hour*60+localTime.minute>=pref.hour*60+pref.minute) {
+                pending += Triple(1006,titleOf("یادآوری داروی ثبت‌شده"),pref.medicationLabel ?: "یادآوری دارویی که خودت ثبت کرده‌ای؛ مطابق دستور پزشکت عمل کن.")
+                sp.edit().putLong("medication_day",today.toEpochDay()).apply()
             }
         }
         if (pending.isEmpty()) return Result.success()
@@ -148,8 +187,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             val notif = NotificationCompat.Builder(applicationContext, ReminderScheduler.CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_bell)
                 .setContentTitle(title)
-                .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setContentText(if(private) "یک یادآوری در ماه داری." else text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(if(private) "یک یادآوری در ماه داری." else text))
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setContentIntent(pi)
                 .setAutoCancel(true)

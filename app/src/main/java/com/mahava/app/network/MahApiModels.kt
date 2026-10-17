@@ -153,7 +153,19 @@ data class PartnerSnapshotDto(
     val isLate: Boolean = false,
     val daysLate: Int? = null,
     val generalOnly: Boolean = false,
+    val wellbeing: String? = null,
+    val energy: String? = null,
+    val needsSupport: Boolean? = null,
+    val pregnancyWeek: Int? = null,
+    val supportText: String? = null,
     val today: PartnerTodayDto? = null
+)
+
+data class PartnerToolDto(
+    val key: String = "",
+    val type: String = "",
+    val epochDay: Long? = null,
+    val payloadJson: String = "{}"
 )
 
 data class PartnerShareDto(
@@ -163,7 +175,11 @@ data class PartnerShareDto(
     val logs: List<com.google.gson.JsonObject>? = null,
     /** Her periods, newest first. */
     val periods: List<com.google.gson.JsonObject>? = null,
+    /** Her tool entries (doctor questions, appointments, pregnancy checklist…). */
+    val tools: List<PartnerToolDto>? = null,
     val updatedAt: String? = null,
+    /** Legacy field; everything is shared with the paired husband. */
+    val permissions: Map<String,Boolean>? = null,
     val version: Int = 0
 )
 

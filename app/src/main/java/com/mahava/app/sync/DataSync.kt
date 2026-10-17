@@ -50,7 +50,7 @@ class DataSyncWorker(appContext: Context, params: WorkerParameters) : CoroutineW
     override suspend fun doWork(): Result {
         val app = applicationContext as? MahavaApplication ?: return Result.success()
         return when (app.dataSync.sync()) {
-            is SyncOutcome.Failed -> if (runAttemptCount < 8) Result.retry() else Result.success()
+            is SyncOutcome.Failed -> Result.retry()
             else -> Result.success()
         }
     }

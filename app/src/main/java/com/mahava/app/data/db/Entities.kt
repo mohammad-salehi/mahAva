@@ -93,6 +93,13 @@ data class DailyLogEntity(
      * Codes without severity still appear in physicalSymptoms.
      */
     val physicalSymptomSeverities: String? = null,
+    val overallFeeling: String? = null,
+    val energyScore: Int? = null,
+    val appetite: String? = null,
+    val painType: String? = null,
+    val painDurationMinutes: Int? = null,
+    val painAction: String? = null,
+    val painResult: String? = null,
     val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long
@@ -152,7 +159,8 @@ data class ReminderPrefEntity(
     val enabled: Boolean = false,
     val hour: Int = 9,
     val minute: Int = 0,
-    val medicationLabel: String? = null
+    val medicationLabel: String? = null,
+    @androidx.room.ColumnInfo(defaultValue = "0") val updatedAt: Long = 0
 )
 
 @Entity(tableName = "secure_kv")

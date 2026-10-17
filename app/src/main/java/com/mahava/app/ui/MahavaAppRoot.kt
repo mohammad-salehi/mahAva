@@ -170,6 +170,7 @@ fun MahavaAppRoot(
         }
     }
 
+    val demoApp = androidx.compose.ui.platform.LocalContext.current.applicationContext as com.mahava.app.MahavaApplication
     LaunchedEffect(deepLink, state.ready, loggedIn, onboardingDone) {
         if (!BuildConfig.DEBUG || !state.ready || deepLink == null) return@LaunchedEffect
         val host = deepLink.host ?: return@LaunchedEffect
@@ -181,8 +182,17 @@ fun MahavaAppRoot(
             nav.navigate(Routes.TODAY) { popUpTo(0) { inclusive = true } }
             return@LaunchedEffect
         }
+        if (host == "demo") {
+            if (com.mahava.app.demo.DemoMode.handle(demoApp, path)) {
+                kotlinx.coroutines.delay(400)
+                if (path == "husband") nav.navigate(Routes.PARTNER_HOME) { popUpTo(0) { inclusive = true } }
+                else nav.navigate(Routes.TODAY) { popUpTo(0) { inclusive = true } }
+            }
+            return@LaunchedEffect
+        }
         if (host == "screen" && setupDone && loggedIn) {
             val route = when (path) {
+                "recommendation" -> "tools/recommendation"
                 "today" -> Routes.TODAY
                 "calendar" -> Routes.CALENDAR
                 "log" -> Routes.LOG_HUB
@@ -190,6 +200,7 @@ fun MahavaAppRoot(
                 "period" -> Routes.PERIOD_LOG
                 "reports" -> Routes.REPORTS
                 "body" -> Routes.BODY
+                "tools" -> deepLink.getQueryParameter("id")?.let { "tools/$it" } ?: Routes.TOOLS
                 "late" -> Routes.LATE
                 "care" -> Routes.CARE
                 "settings" -> Routes.SETTINGS
@@ -224,7 +235,7 @@ fun MahavaAppRoot(
                 com.mahava.app.ui.components.MainNavigation(route) { target ->
                     // Leave overlay screens (settings, tickets, …) so bottom tabs always work.
                     val mainTabs = setOf(
-                        Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.BODY
+                        Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.TOOLS
                     )
                     var guard = 0
                     while (guard++ < 12) {
@@ -265,6 +276,12 @@ fun MahavaAppRoot(
                     }
                 }
             }
+            composable(Routes.TOOLS) {
+                ToolsTheme { ToolsHomeScreen(null) { nav.navigate(it) } }
+            }
+            composable(Routes.TOOL_DETAIL) { entry ->
+                ToolsTheme { ToolsDetailScreen(vm, entry.arguments?.getString("tool") ?: "checkin", {nav.popBackStack()}) { nav.navigate(it) } }
+            }
             composable(Routes.TODAY) {
                 TodayScreen(
                     vm,
@@ -291,7 +308,8 @@ fun MahavaAppRoot(
                     onSignal = { kind, key -> nav.navigate(Routes.signalDetail(kind, key)) },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
                     onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                    onMore = { nav.navigate(Routes.LOG_HUB) },
+                    onMore = { nav.navigate(Routes.TOOLS) },
+                    onTool = { nav.navigate(it) },
                     onHealthAnalytics = { nav.navigate(Routes.HEALTH_ANALYTICS) },
                     onPregnancy = { nav.navigate(Routes.PREGNANCY) },
                     onPregnancySetup = { nav.navigate(Routes.PREGNANCY_SETUP) },

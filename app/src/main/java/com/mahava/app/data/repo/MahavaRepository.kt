@@ -1,5 +1,8 @@
 package com.mahava.app.data.repo
 
+import androidx.room.withTransaction
+import com.mahava.app.data.db.ToolRecord
+
 import com.mahava.app.cycle.CycleEngine
 import com.mahava.app.cycle.CycleEngineResult
 import com.mahava.app.cycle.PeriodInterval
@@ -93,7 +96,7 @@ class MahavaRepository(
     }
 
     suspend fun upsertPeriod(event: PeriodEventEntity): Long {
-        val now = clock.nowMillis()
+        val now = maxOf(clock.nowMillis(),(db.toolRecordDao().get("tombstone_period_${event.startEpochDay}")?.updatedAt ?: 0)+1)
         val today = clock.today().toEpochDay()
         val all = db.periodDao().getAll()
         // Same start day already saved → update it instead of creating a duplicate.
@@ -114,22 +117,32 @@ class MahavaRepository(
         return if (withTs.id != 0L) withTs.id else id
     }
 
-    suspend fun deletePeriod(id: Long) = db.periodDao().delete(id)
+    suspend fun deletePeriod(id: Long) {
+        val row=db.periodDao().getAll().find {it.id==id} ?: return
+        db.withTransaction {
+            val now=maxOf(clock.nowMillis(),row.updatedAt+1)
+            db.toolRecordDao().upsert(ToolRecord("tombstone_period_${row.startEpochDay}","sync_tombstone",payloadJson="{\"kind\":\"period\",\"key\":\"${row.startEpochDay}\"}",createdAt=now,updatedAt=now))
+            db.periodDao().delete(id)
+        }
+    }
 
     suspend fun upsertDailyLog(log: DailyLogEntity): Long {
-        val now = clock.nowMillis()
+        val now = maxOf(clock.nowMillis(),(db.toolRecordDao().get("tombstone_log_${log.epochDay}")?.updatedAt ?: 0)+1)
         val existing = db.dailyLogDao().getByDay(log.epochDay)
         val merged = if (existing == null) {
             log.copy(id = 0, createdAt = now, updatedAt = now)
         } else {
-            log.copy(id = existing.id, createdAt = existing.createdAt, updatedAt = now)
+            log.copy(id = existing.id, createdAt = existing.createdAt, updatedAt = maxOf(now,existing.updatedAt+1))
         }
         return db.dailyLogDao().upsert(merged)
     }
 
     suspend fun getDailyLog(epochDay: Long) = db.dailyLogDao().getByDay(epochDay)
 
-    suspend fun saveReminder(pref: ReminderPrefEntity) = db.reminderDao().upsert(pref)
+    suspend fun saveReminder(pref: ReminderPrefEntity) = db.withTransaction {
+        val old=db.reminderDao().getAll().find {it.id==pref.id}
+        db.reminderDao().upsert(pref.copy(updatedAt=maxOf(clock.nowMillis(),(old?.updatedAt ?: 0)+1)))
+    }
 
     suspend fun getActivePregnancy(): PregnancyEntity? = db.pregnancyDao().getActive()
 
@@ -164,6 +177,7 @@ class MahavaRepository(
         db.reminderDao().clear()
         db.pregnancyDao().clear()
         db.healthAlertDao().clear()
+        db.toolRecordDao().clear()
     }
 
     suspend fun exportJson(): String {
@@ -171,7 +185,11 @@ class MahavaRepository(
         val map = mapOf(
             "profile" to db.profileDao().get(),
             "periods" to db.periodDao().getAll(),
-            "dailyLogs" to db.dailyLogDao().getAll()
+            "dailyLogs" to db.dailyLogDao().getAll(),
+            "pregnancies" to db.pregnancyDao().getAll(),
+            "alerts" to db.healthAlertDao().getAll(),
+            "reminders" to db.reminderDao().getAll(),
+            "tools" to db.toolRecordDao().getAll()
         )
         return gson.toJson(map)
     }

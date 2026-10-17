@@ -95,14 +95,14 @@ class MainFlowTest {
             // Daily log: save, edit, no duplicate
             compose.tap("today_log_button")
             compose.waitTag("daily_log_screen")
-            compose.tap("mood_sad"); compose.tap("energy_low"); compose.tap("sym_bloating")
+            compose.tap("mood_sad"); compose.tap("energy_2"); compose.tap("sym_bloating")
             Shots.take(compose, "08_daily_log")
             compose.tap("save_daily")
             compose.waitFor { Seed.logFor(today) != null }
             assertEquals("sad", Seed.logFor(today)!!.moods)
             compose.waitTag("today_screen")
             compose.tap("today_log_button")
-            compose.tap("energy_medium")
+            compose.tap("energy_3")
             compose.tap("save_daily")
             compose.waitFor { Seed.logFor(today)?.energy == "medium" }
             assertEquals(2, Seed.logs().size)
@@ -130,7 +130,9 @@ class MainFlowTest {
             compose.waitTag("reports_lengths")
             assertTrue(compose.hasText("۲۸"))
             Shots.take(compose, "10_reports")
-            compose.tap("nav_body")
+            compose.tap("nav_tools")
+            compose.waitTag("tools_screen")
+            compose.tap("tool_body")
             compose.waitTag("body_screen")
             Shots.take(compose, "11_body")
             compose.tap("cat_cycle_hormones")

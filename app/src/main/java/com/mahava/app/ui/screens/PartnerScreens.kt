@@ -84,7 +84,7 @@ import java.time.format.DateTimeFormatter
 
 /** Shown wherever she approves a request (hub card and the in-app dialog). */
 const val PARTNER_APPROVE_FA =
-    "اگر تأیید کنی، همسرت همهٔ چیزهایی را که ثبت می‌کنی می‌بیند: پریودها، حال، علائم، هوس‌ها، درد، خون‌ریزی، یادداشت‌ها، رابطه و بقیهٔ ثبت‌ها. هر وقت بخواهی می‌توانی اتصال را قطع کنی."
+    "تأیید اتصال به‌تنهایی اجازهٔ دیدن اطلاعات سلامت نیست. از ابزار «اشتراک با همسر» دسته‌های مجاز را خودت فعال کن؛ یادداشت خصوصی، رابطه و جزئیات پزشکی به اشتراک گذاشته نمی‌شوند. هر زمان می‌توانی اشتراک یا اتصال را متوقف کنی."
 
 /** Woman's side: make a code, approve, remove. */
 @Composable
@@ -292,180 +292,6 @@ fun PartnerHomeScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun PartnerDashboard(
-    vm: AppViewModel,
-    snap: PartnerSnapshotDto,
-    logs: List<JsonObject>,
-    periods: List<JsonObject>,
-    updatedAt: String?,
-    premium: Boolean,
-    onAccount: () -> Unit
-) {
-    val advice = PartnerAdvice.forSnapshot(snap)
-    val group = if (snap.generalOnly) "general" else snap.phaseGroup
-    val (accent, soft) = phaseColors(group)
-    val todayEpoch = vm.today().toEpochDay()
-    val todayLog = snap.today?.log
-        ?.takeIf { it.isJsonObject && snap.today?.epochDay == todayEpoch }
-        ?.asJsonObject
-        ?: logs.firstOrNull { PartnerLogFormat.epochDay(it) == todayEpoch }
-    val todayLines = PartnerLogFormat.lines(todayLog)
-
-    // Always-visible cycle summary (even with no daily log) — same basics her Today screen shows.
-    MahavaCard(Modifier.testTag("partner_cycle_summary")) {
-        CardTitle("وضعیت امروز همسرت")
-        Text(advice.headlineFa, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
-        if (advice.statusFa.isNotBlank()) {
-            Spacer(Modifier.height(4.dp))
-            Text(advice.statusFa, color = accent, style = MaterialTheme.typography.bodyLarge)
-        }
-        snap.cycleDay?.let { day ->
-            val len = snap.cycleLength
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (len != null) "روز ${PersianDigits.toPersian(day)} از حدود ${PersianDigits.toPersian(len)}"
-                else "روز ${PersianDigits.toPersian(day)} چرخه",
-                style = MaterialTheme.typography.titleSmall,
-                color = MahavaPrimary,
-                modifier = Modifier.testTag("partner_cycle_day")
-            )
-        }
-        if (!snap.periodOngoing && !snap.isLate) {
-            snap.daysUntilPeriod?.let { d ->
-                QuietInfo(
-                    when {
-                        d <= 0 -> "پریود بعدی ممکنه همین روزا شروع بشه."
-                        else -> "حدود ${PersianDigits.toPersian(d)} روز تا پریود بعدی."
-                    }
-                )
-            }
-        }
-        if (snap.isLate) QuietInfo("پریودش حدود ${PersianDigits.toPersian(snap.daysLate ?: 0)} روز دیر کرده.")
-        if (todayLines.isEmpty()) QuietInfo("امروز هنوز چیزی ثبت نکرده؛ همین وضعیت کلی چرخه‌شه.")
-    }
-
-    // Hero ring
-    Surface(shape = RoundedCornerShape(24.dp), color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
-        Column(
-            Modifier.background(Brush.verticalGradient(listOf(soft, MahavaSurface))).padding(18.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(advice.headlineFa, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
-                color = MahavaTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.testTag("partner_headline"))
-            if (advice.statusFa.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(advice.statusFa, color = accent, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
-            }
-            Spacer(Modifier.height(8.dp))
-            PeriodCycleWidget(
-                cycleDay = snap.cycleDay,
-                cycleLengthHint = snap.cycleLength,
-                phase = phaseOf(group),
-                phaseTitleFa = PartnerAdvice.phaseNameFa(group),
-                daysUntilPeriod = snap.daysUntilPeriod,
-                isLate = snap.isLate
-            )
-            lastUpdatedFa(updatedAt)?.let { QuietInfo("به‌روزرسانی: $it") }
-        }
-    }
-
-    // Everything she logged today
-    if (todayLines.isNotEmpty()) {
-        MahavaCard(Modifier.testTag("partner_today_card")) {
-            CardTitle("امروز ثبت کرده")
-            val today = snap.today
-            val pills = mutableListOf<Pair<String, Color>>()
-            today?.moods.orEmpty().forEach { pills += TodaySignalContent.label("mood", it) to MahavaFertility }
-            today?.symptoms.orEmpty().forEach { pills += TodaySignalContent.label("body", it) to MahavaPrimary }
-            (today?.painScore ?: 0).takeIf { it > 0 }?.let { pills += "درد ${PersianDigits.toPersian(it)} از ۱۰" to MahavaDanger }
-            today?.cravings.orEmpty().forEach { pills += "هوس ${FoodCravingKeys.labelFa(it)}" to MahavaMenstruation }
-            if (pills.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    pills.forEach { (label, color) -> Pill(label, color) }
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-            LogLines(todayLines)
-        }
-    }
-
-    if (!premium) {
-        PremiumPaywallCard(
-            vm,
-            titleFa = "راهنمای علمی امروز",
-            benefitFa = "با یک اشتراک فعال (از تو یا همسرت) باز می‌شود؛ هر دو استفاده می‌کنید.",
-            onOpenAccount = onAccount
-        )
-    } else {
-        advice.sections.forEach { s -> AdviceCard(s.icon, s.titleFa, s.bodyFa, soft) }
-        val sourceIds = advice.sourceIds.toMutableList()
-        if (todayLines.isEmpty()) {
-            // Nothing logged today: the same sourced content her Today screen shows for this phase.
-            MahavaCard(Modifier.testTag("partner_phase_science")) {
-                CardTitle("این روزها در بدنش")
-                Text(TodaySignalContent.bodyTodayFa(group), style = MaterialTheme.typography.bodyLarge)
-            }
-            PartnerAdvice.phaseScience(group).forEach { item ->
-                val e = item.explanation
-                sourceIds += e.sourceIds
-                MahavaCard(Modifier.testTag("partner_science_${item.kind}_${item.key}")) {
-                    Text("${TodaySignalContent.kindTitleFa(item.kind)} · ${TodaySignalContent.label(item.kind, item.key)}",
-                        style = MaterialTheme.typography.labelLarge, color = accent)
-                    Spacer(Modifier.height(2.dp))
-                    Text(e.teaserFa, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
-                    e.sections.take(2).forEach { sec ->
-                        Spacer(Modifier.height(6.dp))
-                        Text(sec.titleFa, fontWeight = FontWeight.Bold, color = MahavaPrimary, style = MaterialTheme.typography.bodyMedium)
-                        Text(sec.bodyFa, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-        }
-        MahavaCard(Modifier.testTag("partner_do_card")) {
-            CardTitle("امروز چه کار کنی؟")
-            advice.doFa.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 2.dp)) }
-        }
-        EvidenceCard(advice.evidence)
-        SourcesCard(sourceIds.distinct())
-    }
-
-    // Everything she logged recently
-    val older = logs.filter { PartnerLogFormat.epochDay(it) != todayEpoch && PartnerLogFormat.lines(it).isNotEmpty() }
-    if (older.isNotEmpty()) {
-        var showAll by remember { mutableStateOf(false) }
-        MahavaCard(Modifier.testTag("partner_history_card")) {
-            CardTitle("ثبت‌های روزهای قبل")
-            (if (showAll) older else older.take(5)).forEach { log ->
-                val day = PartnerLogFormat.epochDay(log) ?: return@forEach
-                Spacer(Modifier.height(8.dp))
-                Text(dayFa(day), fontWeight = FontWeight.Bold, color = MahavaTextPrimary, style = MaterialTheme.typography.bodyMedium)
-                LogLines(PartnerLogFormat.lines(log))
-            }
-            if (older.size > 5) {
-                TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "کمتر" else "همه (${PersianDigits.toPersian(older.size)} روز)") }
-            }
-        }
-    }
-    if (periods.isNotEmpty()) {
-        MahavaCard(Modifier.testTag("partner_periods_card")) {
-            CardTitle("پریودهایش")
-            periods.take(6).forEach { p ->
-                val start = try { p.get("startEpochDay")?.asLong } catch (_: Throwable) { null } ?: return@forEach
-                val end = try { p.get("endEpochDay")?.takeIf { !it.isJsonNull }?.asLong } catch (_: Throwable) { null }
-                val ongoing = end == null || (try { p.get("stillOngoing")?.asBoolean } catch (_: Throwable) { null } == true)
-                val text = if (ongoing && (end == null || end >= todayEpoch)) "از ${shortFa(start)} (ادامه دارد)"
-                else "${shortFa(start)} تا ${shortFa(end ?: start)} · ${PersianDigits.toPersian(((end ?: start) - start + 1).toInt())} روز"
-                Text("• $text", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
-                val note = try { p.get("note")?.takeIf { !it.isJsonNull }?.asString } catch (_: Throwable) { null }
-                if (!note.isNullOrBlank()) Text("   یادداشت: $note", style = MaterialTheme.typography.bodySmall, color = MahavaTextSecondary)
-            }
-        }
-    }
-}
-
 @Composable
 private fun LogLines(lines: List<PartnerLogFormat.Line>) {
     lines.forEach { l ->
@@ -597,4 +423,160 @@ fun lastUpdatedFa(iso: String?): String? {
             else -> "${PersianDigits.toPersian(days)} روز پیش"
         }
     } catch (_: Throwable) { null }
+}
+
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PartnerDashboard(
+    vm: AppViewModel,
+    snap: PartnerSnapshotDto,
+    logs: List<JsonObject>,
+    periods: List<JsonObject>,
+    updatedAt: String?,
+    premium: Boolean,
+    onAccount: () -> Unit
+) {
+    val advice = PartnerAdvice.forSnapshot(snap)
+    val group = if (snap.generalOnly) "general" else snap.phaseGroup
+    val (accent, soft) = phaseColors(group)
+    val todayEpoch = vm.today().toEpochDay()
+    val todayLog = snap.today?.log?.takeIf { it.isJsonObject && snap.today?.epochDay == todayEpoch }?.asJsonObject
+        ?: logs.firstOrNull { PartnerLogFormat.epochDay(it) == todayEpoch }
+    val todayLines = PartnerLogFormat.lines(todayLog)
+
+    // Hero
+    Surface(shape = RoundedCornerShape(24.dp), color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.background(Brush.verticalGradient(listOf(soft, MahavaSurface))).padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(advice.headlineFa, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                color = MahavaTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.testTag("partner_headline"))
+            if (advice.statusFa.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(advice.statusFa, color = accent, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+            }
+            Spacer(Modifier.height(8.dp))
+            PeriodCycleWidget(
+                cycleDay = snap.cycleDay,
+                cycleLengthHint = snap.cycleLength,
+                phase = phaseOf(group),
+                phaseTitleFa = PartnerAdvice.phaseNameFa(group),
+                daysUntilPeriod = snap.daysUntilPeriod,
+                isLate = snap.isLate
+            )
+            lastUpdatedFa(updatedAt)?.let { QuietInfo("به‌روزرسانی: $it") }
+        }
+    }
+
+    // Everything she logged today
+    if (todayLines.isNotEmpty()) {
+        MahavaCard(Modifier.testTag("partner_today_card")) {
+            CardTitle("امروز ثبت کرده")
+            val today = snap.today
+            val pills = mutableListOf<Pair<String, Color>>()
+            today?.moods.orEmpty().forEach { pills += TodaySignalContent.label("mood", it) to MahavaFertility }
+            today?.symptoms.orEmpty().forEach { pills += TodaySignalContent.label("body", it) to MahavaPrimary }
+            (today?.painScore ?: 0).takeIf { it > 0 }?.let { pills += "درد ${PersianDigits.toPersian(it)} از ۱۰" to MahavaDanger }
+            today?.cravings.orEmpty().forEach { pills += "هوس ${FoodCravingKeys.labelFa(it)}" to MahavaMenstruation }
+            if (pills.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pills.forEach { (label, color) -> Pill(label, color) }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            LogLines(todayLines)
+        }
+    }
+
+    if (!premium) {
+        PremiumPaywallCard(
+            vm,
+            titleFa = "راهنمای علمی امروز",
+            benefitFa = "با یک اشتراک فعال (از تو یا همسرت) باز می‌شود؛ هر دو استفاده می‌کنید.",
+            onOpenAccount = onAccount
+        )
+    } else {
+        advice.sections.forEach { s -> AdviceCard(s.icon, s.titleFa, s.bodyFa, soft) }
+        val sourceIds = advice.sourceIds.toMutableList()
+        if (todayLines.isEmpty()) {
+            // Nothing logged today: the same sourced content her Today screen shows for this phase.
+            MahavaCard(Modifier.testTag("partner_phase_science")) {
+                CardTitle("این روزها در بدنش")
+                Text(TodaySignalContent.bodyTodayFa(group), style = MaterialTheme.typography.bodyLarge)
+            }
+            PartnerAdvice.phaseScience(group).forEach { item ->
+                val e = item.explanation
+                sourceIds += e.sourceIds
+                MahavaCard(Modifier.testTag("partner_science_${item.kind}_${item.key}")) {
+                    Text("${TodaySignalContent.kindTitleFa(item.kind)} · ${TodaySignalContent.label(item.kind, item.key)}",
+                        style = MaterialTheme.typography.labelLarge, color = accent)
+                    Spacer(Modifier.height(2.dp))
+                    Text(e.teaserFa, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
+                    e.sections.take(2).forEach { sec ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(sec.titleFa, fontWeight = FontWeight.Bold, color = MahavaPrimary, style = MaterialTheme.typography.bodyMedium)
+                        Text(sec.bodyFa, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+        MahavaCard(Modifier.testTag("partner_do_card")) {
+            CardTitle("امروز چه کار کنی؟")
+            advice.doFa.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 2.dp)) }
+        }
+        EvidenceCard(advice.evidence)
+        SourcesCard(sourceIds.distinct())
+    }
+
+    // Everything she logged recently
+    val older = logs.filter { PartnerLogFormat.epochDay(it) != todayEpoch && PartnerLogFormat.lines(it).isNotEmpty() }
+    if (older.isNotEmpty()) {
+        var showAll by remember { mutableStateOf(false) }
+        MahavaCard(Modifier.testTag("partner_history_card")) {
+            CardTitle("ثبت‌های روزهای قبل")
+            (if (showAll) older else older.take(5)).forEach { log ->
+                val day = PartnerLogFormat.epochDay(log) ?: return@forEach
+                Spacer(Modifier.height(8.dp))
+                Text(dayFa(day), fontWeight = FontWeight.Bold, color = MahavaTextPrimary, style = MaterialTheme.typography.bodyMedium)
+                LogLines(PartnerLogFormat.lines(log))
+            }
+            if (older.size > 5) {
+                TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "کمتر" else "همه (${PersianDigits.toPersian(older.size)} روز)") }
+            }
+        }
+    }
+    if (periods.isNotEmpty()) {
+        MahavaCard(Modifier.testTag("partner_periods_card")) {
+            CardTitle("پریودهایش")
+            periods.take(6).forEach { p ->
+                val start = try { p.get("startEpochDay")?.asLong } catch (_: Throwable) { null } ?: return@forEach
+                val end = try { p.get("endEpochDay")?.takeIf { !it.isJsonNull }?.asLong } catch (_: Throwable) { null }
+                val ongoing = end == null || (try { p.get("stillOngoing")?.asBoolean } catch (_: Throwable) { null } == true)
+                val text = if (ongoing && (end == null || end >= todayEpoch)) "از ${shortFa(start)} (ادامه دارد)"
+                else "${shortFa(start)} تا ${shortFa(end ?: start)} · ${PersianDigits.toPersian(((end ?: start) - start + 1).toInt())} روز"
+                Text("• $text", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
+                val note = try { p.get("note")?.takeIf { !it.isJsonNull }?.asString } catch (_: Throwable) { null }
+                if (!note.isNullOrBlank()) Text("   یادداشت: $note", style = MaterialTheme.typography.bodySmall, color = MahavaTextSecondary)
+            }
+        }
+    }
+    val tools = (vm.partnerShare.collectAsState().value?.tools).orEmpty()
+        .filter { it.type in setOf("doctor", "appointments") }
+    if (tools.isNotEmpty()) {
+        MahavaCard(Modifier.testTag("partner_tools_card")) {
+            CardTitle("سؤال‌ها و مراجعه‌های پزشکی‌اش")
+            tools.sortedByDescending { it.epochDay ?: 0L }.take(10).forEach { t ->
+                val o = try { com.google.gson.JsonParser.parseString(t.payloadJson).asJsonObject } catch (_: Throwable) { null }
+                val text = try { o?.get("text")?.asString } catch (_: Throwable) { null }.orEmpty()
+                if (text.isBlank()) return@forEach
+                val done = try { o?.get("done")?.asBoolean } catch (_: Throwable) { null } == true
+                val kind = if (t.type == "doctor") "سؤال از پزشک" else "مراجعه"
+                val day = t.epochDay?.let { " · ${shortFa(it)}" }.orEmpty()
+                Text("• $kind$day: $text${if (done) " (انجام شد)" else ""}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
+            }
+        }
+    }
 }

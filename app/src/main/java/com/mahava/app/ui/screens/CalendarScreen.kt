@@ -33,6 +33,7 @@ import java.time.LocalDate
 @Composable
 fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Unit = {}, onOpenDay: (LocalDate) -> Unit) {
     val state by vm.state.collectAsState()
+    val toolRecords by vm.toolRecords.collectAsState()
     val premium by vm.isPremium.collectAsState()
     val useJalali = state.profile?.calendarType != "gregorian"
     val today = vm.today()
@@ -123,7 +124,16 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
                         val actual = !pregnancy && epoch in periodDays
                         val predP = epoch in predictedPeriod && !actual
                         val fert = epoch in predictedFertile && !actual
-                        DayCell(day, useJalali, actual, predP, fert, day == today, day == selected, Modifier.weight(1f)) { selected = day }
+                        DayCell(day, useJalali, actual, predP, fert, day == today, day == selected, Modifier.weight(1f), indicators = vm.logFor(day)?.let { log -> buildList {
+                            if(log.painScore!=null) add("درد")
+                            if(log.sleepMinutes!=null || log.sleepHours!=null) add("خواب")
+                            if(log.moods!=null || log.overallFeeling!=null) add("حال")
+                            if(log.energyScore!=null || log.energy!=null) add("انرژی")
+                            if(log.discharge!=null) add("ترشحات")
+                            if(log.medicationNote!=null) add("دارو")
+                            if(log.note!=null) add("یادداشت")
+                            if(log.intimacyLogged) add("رابطه")
+                        } }.orEmpty()) { selected = day }
                     }
                 }
             }
@@ -156,7 +166,22 @@ fun CalendarScreen(vm: AppViewModel, onSettings: () -> Unit, onAccount: () -> Un
                     sel.toEpochDay() in predictedPeriod -> Text("پریود احتمالی (تخمینی)", color = MahavaMenstruation)
                     sel.toEpochDay() in predictedFertile -> Text("روز احتمالی باروری (تخمینی)", color = MahavaFertility)
                 }
+                val appointments=toolRecords.filter {it.type=="appointments" && it.deletedAt==null && it.epochDay==sel.toEpochDay()}
+                appointments.forEach { appointment -> QuietInfo("مراجعه: " + com.google.gson.JsonParser.parseString(appointment.payloadJson).asJsonObject.get("text").asString) }
                 if (premium) {
+                    selLog?.let { log ->
+                        val markers=buildList {
+                            if(log.painScore!=null) add("درد: ${log.painScore} از ۱۰")
+                            if("headache" in log.physicalSymptoms.orEmpty().split(',')) add("سردرد")
+                            com.mahava.app.health.ToolsAnalytics.sleep(log)?.let {add("خواب: $it دقیقه")}
+                            com.mahava.app.health.ToolsAnalytics.energy(log)?.let {add("انرژی: $it از ۵")}
+                            if(log.moods!=null || log.overallFeeling!=null) add("حال ثبت‌شده")
+                            if(log.discharge!=null) add("ترشحات ثبت‌شده")
+                            if(log.medicationNote!=null) add("دارو ثبت‌شده")
+                            if(log.intimacyLogged) add("رابطه ثبت‌شده")
+                        }
+                        QuietInfo(markers.joinToString(" · "))
+                    }
                     Text(todayLogLine(selLog).replace("امروز", "این روز").replace("ثبت امروزِ تو", "ثبت این روز"), style = MaterialTheme.typography.bodyMedium)
                     selLog?.note?.takeIf { it.isNotBlank() }?.let { Text("یادداشت: $it", style = MaterialTheme.typography.bodyMedium) }
                     Spacer(Modifier.height(8.dp))
@@ -198,7 +223,7 @@ private fun monthTitle(anchor: LocalDate, jalali: Boolean): String =
     else "${GREG_MONTHS_FA[anchor.monthValue - 1]} ${PersianDigits.toPersian(anchor.year)}"
 
 @Composable private fun DayCell(
-    day: LocalDate, jalali: Boolean, actual: Boolean, pred: Boolean, fert: Boolean, isToday: Boolean, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit
+    day: LocalDate, jalali: Boolean, actual: Boolean, pred: Boolean, fert: Boolean, isToday: Boolean, isSelected: Boolean, modifier: Modifier = Modifier, indicators: List<String> = emptyList(), onClick: () -> Unit
 ) {
     val label = if (jalali) PersianDigits.toPersian(JalaliDate.from(day).day) else PersianDigits.toPersian(day.dayOfMonth)
     Box(
@@ -206,9 +231,10 @@ private fun monthTitle(anchor: LocalDate, jalali: Boolean): String =
             .then(if (isSelected) Modifier.border(2.dp, MahavaPrimary, CircleShape) else Modifier)
             .clickable(onClick = onClick)
             .testTag("day_${day}")
-            .then(Modifier.semantics { contentDescription = "${JalaliDate.from(day).formatFa()}، " + when { actual -> "پریود ثبت‌شده"; pred -> "پریود تخمینی"; fert -> "باروری تخمینی"; else -> "بدون نشانگر" } + if (isToday) "، امروز" else "" }),
+            .then(Modifier.semantics { contentDescription = "${JalaliDate.from(day).formatFa()}، " + when { actual -> "پریود ثبت‌شده"; pred -> "پریود تخمینی"; fert -> "باروری تخمینی"; else -> "بدون نشانگر" } + (if (isToday) "، امروز" else "") + indicators.joinToString(prefix="، ") }),
         contentAlignment = Alignment.Center
     ) {
+        if(indicators.isNotEmpty()) Text("•",color=MahavaPrimary,modifier=Modifier.align(Alignment.BottomCenter),fontSize=12.sp)
         when {
             actual -> Box(Modifier.size(34.dp).background(MahavaMenstruation, CircleShape), contentAlignment = Alignment.Center) {
                 Text(label, color = Color.White, fontSize = 13.sp)

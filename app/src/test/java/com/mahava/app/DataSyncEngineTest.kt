@@ -51,15 +51,13 @@ class DataSyncEngineTest {
     }
 
     @Test
-    fun newPhoneWithOnlyOnboardingAnswersTakesServerCopy() {
-        // Onboarding made a guessed period (no end, no logs); the account already has real data.
+    fun firstSyncKeepsUnsyncedPeriodsAndNewerCompletedProfile() {
         val local = map(period(200, 99), SyncRecord("profile", "main", obj("onboardingDone" to true), 99))
         val server = map(period(198, 1, 202), log(199, 1, "moods" to "sad"), SyncRecord("profile", "main", obj("onboardingDone" to true, "goal" to "ttc"), 1))
         val plan = DataSyncEngine.planInitial(local, server)
-        assertTrue(plan.push.isEmpty())
-        val ids = plan.applyLocal.associateBy { it.id }
-        assertTrue(ids["period/200"]!!.deleted)
-        assertTrue("period/198" in ids && "log/199" in ids && "profile/main" in ids)
+        assertEquals(setOf("period/200","profile/main"),plan.push.map {it.id}.toSet())
+        assertEquals(setOf("period/198","log/199"),plan.applyLocal.map {it.id}.toSet())
+        assertTrue(plan.applyLocal.none {it.deleted})
     }
 
     @Test

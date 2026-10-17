@@ -89,9 +89,6 @@ object DataSyncEngine {
         now: Long = System.currentTimeMillis()
     ): SyncPlan {
         val serverLive = server.filterValues { !it.deleted }
-        val localHasRealData = local.values.any { it.kind == "log" } ||
-            local.values.any { it.kind == "period" && it.data?.get("endEpochDay")?.let { e -> !e.isJsonNull } == true }
-        val serverWinsAll = serverLive.values.any { it.kind == "period" || it.kind == "log" } && !localHasRealData
         val push = mutableListOf<SyncRecord>()
         val apply = mutableListOf<SyncRecord>()
         val same = mutableListOf<String>()
@@ -101,14 +98,12 @@ object DataSyncEngine {
             val s = serverLive[id]
             when {
                 l != null && s == null -> {
-                    if (serverWinsAll && (l.kind == "period" || l.kind == "log")) {
-                        apply += l.copy(data = null, deleted = true) // drop onboarding-only guesses
-                    } else push += l.stamped(now)
+                    push += l.stamped(now)
                 }
                 l == null && s != null -> apply += s
                 l != null && s != null -> when {
                     sameContent(l, s) -> same += id
-                    l.kind == "profile" || serverWinsAll -> apply += s
+                    l.kind == "profile" && l.data?.get("onboardingDone")?.let { !it.isJsonNull && it.asBoolean } != true -> apply += s
                     s.updatedAt >= l.updatedAt -> apply += s
                     else -> push += l.stamped(now)
                 }

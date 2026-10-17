@@ -118,8 +118,8 @@ class DataSyncRepository(
         db.reminderDao().getAll().forEach { e ->
             val o = gson.toJsonTree(e).asJsonObject
             o.remove("id")
-            // No local timestamp; push stamps a valid server time.
-            val r = SyncRecord("reminder", e.id, sanitizeForServer(o), 0L)
+            o.remove("updatedAt")
+            val r = SyncRecord("reminder", e.id, sanitizeForServer(o), e.updatedAt)
             out[r.id] = r
         }
         db.pregnancyDao().getAll().forEach { e ->
@@ -141,6 +141,18 @@ class DataSyncRepository(
             val r = SyncRecord("alert", key, sanitizeForServer(o), ts)
             out[r.id] = r
         }
+        db.toolRecordDao().getAll().forEach { e ->
+            if(e.type=="sync_tombstone") {
+                val value=com.google.gson.JsonParser.parseString(e.payloadJson).asJsonObject
+                val kind=value.get("kind").asString; val key=value.get("key").asString
+                val current=out["$kind/$key"]
+                if(current==null || current.updatedAt<=e.updatedAt) out["$kind/$key"]=SyncRecord(kind,key,null,e.updatedAt,true)
+                return@forEach
+            }
+            val o = gson.toJsonTree(e).asJsonObject.apply { remove("updatedAt") }
+            val rec = SyncRecord("tool", e.id, if (e.deletedAt == null) sanitizeForServer(o) else null, e.updatedAt, e.deletedAt != null)
+            out[rec.id] = rec
+        }
         out
     }
 
@@ -161,7 +173,8 @@ class DataSyncRepository(
                 }
                 p.isString -> {
                     val s = p.asString
-                    if (s.length <= 4000) out.addProperty(k, s)
+                    require(s.length <= 4000) { "متن برای همگام‌سازی بیش از حد طولانی است" }
+                    out.addProperty(k, s)
                 }
             }
         }
@@ -177,10 +190,33 @@ class DataSyncRepository(
         }
     }
 
+    private suspend fun applyUnchanged(records: List<SyncRecord>, snapshot: Map<String, SyncRecord>): List<SyncRecord> = db.withTransaction {
+        val current=collectLocal()
+        val safe=records.filter { DataSyncEngine.sameContent(current[it.id],snapshot[it.id]) && current[it.id]?.updatedAt==snapshot[it.id]?.updatedAt }
+        safe.forEach { applyOne(it) }
+        safe
+    }
+
     private suspend fun applyOne(r: SyncRecord) {
+        if(!r.deleted) {
+            val tombstoneId="tombstone_${r.kind}_${r.key}"
+            db.toolRecordDao().get(tombstoneId)?.let {
+                if(r.updatedAt>=it.updatedAt) db.toolRecordDao().removeSyncedTombstone(tombstoneId)
+            }
+        }
         when (r.kind) {
+            "tool" -> {
+                val existing = db.toolRecordDao().get(r.key)
+                if (r.deleted || r.data == null) {
+                    existing?.let { db.toolRecordDao().upsert(it.copy(deletedAt = r.updatedAt, updatedAt = r.updatedAt)) }
+                } else {
+                    val base = gson.toJsonTree(com.mahava.app.data.db.ToolRecord(r.key, "unknown", payloadJson="{}", createdAt=r.updatedAt, updatedAt=r.updatedAt)).asJsonObject
+                    val item = gson.fromJson(withDefaults(base, r.data), com.mahava.app.data.db.ToolRecord::class.java)
+                    db.toolRecordDao().upsert(item.copy(id=r.key, updatedAt=r.updatedAt))
+                }
+            }
             "profile" -> {
-                if (r.deleted || r.data == null) return
+                if (r.deleted || r.data == null) { db.profileDao().clear(); return }
                 val cur = db.profileDao().get()
                 val o = r.data.deepCopy()
                 PROFILE_LOCAL_ONLY.forEach { o.remove(it) }
@@ -215,7 +251,7 @@ class DataSyncRepository(
             "reminder" -> {
                 if (r.deleted || r.data == null) return
                 val base = gson.toJsonTree(ReminderPrefEntity(id = r.key)).asJsonObject
-                val o = withDefaults(base, r.data).apply { addProperty("id", r.key) }
+                val o = withDefaults(base, r.data).apply { addProperty("id", r.key); addProperty("updatedAt",r.updatedAt) }
                 db.reminderDao().upsert(gson.fromJson(o, ReminderPrefEntity::class.java))
             }
             "pregnancy" -> {
@@ -299,7 +335,8 @@ class DataSyncRepository(
             out += res.records.orEmpty().map { it.toRecord() }
             cursor = res.cursor
             pages += 1
-            if (!res.more || pages >= 50) break
+            if (!res.more) break
+            check(pages < 50) { "همگام‌سازی کامل نشده؛ دوباره تلاش می‌شود" }
         }
         return out to cursor
     }
@@ -329,13 +366,15 @@ class DataSyncRepository(
                 val res = remote.push(chunk)
                 conflicts += res.conflicts.orEmpty().map { it.toRecord() }
                 accepted += chunk.map { it.id }
-            } catch (_: Throwable) {
+            } catch (batchError: Throwable) {
+                if(batchError is kotlinx.coroutines.CancellationException) throw batchError
                 chunk.forEach { one ->
                     try {
                         val res = remote.push(listOf(one))
                         conflicts += res.conflicts.orEmpty().map { it.toRecord() }
                         accepted += one.id
                     } catch (oneErr: Throwable) {
+                        if(oneErr is kotlinx.coroutines.CancellationException) throw oneErr
                         if (firstFailure == null) firstFailure = oneErr
                     }
                 }
@@ -385,7 +424,7 @@ class DataSyncRepository(
     }
 
     suspend fun pendingCount(): Int = withContext(Dispatchers.IO) {
-        if (canSync() == null || !sp.getBoolean(K_INITIAL, false)) return@withContext 0
+        if (canSync() == null) return@withContext 0
         DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size
     }
 
@@ -424,6 +463,10 @@ class DataSyncRepository(
                 )
                 if (pending > 0) SyncOutcome.Failed(_status.value.lastError) else SyncOutcome.Ok
             } catch (t: Throwable) {
+                if(t is kotlinx.coroutines.CancellationException) {
+                    _status.value=_status.value.copy(running=false)
+                    throw t
+                }
                 val pending = try { DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size } catch (_: Throwable) { 0 }
                 _status.value = _status.value.copy(running = false, lastError = t.message, pending = pending)
                 SyncOutcome.Failed(t.message)
@@ -450,19 +493,20 @@ class DataSyncRepository(
         val server = serverList.associateBy { it.id }
         val local = collectLocal()
         val plan = DataSyncEngine.planInitial(local, server, clock.nowMillis())
-        applyAll(plan.applyLocal)
+        val applied = applyUnchanged(plan.applyLocal,local)
         val pushed = pushAll(plan.push)
-        applyAll(pushed.conflicts)
+        stampLegacyReminders(pushed.acceptedIds, local)
+        val appliedConflicts=applyUnchanged(pushed.conflicts,local)
         val after = collectLocal()
         val synced = mutableMapOf<String, String>()
-        plan.same.forEach { id -> DataSyncEngine.hash(after[id])?.let { synced[id] = it } }
-        plan.applyLocal.forEach { r ->
+        plan.same.forEach { id -> DataSyncEngine.hash(local[id])?.let { synced[id] = it } }
+        applied.forEach { r ->
             val h = DataSyncEngine.hash(after[r.id])
             if (h == null) synced.remove(r.id) else synced[r.id] = h
         }
         val conflictIds = pushed.conflicts.map { it.id }.toSet()
-        rememberSyncedHashes(pushed.acceptedIds - conflictIds, after, synced)
-        pushed.conflicts.forEach { r ->
+        rememberSyncedHashes(pushed.acceptedIds - conflictIds, local, synced)
+        appliedConflicts.forEach { r ->
             DataSyncEngine.hash(after[r.id])?.let { synced[r.id] = it }
         }
         sp.edit()
@@ -489,21 +533,22 @@ class DataSyncRepository(
         val changes = DataSyncEngine.localChanges(local, synced, now, detected)
             .let { list -> if (localWins) list.map { it.copy(updatedAt = now) } else list }
         val pushed = pushAll(changes)
+        stampLegacyReminders(pushed.acceptedIds, local)
         if (localWins) sp.edit().putBoolean(K_LOCAL_WINS, false).apply()
         val conflictIds = pushed.conflicts.map { it.id }.toSet()
         val newSynced = synced.toMutableMap()
         val afterPush = collectLocal()
-        rememberSyncedHashes(pushed.acceptedIds - conflictIds, afterPush, newSynced)
+        rememberSyncedHashes(pushed.acceptedIds - conflictIds, local, newSynced)
         pushed.acceptedIds.filter { it in conflictIds }.forEach { newSynced.remove(it) }
-        applyAll(pushed.conflicts)
+        val appliedConflicts=applyUnchanged(pushed.conflicts,local)
 
         val (remote, cursor) = pullAll(sp.getLong(K_CURSOR, 0L))
         val pushedIds = pushed.acceptedIds - conflictIds
-        val toApply = DataSyncEngine.remoteToApply(remote.distinctBy { it.id to it.updatedAt }, local, pushedIds)
+        val toApply = DataSyncEngine.remoteToApply(remote.distinctBy { it.id to it.updatedAt }, local, pushedIds + changes.map { it.id })
             .groupBy { it.id }.map { (_, v) -> v.maxBy { it.updatedAt } }
-        applyAll(toApply)
+        val applied=applyUnchanged(toApply,local)
 
-        val touched = (toApply.map { it.id } + conflictIds).toSet()
+        val touched = (applied.map { it.id } + appliedConflicts.map { it.id }).toSet()
         if (touched.isNotEmpty()) {
             val after = collectLocal()
             rememberSyncedHashes(touched, after, newSynced)
@@ -513,6 +558,21 @@ class DataSyncRepository(
             .putString(K_DETECTED, "{}")
             .putLong(K_CURSOR, cursor)
             .apply()
+    }
+
+    /** Legacy reminders had no edit timestamp. A successful first upload gives them one. */
+    private suspend fun stampLegacyReminders(accepted: Set<String>, snapshot: Map<String, SyncRecord>) {
+        db.withTransaction {
+            db.reminderDao().getAll().filter { "reminder/${it.id}" in accepted }.forEach { row ->
+                val sent=snapshot["reminder/${row.id}"] ?: return@forEach
+                if(row.updatedAt<DataSyncEngine.MIN_SERVER_TS && row.updatedAt==sent.updatedAt) {
+                    val current=gson.toJsonTree(row).asJsonObject.apply {remove("id");remove("updatedAt")}
+                    if(DataSyncEngine.canonical(current)==DataSyncEngine.canonical(sent.data)) {
+                        db.reminderDao().upsert(row.copy(updatedAt=clock.nowMillis().coerceAtLeast(DataSyncEngine.MIN_SERVER_TS)))
+                    }
+                }
+            }
+        }
     }
 
     /** Before logout: clear the pending flag so the UI cannot trap the user. */
@@ -535,6 +595,7 @@ class DataSyncRepository(
             db.reminderDao().clear()
             db.pregnancyDao().clear()
             db.healthAlertDao().clear()
+        db.toolRecordDao().clear()
         }
         resetAll()
     }

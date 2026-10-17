@@ -80,8 +80,7 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 SecondaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
                         status = "داره خارج می‌شه…"
-                        vm.logoutAccount()
-                        status = "خارج شدی."
+                        status = vm.logoutAccount() ?: "خارج شدی."
                     }
                 }
             }

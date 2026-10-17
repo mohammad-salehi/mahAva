@@ -132,6 +132,47 @@ class DesignFlowTest {
         shot("pregnancy")
         rule.onNodeWithTag("cycle_status_card").assertDoesNotExist()
     }
+    @Test fun toolsDirectoryIsConnectedAndRendered() {
+        val vm=model()
+        show(vm) { ToolsHomeScreen({}) {} }
+        rule.onNodeWithText("بدن و چرخه").assertExists()
+        shot("tools")
+    }
+    @Test @Config(qualifiers="fa-rIR-w411dp-h891dp-night-xhdpi") fun toolsAlsoRenderInSystemDarkMode() {
+        val vm=model()
+        show(vm) { ToolsTheme { ToolsHomeScreen({}) {} } }
+        rule.onNodeWithText("بدن و چرخه").assertExists()
+        shot("tools-dark")
+    }
+    @Test fun moodEnergyToolPersistsFeelingAndEnergy() {
+        val vm=model()
+        show(vm) { ToolsDetailScreen(vm,"mood_energy",{}) {} }
+        rule.onNodeWithTag("feel_great",useUnmergedTree=true).performClick()
+        rule.onNodeWithTag("en_3",useUnmergedTree=true).performScrollTo().performClick()
+        shot("mood-energy")
+        rule.onNodeWithText("ذخیره برای امروز",useUnmergedTree=true).performScrollTo().performClick()
+        rule.waitUntil(15000) {org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();vm.logFor(vm.today())?.energyScore==3}
+        Assert.assertEquals("great",vm.logFor(vm.today())?.overallFeeling)
+        Assert.assertEquals("medium",vm.logFor(vm.today())?.energy)
+    }
+    @Test fun doctorQuestionPersistsPrivately() {
+        val vm=model()
+        show(vm) { ToolsDetailScreen(vm,"doctor",{}) {} }
+        rule.onNode(hasSetTextAction()).performTextInput("سؤال خصوصی برای پزشک")
+        rule.onNodeWithText("ذخیره",useUnmergedTree=true).performClick()
+        rule.waitUntil(15000) {org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();vm.toolRecords.value.any {it.type=="doctor"}}
+        shot("doctor-questions")
+    }
+    @Test fun sleepToolStoresHoursAndMinutes() {
+        val vm=model()
+        show(vm) { ToolsDetailScreen(vm,"sleep",{}) {} }
+        rule.onNodeWithText("۷ ساعت",useUnmergedTree=true).performClick()
+        rule.onNodeWithText("ذخیره برای امروز",useUnmergedTree=true).performScrollTo().performClick()
+        rule.waitUntil(15000) {org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();vm.logFor(vm.today())?.sleepMinutes==420}
+        Assert.assertEquals(7f,vm.logFor(vm.today())?.sleepHours)
+        shot("sleep-hours")
+    }
+
 }
 
 class DesignTestApplication : MahavaApplication()

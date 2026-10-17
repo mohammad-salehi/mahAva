@@ -52,7 +52,9 @@ class FakeDataServer : DataSyncRemote {
         return DataPullDto(now = tick, cursor = tick, more = false, full = since <= 0, records = list.sortedBy { it.serverTs }.map(::dto))
     }
 
+    var duringPush: (suspend () -> Unit)? = null
     override suspend fun push(changes: List<SyncRecord>): DataPushDto {
+        duringPush?.invoke()
         // Same validation as the backend: a missing/zero time fails the whole batch (HTTP 400).
         changes.forEach { require(it.updatedAt >= MIN_TS) { "زمان نامعتبر: ${it.kind}/${it.key}" } }
         val conflicts = mutableListOf<SyncRecordDto>()
@@ -232,4 +234,43 @@ class DataSyncRoundTripTest {
         assertEquals("jalali", p.calendarType)
         assertNotNull(p.hiddenBodyCategories)
     }
+    @Test fun editDuringPushStaysPendingAndUploadsOnNextRound() = runBlocking {
+        db.dailyLogDao().upsert(fullLog(today,t0))
+        assertEquals(SyncOutcome.Ok,sync.sync())
+        val original=db.dailyLogDao().getByDay(today)!!
+        db.dailyLogDao().upsert(original.copy(note="first edit",updatedAt=t0+100))
+        server.duringPush={db.dailyLogDao().upsert(original.copy(note="second edit",updatedAt=t0+200));server.duringPush=null}
+        assertTrue(sync.sync() is SyncOutcome.Failed)
+        assertEquals("second edit",db.dailyLogDao().getByDay(today)!!.note)
+        assertEquals(1,sync.pendingCount())
+        assertEquals(SyncOutcome.Ok,sync.sync())
+        assertEquals("second edit",server.live("log")[today.toString()]!!.get("note").asString)
+    }
+    @Test fun toolRecordsRoundTripAndTombstonesStayPrivateUserData() = runBlocking {
+        val record=com.mahava.app.data.db.ToolRecord("doctor_test","doctor",today,"{\"text\":\"private question\"}",t0,t0)
+        db.toolRecordDao().upsert(record)
+        assertEquals(SyncOutcome.Ok,sync.sync())
+        db.toolRecordDao().clear()
+        sync.resetAll()
+        assertEquals(SyncOutcome.Ok,sync.sync())
+        assertEquals(record.payloadJson,db.toolRecordDao().get(record.id)!!.payloadJson)
+        db.toolRecordDao().upsert(record.copy(deletedAt=t0+100,updatedAt=t0+100))
+        assertEquals(SyncOutcome.Ok,sync.sync())
+        assertTrue(server.rows["tool/doctor_test"]!!.deleted)
+    }
+    @Test fun temporaryFailureNeverAcknowledgesOrLosesDirtyRecord() = runBlocking {
+        db.dailyLogDao().upsert(fullLog(today,t0))
+        assertEquals(SyncOutcome.Ok,sync.sync())
+        val original=db.dailyLogDao().getByDay(today)!!
+        db.dailyLogDao().upsert(original.copy(note="offline edit",updatedAt=t0+100))
+        server.duringPush={throw java.io.IOException("temporary")}
+        assertTrue(sync.sync() is SyncOutcome.Failed)
+        assertEquals(1,sync.pendingCount())
+        // Recreate the repository as after process restart; Room and persisted sync hashes survive.
+        val reopened=DataSyncRepository(app,db,app.prefs,app.apiClient,app.authRepository,clock,server)
+        server.duringPush=null
+        assertEquals(SyncOutcome.Ok,reopened.sync())
+        assertEquals("offline edit",server.live("log")[today.toString()]!!.get("note").asString)
+    }
+
 }

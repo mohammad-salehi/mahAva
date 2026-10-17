@@ -229,6 +229,10 @@ class MahApiClient(
 
     // ---- Full data sync (/api/mah/data) ----
 
+    suspend fun partnerRegisterDevice(token:String,deviceId:String,pushToken:String) {
+        request("POST","/api/mah/partner/device",mapOf("deviceId" to deviceId,"token" to pushToken),token)
+    }
+
     suspend fun dataPull(token: String, since: Long): DataPullDto =
         gson.fromJson(request("GET", "/api/mah/data?since=$since", null, token), DataPullDto::class.java)
 
@@ -318,6 +322,8 @@ class MahApiClient(
         bodyJson: String?,
         token: String?
     ): String = withContext(Dispatchers.IO) {
+        // The offline demo build never talks to a server.
+        if (BuildConfig.MAH_DEMO) throw java.io.IOException("demo build is offline")
         val url = URL(currentBaseUrl() + path)
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = method

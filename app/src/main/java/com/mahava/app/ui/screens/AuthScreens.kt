@@ -467,8 +467,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
                     scope.launch {
                         status = "داره خارج می‌شه…"
-                        vm.logoutAccount()
-                        status = "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
+                        status = vm.logoutAccount() ?: "خارج شدی. اطلاعاتت روی سرور می‌مونه و با ورود دوباره برمی‌گرده."
                     }
                 }
             }
