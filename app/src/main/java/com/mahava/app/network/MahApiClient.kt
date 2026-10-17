@@ -11,6 +11,9 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
+/** Full restore/upload over a slow link or VPN can take longer than a normal call. */
+private const val DATA_READ_TIMEOUT_MS = 60_000
+
 /**
  * Minimal HTTP client for /api/mah — no OkHttp dependency (offline Gradle friendly).
  */
@@ -234,7 +237,7 @@ class MahApiClient(
     }
 
     suspend fun dataPull(token: String, since: Long): DataPullDto =
-        gson.fromJson(request("GET", "/api/mah/data?since=$since", null, token), DataPullDto::class.java)
+        gson.fromJson(requestRaw("GET", "/api/mah/data?since=$since", null, token, DATA_READ_TIMEOUT_MS), DataPullDto::class.java)
 
     suspend fun dataPush(token: String, changes: List<com.mahava.app.sync.SyncRecord>): DataPushDto {
         // Build a real JsonObject so nested record `data` is not lost (Map+Any + Gson can drop JsonObject).
@@ -251,7 +254,7 @@ class MahApiClient(
             })
         }
         root.add("changes", arr)
-        return gson.fromJson(requestJson("POST", "/api/mah/data/sync", root, token), DataPushDto::class.java)
+        return gson.fromJson(requestRaw("POST", "/api/mah/data/sync", gson.toJson(root), token, DATA_READ_TIMEOUT_MS), DataPushDto::class.java)
     }
 
     suspend fun dataWipe(token: String) {
@@ -320,7 +323,8 @@ class MahApiClient(
         method: String,
         path: String,
         bodyJson: String?,
-        token: String?
+        token: String?,
+        readTimeoutMs: Int = 20000
     ): String = withContext(Dispatchers.IO) {
         // The offline demo build never talks to a server.
         if (BuildConfig.MAH_DEMO) throw java.io.IOException("demo build is offline")
@@ -328,7 +332,7 @@ class MahApiClient(
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = 15000
-            readTimeout = 20000
+            readTimeout = readTimeoutMs
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             if (!token.isNullOrBlank()) setRequestProperty("Authorization", "Bearer $token")
@@ -348,7 +352,7 @@ class MahApiClient(
             val msg = try {
                 gson.fromJson(text, JsonObject::class.java).get("message")?.asString
             } catch (_: Throwable) { null }
-            throw MahApiException(code, msg ?: "خطای شبکه ($code)")
+            throw MahApiException(code, msg ?: "خطای سرور (کد ${com.mahava.app.util.PersianDigits.toPersian(code.toString())})")
         }
         text
     }

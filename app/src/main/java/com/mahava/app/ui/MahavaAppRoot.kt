@@ -80,6 +80,7 @@ fun MahavaAppRoot(
         else nav.navigate(Routes.LOGIN) { launchSingleTop = true }
     }
     val accountRole by vm.accountRole.collectAsState()
+    val restoreNotice by vm.restoreNotice.collectAsState()
     val isPartnerAccount = loggedIn && accountRole == "male"
     // Cycle questions come only after login and only for a woman's account; the husband skips them.
     val setupDone = isPartnerAccount || onboardingDone
@@ -252,7 +253,30 @@ fun MahavaAppRoot(
             }
         },
         snackbarHost = {
-            state.message?.let { msg ->
+            restoreNotice?.let { n ->
+                androidx.compose.foundation.layout.Column(
+                    Modifier.padding(16.dp)
+                        .background(MahavaTextPrimary, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .testTag("restore_notice")
+                ) {
+                    androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (n.busy) {
+                            CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            androidx.compose.foundation.layout.Spacer(Modifier.width(10.dp))
+                        }
+                        Text(n.text, color = Color.White, modifier = Modifier.weight(1f))
+                    }
+                    if (!n.busy) {
+                        androidx.compose.foundation.layout.Row(Modifier.align(Alignment.End)) {
+                            if (n.canRetry) androidx.compose.material3.TextButton(
+                                onClick = { vm.retryRestore() }, modifier = Modifier.testTag("restore_retry")
+                            ) { Text("دوباره امتحان", color = Color.White) }
+                            androidx.compose.material3.TextButton(onClick = { vm.dismissRestoreNotice() }) { Text("بستن", color = Color.White) }
+                        }
+                    }
+                }
+            } ?: state.message?.let { msg ->
                 Text(
                     msg, color = Color.White,
                     modifier = Modifier.padding(16.dp)

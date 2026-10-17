@@ -47,7 +47,13 @@ class FakeDataServer : DataSyncRemote {
 
     private fun dto(r: Row) = SyncRecordDto(r.kind, r.key, r.data?.let { JsonParser.parseString(it).asJsonObject }, r.deleted, r.updatedAt, r.serverTs)
 
+    /** Test hooks: make the "server" answer with an error (null = normal answer). */
+    var failPull: ((Long) -> Throwable?)? = null
+    var failPush: ((List<SyncRecord>) -> Throwable?)? = null
+    var pushCalls = 0
+
     override suspend fun pull(since: Long): DataPullDto {
+        failPull?.invoke(since)?.let { throw it }
         val list = if (since <= 0) rows.values.filter { !it.deleted } else rows.values.filter { it.serverTs > since }
         return DataPullDto(now = tick, cursor = tick, more = false, full = since <= 0, records = list.sortedBy { it.serverTs }.map(::dto))
     }
@@ -55,6 +61,8 @@ class FakeDataServer : DataSyncRemote {
     var duringPush: (suspend () -> Unit)? = null
     override suspend fun push(changes: List<SyncRecord>): DataPushDto {
         duringPush?.invoke()
+        pushCalls += 1
+        failPush?.invoke(changes)?.let { throw it }
         // Same validation as the backend: a missing/zero time fails the whole batch (HTTP 400).
         changes.forEach { require(it.updatedAt >= MIN_TS) { "زمان نامعتبر: ${it.kind}/${it.key}" } }
         val conflicts = mutableListOf<SyncRecordDto>()

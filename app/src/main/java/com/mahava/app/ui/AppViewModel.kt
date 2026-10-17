@@ -44,9 +44,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
+
+/** How long login waits for the restore before it continues in the background. */
+private const val RESTORE_WAIT_MS = 25_000L
 
 data class AppUiState(
     val ready: Boolean = false,
@@ -688,7 +692,7 @@ class AppViewModel(
         return try {
             authRepository.login(phone.trim(), password)
             refreshRoleAfterAuth()
-            restoreFromServer()
+            restoreFromServer(userFacing = true)
         } catch (e: MahApiException) {
             com.mahava.app.util.FaText.orFallback(e.message, "ورود ناموفق بود.")
         } catch (t: Throwable) {
@@ -738,7 +742,7 @@ class AppViewModel(
                 termsVersion = com.mahava.app.content.LegalDocuments.TERMS_VERSION
             )
             refreshRoleAfterAuth()
-            restoreFromServer()
+            restoreFromServer(userFacing = true)
         } catch (e: MahApiException) {
             com.mahava.app.util.FaText.orFallback(e.message, "ثبت‌نام ناموفق بود.")
         } catch (t: Throwable) {
@@ -761,15 +765,73 @@ class AppViewModel(
      * After login/register: bring her data back from the server (new phone) and upload what
      * this phone had before (first login: upload once and merge). Never blocks login on failure.
      */
-    private suspend fun restoreFromServer(): String? {
+    /** Persistent banner for the restore after login: a short reason and a retry button. */
+    data class RestoreNotice(val text: String, val canRetry: Boolean, val busy: Boolean = false)
+    private val _restoreNotice = MutableStateFlow<RestoreNotice?>(null)
+    val restoreNotice: StateFlow<RestoreNotice?> = _restoreNotice
+    fun dismissRestoreNotice() { _restoreNotice.value = null }
+
+    /** One restore at a time: login, resume and cold start share it instead of queueing up. */
+    private var restoreJob: kotlinx.coroutines.Deferred<com.mahava.app.sync.SyncOutcome>? = null
+
+    private fun startRestore(): kotlinx.coroutines.Deferred<com.mahava.app.sync.SyncOutcome> =
+        restoreJob?.takeIf { it.isActive }
+            ?: viewModelScope.async { app.dataSync.sync() }.also { restoreJob = it }
+
+    /**
+     * After login/register (and on start/resume): bring her data back from the server and upload
+     * what this phone had. Never blocks login for long: a slow link keeps restoring in the
+     * background and the banner reports the real result (network vs. a server answer).
+     */
+    private suspend fun restoreFromServer(userFacing: Boolean = false): String? {
         if (offline || prefs.getAccountRole() == "male") return null
-        val outcome = kotlinx.coroutines.withTimeoutOrNull(30_000) { app.dataSync.sync() }
+        val job = startRestore()
+        val outcome = kotlinx.coroutines.withTimeoutOrNull(RESTORE_WAIT_MS) { job.await() }
         com.mahava.app.sync.DataSync.ensurePeriodic(app)
-        if (outcome !is com.mahava.app.sync.SyncOutcome.Ok && outcome !is com.mahava.app.sync.SyncOutcome.Skipped) {
-            com.mahava.app.sync.DataSync.syncNow(app)
-            _message.value = "وارد شدی. بازیابی اطلاعات از سرور کامل نشد؛ با وصل شدن اینترنت خودکار انجام می‌شود."
+        if (outcome == null) {
+            // Still running (slow link / VPN): not a failure. Report when it really ends.
+            if (userFacing) _restoreNotice.value = RestoreNotice(com.mahava.app.sync.SyncMessages.RESTORE_RUNNING, canRetry = false, busy = true)
+            viewModelScope.launch {
+                val late = try { job.await() } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (t: Throwable) {
+                    com.mahava.app.sync.SyncOutcome.Failed(t.message, com.mahava.app.sync.SyncFailure.of(t).first)
+                }
+                reportRestore(late, userFacing, afterWait = true)
+            }
+        } else {
+            reportRestore(outcome, userFacing, afterWait = false)
         }
         return null
+    }
+
+    private fun reportRestore(outcome: com.mahava.app.sync.SyncOutcome, userFacing: Boolean, afterWait: Boolean) {
+        val msgs = com.mahava.app.sync.SyncMessages
+        when (outcome) {
+            is com.mahava.app.sync.SyncOutcome.Ok, is com.mahava.app.sync.SyncOutcome.Skipped -> {
+                val showedBanner = _restoreNotice.value != null
+                _restoreNotice.value = null
+                if (afterWait && (userFacing || showedBanner)) _message.value = msgs.RESTORE_DONE
+            }
+            is com.mahava.app.sync.SyncOutcome.Failed -> {
+                if (msgs.autoRetry(outcome)) com.mahava.app.sync.DataSync.syncNow(app)
+                when {
+                    // Pulled and applied; only uploads wait. Not a restore failure.
+                    outcome.restored && outcome.reason == com.mahava.app.sync.SyncFailure.REJECTED -> {
+                        _restoreNotice.value = null
+                        if (userFacing) _message.value = msgs.RESTORED_PENDING
+                    }
+                    // The phone already has her data from an earlier sync: stay quiet on start/resume.
+                    outcome.restored && !userFacing -> Unit
+                    else -> _restoreNotice.value = RestoreNotice(msgs.restoreFailedFa(outcome), canRetry = true)
+                }
+            }
+        }
+    }
+
+    /** Banner button «دوباره امتحان». */
+    fun retryRestore() {
+        if (restoreJob?.isActive == true) return
+        _restoreNotice.value = RestoreNotice("در حال دریافت اطلاعاتت از سرور…", canRetry = false, busy = true)
+        viewModelScope.launch { restoreFromServer(userFacing = true) }
     }
 
     fun refreshSyncPending() = viewModelScope.launch { app.dataSync.refreshPending() }
@@ -778,7 +840,7 @@ class AppViewModel(
     suspend fun syncDataNow(): String = when (val r = app.dataSync.sync()) {
         is com.mahava.app.sync.SyncOutcome.Ok -> "اطلاعاتت با سرور همگام شد."
         is com.mahava.app.sync.SyncOutcome.Skipped -> "برای این حساب همگام‌سازی لازم نیست."
-        is com.mahava.app.sync.SyncOutcome.Failed -> "همگام نشد (${r.message?.takeIf { m -> m.any { it in '\u0600'..'\u06FF' } } ?: "اینترنت یا سرور در دسترس نبود"}). بعداً خودکار دوباره امتحان می‌شود."
+        is com.mahava.app.sync.SyncOutcome.Failed -> "همگام نشد: ${com.mahava.app.sync.SyncMessages.reasonFa(r)}."
     }
 
     suspend fun loadTickets(): List<com.mahava.app.network.MahTicketDto> =
@@ -856,8 +918,11 @@ class AppViewModel(
         if (justRegistered) return com.mahava.app.ui.navigation.Routes.ONBOARDING
 
         // Login path: pull server profile before deciding. Never re-ask if she already finished.
-        var outcome = app.dataSync.sync()
-        if (outcome is com.mahava.app.sync.SyncOutcome.Failed) {
+        // Join the restore started by login (if still running) instead of a second full round.
+        var outcome = restoreJob?.takeIf { it.isActive }?.let { j ->
+            try { j.await() } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (_: Throwable) { null }
+        } ?: app.dataSync.sync()
+        if (outcome is com.mahava.app.sync.SyncOutcome.Failed && com.mahava.app.sync.SyncMessages.autoRetry(outcome)) {
             outcome = app.dataSync.sync()
         }
         val profile = repo.ensureProfile()
@@ -870,8 +935,8 @@ class AppViewModel(
                 com.mahava.app.ui.navigation.Routes.ONBOARDING
             is com.mahava.app.sync.SyncOutcome.Failed -> {
                 // Offline: do not show the form again (it could overwrite server data later).
-                _message.value = "آنلاین شو تا اطلاعات چرخه‌ات از سرور برگردد."
-                com.mahava.app.sync.DataSync.syncNow(app)
+                _restoreNotice.value = RestoreNotice(com.mahava.app.sync.SyncMessages.restoreFailedFa(outcome), canRetry = true)
+                if (com.mahava.app.sync.SyncMessages.autoRetry(outcome)) com.mahava.app.sync.DataSync.syncNow(app)
                 com.mahava.app.ui.navigation.Routes.TODAY
             }
         }
@@ -882,7 +947,7 @@ class AppViewModel(
         if (prefs.getAccountRole() == "male") return
         if (!authRepository.hasSessionTokens()) return
         if (repo.ensureProfile().onboardingDone) return
-        restoreFromServer()
+        restoreFromServer(userFacing = true)
     }
 
     suspend fun refreshAccountFromServer(): Boolean {

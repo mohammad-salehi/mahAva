@@ -35,7 +35,45 @@ data class DataSyncStatus(
 sealed class SyncOutcome {
     object Ok : SyncOutcome()
     object Skipped : SyncOutcome()
-    data class Failed(val message: String?) : SyncOutcome()
+    /**
+     * [reason] says what really went wrong (network vs. a server answer), [restored] is true when
+     * the server copy was pulled and applied and only some uploads are still waiting.
+     */
+    data class Failed(
+        val message: String?,
+        val reason: SyncFailure = SyncFailure.UNKNOWN,
+        val httpCode: Int? = null,
+        val restored: Boolean = false
+    ) : SyncOutcome()
+}
+
+/** Why a sync round did not finish. */
+enum class SyncFailure { NETWORK, TIMEOUT, RATE_LIMIT, SERVER, AUTH, UPDATE_REQUIRED, REJECTED, UNKNOWN;
+    companion object {
+        fun of(t: Throwable): Pair<SyncFailure, Int?> {
+            var e: Throwable? = t
+            var depth = 0
+            while (e != null && depth < 5) {
+                when (e) {
+                    is com.mahava.app.network.MahApiException -> return when {
+                        e.status == 429 -> RATE_LIMIT
+                        e.status == 401 || e.status == 403 -> AUTH
+                        e.status == 426 -> UPDATE_REQUIRED
+                        e.status >= 500 -> SERVER
+                        e.status in 400..499 -> REJECTED
+                        else -> SERVER
+                    } to e.status
+                    is java.net.SocketTimeoutException -> return TIMEOUT to null
+                    is java.io.IOException -> return NETWORK to null
+                    // A reply that is not our JSON (proxy/CDN page): the server side answered badly.
+                    is com.google.gson.JsonParseException -> return SERVER to null
+                }
+                e = e.cause
+                depth++
+            }
+            return UNKNOWN to null
+        }
+    }
 }
 
 /** The server side of the sync (real API in the app, an in-memory fake in tests). */
@@ -79,7 +117,13 @@ class DataSyncRepository(
         private const val K_LOCAL_WINS = "local_wins"
         /** Clears fake "synced" hashes from an older client that soft-dropped rejected pushes. */
         private const val K_RESYNC_SOFT = "resync_soft_v1"
-        private const val BATCH = 400
+        private const val BATCH = 200
+
+        /** Data errors (400/413) are isolated per record; anything else stops the round at once. */
+        internal fun isRecordError(t: Throwable): Boolean {
+            val (reason, code) = SyncFailure.of(t)
+            return reason == SyncFailure.REJECTED && (code == 400 || code == 413 || code == 422)
+        }
 
         /** Device-specific profile fields that never leave the phone. */
         val PROFILE_LOCAL_ONLY = setOf("id", "updatedAt", "lockEnabled", "lockTimeoutSeconds", "qaSampleData", "schemaVersion", "contentVersionShown")
@@ -172,9 +216,9 @@ class DataSyncRepository(
                     if (n.isFinite()) out.add(k, v)
                 }
                 p.isString -> {
-                    val s = p.asString
-                    require(s.length <= 4000) { "متن برای همگام‌سازی بیش از حد طولانی است" }
-                    out.addProperty(k, s)
+                    // Over-long text is still sent: the server rejects only that record (400),
+                    // which stays pending, instead of the whole round failing here.
+                    out.addProperty(k, p.asString)
                 }
             }
         }
@@ -354,38 +398,52 @@ class DataSyncRepository(
     private suspend fun pushAll(changes: List<SyncRecord>): PushResult {
         if (changes.isEmpty()) return PushResult(emptyList(), emptySet())
         val now = clock.nowMillis().coerceAtLeast(DataSyncEngine.MIN_SERVER_TS)
-        val prepared = changes.map { rec ->
-            val cleaned = rec.copy(data = if (rec.deleted) null else sanitizeForServer(rec.data))
-            with(DataSyncEngine) { cleaned.withServerTimestamp(now) }
+        var firstFailure: Throwable? = null
+        // A record this app cannot send (e.g. text over the limit) stays pending instead of
+        // failing the whole round (and with it the restore of everything else).
+        val prepared = changes.mapNotNull { rec ->
+            try {
+                val cleaned = rec.copy(data = if (rec.deleted) null else sanitizeForServer(rec.data))
+                with(DataSyncEngine) { cleaned.withServerTimestamp(now) }
+            } catch (bad: IllegalArgumentException) {
+                if (firstFailure == null) firstFailure = MahApiExceptionOf(400, bad.message)
+                null
+            }
         }
         val conflicts = mutableListOf<SyncRecord>()
         val accepted = linkedSetOf<String>()
-        var firstFailure: Throwable? = null
-        prepared.chunked(BATCH).forEach { chunk ->
+
+        /**
+         * Send [part]; when the server rejects the data (400/413), split it in halves so the good
+         * records still go up with few requests. Network, timeout, rate-limit, auth and 5xx errors
+         * stop at once: retrying record by record only floods a slow link and the per-user limit.
+         */
+        suspend fun send(part: List<SyncRecord>) {
             try {
-                val res = remote.push(chunk)
+                val res = remote.push(part)
                 conflicts += res.conflicts.orEmpty().map { it.toRecord() }
-                accepted += chunk.map { it.id }
-            } catch (batchError: Throwable) {
-                if(batchError is kotlinx.coroutines.CancellationException) throw batchError
-                chunk.forEach { one ->
-                    try {
-                        val res = remote.push(listOf(one))
-                        conflicts += res.conflicts.orEmpty().map { it.toRecord() }
-                        accepted += one.id
-                    } catch (oneErr: Throwable) {
-                        if(oneErr is kotlinx.coroutines.CancellationException) throw oneErr
-                        if (firstFailure == null) firstFailure = oneErr
-                    }
+                accepted += part.map { it.id }
+            } catch (err: Throwable) {
+                if (err is kotlinx.coroutines.CancellationException) throw err
+                if (!isRecordError(err)) throw err
+                if (part.size == 1) {
+                    if (firstFailure == null) firstFailure = err
+                    return
                 }
+                val half = part.size / 2
+                send(part.subList(0, half))
+                send(part.subList(half, part.size))
             }
         }
-        if (firstFailure != null && accepted.isEmpty()) throw firstFailure!!
-        if (firstFailure != null) {
-            // Partial success: keep going so pull can run; pendingCount will retry the rest.
-        }
+        prepared.chunked(BATCH).forEach { chunk -> send(chunk) }
+        if (firstFailure != null && accepted.isEmpty() && prepared.isNotEmpty()) throw firstFailure!!
+        // Partial success: keep going so pull can run; pendingCount will retry the rest.
         return PushResult(conflicts, accepted)
     }
+
+    @Suppress("FunctionName")
+    private fun MahApiExceptionOf(code: Int, msg: String?) =
+        com.mahava.app.network.MahApiException(code, msg ?: "دادهٔ نامعتبر")
 
     private fun rememberSyncedHashes(ids: Collection<String>, local: Map<String, SyncRecord>, base: MutableMap<String, String>) {
         ids.forEach { id ->
@@ -462,7 +520,7 @@ class DataSyncRepository(
                     running = false,
                     lastError = if (pending > 0) "بعضی تغییرها هنوز به سرور نرسیده" else null
                 )
-                if (pending > 0) SyncOutcome.Failed(_status.value.lastError) else SyncOutcome.Ok
+                if (pending > 0) SyncOutcome.Failed(_status.value.lastError, SyncFailure.REJECTED, restored = true) else SyncOutcome.Ok
             } catch (t: Throwable) {
                 if(t is kotlinx.coroutines.CancellationException) {
                     _status.value=_status.value.copy(running=false)
@@ -470,7 +528,8 @@ class DataSyncRepository(
                 }
                 val pending = try { DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size } catch (_: Throwable) { 0 }
                 _status.value = _status.value.copy(running = false, lastError = t.message, pending = pending)
-                SyncOutcome.Failed(t.message)
+                val (reason, code) = SyncFailure.of(t)
+                SyncOutcome.Failed(t.message, reason, code, restored = sp.getBoolean(K_INITIAL, false))
             }
         }
     }
