@@ -41,6 +41,7 @@ fun BarChart(
 ) {
     val max = (maxValue ?: values.filterNotNull().maxOrNull() ?: 1f).coerceAtLeast(0.1f)
     val faint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
     Column(modifier.fillMaxWidth()) {
         if (showValues && values.size <= 12) {
             Row(Modifier.fillMaxWidth()) {
@@ -56,8 +57,8 @@ fun BarChart(
             val slot = size.width / values.size
             val bw = (slot * 0.62f).coerceAtMost(28.dp.toPx())
             values.forEachIndexed { i, v ->
-                // RTL: the oldest value sits on the right (start), matching Row order in RTL.
-                val x = size.width - (i + 0.5f) * slot - bw / 2
+                // Time reads left to right: oldest on the left, newest on the right.
+                val x = (i + 0.5f) * slot - bw / 2
                 if (v == null) {
                     drawRoundRect(faint, Offset(x, size.height - 4.dp.toPx()), Size(bw, 4.dp.toPx()), CornerRadius(3f, 3f))
                 } else {
@@ -82,6 +83,7 @@ fun BarChart(
             }
         }
     }
+    }
 }
 
 /** Line chart with dots; gaps where a day has no record. */
@@ -105,7 +107,7 @@ fun LineChart(
             val inset = 5.dp.toPx()
             val usable = size.width - 2 * inset
             val step = if (values.size > 1) usable / (values.size - 1) else 0f
-            fun pt(i: Int, v: Float) = Offset(if (values.size > 1) size.width - inset - i * step else size.width / 2,
+            fun pt(i: Int, v: Float) = Offset(if (values.size > 1) inset + i * step else size.width / 2,
                 size.height - ((v - minValue) / (maxValue - minValue)).coerceIn(0f, 1f) * size.height)
             var path: Path? = null
             values.forEachIndexed { i, v ->

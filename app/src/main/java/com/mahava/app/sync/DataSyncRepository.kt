@@ -487,6 +487,11 @@ class DataSyncRepository(
         DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size
     }
 
+    /** Ids still not on the server (diagnostics and tests). */
+    suspend fun pendingIds(): List<String> = withContext(Dispatchers.IO) {
+        DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).map { it.id }
+    }
+
     suspend fun refreshPending() {
         val n = try { pendingCount() } catch (_: Throwable) { 0 }
         _status.value = _status.value.copy(pending = n)

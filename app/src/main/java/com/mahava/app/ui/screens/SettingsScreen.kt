@@ -347,15 +347,17 @@ fun LogoutButton(vm: AppViewModel, primary: Boolean, onStatus: (String) -> Unit)
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var unsynced by remember { mutableStateOf(0) }
+    var local by remember { mutableStateOf("") } // shown right under the button (the screen's status line is far below)
+    val report: (String) -> Unit = { local = it; onStatus(it) }
     fun doLogout() {
         busy = true
-        onStatus("در حال خروج…")
-        scope.launch { onStatus(vm.logoutAccount() ?: "خارج شدی."); busy = false }
+        report("در حال خروج…")
+        scope.launch { try { report(vm.logoutAccount() ?: "خارج شدی.") } finally { busy = false } }
     }
     val onClick: () -> Unit = {
         if (!busy) {
             busy = true
-            onStatus("در حال آماده شدن برای خروج…")
+            report("در حال ذخیرهٔ تغییرها روی سرور و آماده شدن برای خروج…")
             scope.launch {
                 val n = vm.unsyncedBeforeLogout()
                 busy = false
@@ -365,7 +367,9 @@ fun LogoutButton(vm: AppViewModel, primary: Boolean, onStatus: (String) -> Unit)
     }
     val label = if (busy) "صبر کن…" else "خروج از حساب"
     if (primary) PrimaryButton(label, enabled = !busy, modifier = Modifier.testTag("logout_btn"), onClick = onClick)
-    else SecondaryButton(label, modifier = Modifier.testTag("logout_btn"), onClick = onClick)
+    else SecondaryButton(label, enabled = !busy, modifier = Modifier.testTag("logout_btn"), onClick = onClick)
+    if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 4.dp))
+    if (local.isNotBlank()) Text(local, color = MahavaPrimary, modifier = Modifier.padding(vertical = 4.dp).testTag("logout_status"))
     if (unsynced > 0) {
         AlertDialog(
             onDismissRequest = { unsynced = 0 },

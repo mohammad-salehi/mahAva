@@ -24,6 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.border
 import androidx.compose.ui.unit.sp
 import com.mahava.app.ui.theme.*
 
@@ -60,9 +65,10 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
 }
 
 @Composable
-fun SecondaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun SecondaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(0.dp, Color.Transparent),
@@ -137,24 +143,64 @@ fun ChoiceChipPill(
     selected: Boolean,
     selectedColor: Color = MahavaPrimary,
     tag: String? = null,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val bg = if (selected) selectedColor.copy(alpha = 0.22f) else Color(0xFFF4F0F8)
-    val fg = if (selected) MahavaPrimaryDeep else MahavaTextPrimary
+    // Selected = solid colour with white text, so the choice is obvious at a glance.
+    val bg = if (selected) selectedColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+    val fg = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
     Box(
-        modifier = Modifier
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(14.dp))
+        modifier = modifier
+            .heightIn(min = 40.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(bg)
+            .border(1.dp, if (selected) selectedColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
             .clickable(role = Role.Button, onClick = onClick)
+            .semantics { this.selected = selected }
             .then(if (tag != null) Modifier.testTag(tag) else Modifier)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(label, color = fg, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1, softWrap = false)
+        Text(label, color = fg, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, softWrap = false)
     }
 }
 
+/** Small label for one question inside a [FormSection]. */
+@Composable
+fun FieldLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
+}
+
+/** A titled, collapsible group of related choices (tap the title to fold it). */
+@Composable
+fun FormSection(title: String, modifier: Modifier = Modifier, initiallyOpen: Boolean = true, tag: String? = null,
+                content: @Composable ColumnScope.() -> Unit) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(initiallyOpen) }
+    Column(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surface)
+            .then(if (tag != null) Modifier.testTag(tag) else Modifier)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().clickable(role = Role.Button) { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(if (open) "−" else "+", style = MaterialTheme.typography.titleLarge, color = MahavaPrimaryDeep)
+        }
+        if (open) Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 12.dp), content = content)
+    }
+}
+
+/** A 1..n scale on one line: equal-width segments instead of wrapping chips. */
+@Composable
+fun ScaleRow(options: List<Pair<String, String>>, selected: String?, tagPrefix: String? = null, onSelect: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.forEach { (k, label) ->
+            ChoiceChipPill(label, selected == k, tag = tagPrefix?.let { "${it}_$k" }, modifier = Modifier.weight(1f)) { onSelect(k) }
+        }
+    }
+}
 @Composable
 fun SectionLabel(text: String) {
     Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
@@ -186,9 +232,9 @@ fun splitBullets(text: String?): List<String> =
 @Composable
 fun ChipsFlow(options: List<Pair<String, String>>, selected: String?, tagPrefix: String? = null, onSelect: (String) -> Unit) {
     FlowRow(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         options.forEach { (k, label) -> ChoiceChipPill(label, selected == k, tag = tagPrefix?.let { "${it}_$k" }) { onSelect(k) } }
     }
@@ -199,9 +245,9 @@ fun ChipsFlow(options: List<Pair<String, String>>, selected: String?, tagPrefix:
 @Composable
 fun MultiChipsFlow(options: List<Pair<String, String>>, selected: Set<String>, tagPrefix: String? = null, onToggle: (String) -> Unit) {
     FlowRow(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         options.forEach { (k, label) -> ChoiceChipPill(label, k in selected, tag = tagPrefix?.let { "${it}_$k" }) { onToggle(k) } }
     }

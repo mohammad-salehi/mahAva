@@ -69,10 +69,11 @@ fun rememberReportRange(vm: AppViewModel, key: String, months: List<Int> = listO
 
 /**
  * Hosts a chart. When there are more points than fit (each needs [minSlot]), the chart gets
- * wider and scrolls sideways, opening on the newest data (left side in RTL).
+ * wider and scrolls sideways, opening on the newest data. Always left to right (oldest left).
  */
 @Composable
 fun ChartFrame(points: Int, modifier: Modifier = Modifier, minSlot: Dp = 26.dp, content: @Composable () -> Unit) {
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val needed = minSlot * points
         if (needed <= maxWidth) {
@@ -80,24 +81,22 @@ fun ChartFrame(points: Int, modifier: Modifier = Modifier, minSlot: Dp = 26.dp, 
         } else {
             val scroll = rememberScrollState()
             LaunchedEffect(points, scroll.maxValue) { scroll.scrollTo(scroll.maxValue) }
-            Column {
-                Row(Modifier.fillMaxWidth().horizontalScroll(scroll).testTag("chart_scroll")) {
-                    Column(Modifier.width(needed)) { content() }
-                }
-                Text("برای دیدن قبل‌تر، نمودار را به راست بکش.", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth().horizontalScroll(scroll).testTag("chart_scroll")) {
+                Column(Modifier.width(needed)) { content() }
             }
         }
+    }
     }
 }
 
 /**
- * Sparse date labels under a time chart (oldest on the right in RTL). [centered] = bar slots;
+ * Sparse date labels under a time chart (oldest on the left). [centered] = bar slots;
  * otherwise line-chart points from edge to edge.
  */
 @Composable
 fun TimeAxis(labels: List<String>, centered: Boolean = true) {
     if (labels.isEmpty()) return
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr) {
     BoxWithConstraints(Modifier.fillMaxWidth().heightIn(min = 18.dp)) {
         val n = labels.size
         val fit = (maxWidth / (64.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale)).toInt().coerceIn(1, n)
@@ -108,6 +107,7 @@ fun TimeAxis(labels: List<String>, centered: Boolean = true) {
             Text(labels[i], Modifier.align(BiasAlignment(-1f + 2f * f, 0f)), style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
+    }
     }
 }
 

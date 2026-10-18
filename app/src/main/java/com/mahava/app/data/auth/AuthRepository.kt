@@ -137,6 +137,8 @@ class AuthRepository(
         val refresh = prefs.getRefreshToken() ?: return false
         return try {
             val res = api.refresh(refresh)
+            // Logged out while the refresh was in flight: never bring the session back.
+            if (prefs.getRefreshToken() != refresh) return false
             persistSession(res)
             true
         } catch (_: Throwable) {
@@ -216,6 +218,8 @@ class AuthRepository(
     }
 
     private suspend fun persistSession(res: MahAuthResponse, keepTokens: Boolean = false) {
+        // A late me response after logout must not re-save the account.
+        if (keepTokens && prefs.getAccessToken().isNullOrBlank()) return
         if (!keepTokens) {
             if (!res.accessToken.isNullOrBlank()) prefs.setAccessToken(res.accessToken)
             if (!res.refreshToken.isNullOrBlank()) prefs.setRefreshToken(res.refreshToken)

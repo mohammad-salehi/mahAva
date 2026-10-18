@@ -86,13 +86,6 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("daily_log_screen")) {
         ScreenHeader(if (day == vm.today()) "ثبت امروز" else "ثبت روزانه", onBack = if (onSettings == null) onBack else null, onSettings = onSettings)
-        MahavaCard(containerColor = MahavaPrimarySoft.copy(alpha = 0.5f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) { SectionLabel("یک دقیقه برای خودت"); QuietInfo("هرچه ثبت کنی، شناختت دقیق‌تر می‌شود.") }
-                Illustration(R.drawable.design_lavender_sprig, Modifier.width(60.dp).height(70.dp))
-            }
-        }
-        Spacer(Modifier.height(20.dp))
         DateStepper(day, max = vm.today(), min = vm.today().minusDays(3650), onChange = onDate)
         if (existing != null) QuietInfo("برای این روز قبلاً ثبت کرده‌ای؛ تغییرها همان ثبت را به‌روز می‌کند.")
         if (isFuture) {
@@ -103,104 +96,98 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
             return@Column
         }
         Spacer(Modifier.height(12.dp))
-        MahavaCard {
-        SectionLabel(if (pregnant) "خون‌ریزی در بارداری" else "خون‌ریزی")
-        ChipsFlow(
-            listOf("none" to "ندارم", "spotting" to "لکه‌بینی", "light" to "کم", "medium" to "متوسط", "heavy" to "زیاد"),
-            bleeding, "bleed"
-        ) { bleeding = if (bleeding == it) null else it }
-
-        if (pregnant && bleeding != null && bleeding != "none") Text("خون‌ریزی در بارداری را با پزشک یا ماما مطرح کن؛ درد شدید، غش یا خون‌ریزی زیاد به بررسی فوری نیاز دارد.", color = MahavaDanger)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        FormSection(if (pregnant) "خون‌ریزی در بارداری" else "خون‌ریزی", tag = "log_section_bleeding") {
+            ChipsFlow(
+                listOf("none" to "ندارم", "spotting" to "لکه‌بینی", "light" to "کم", "medium" to "متوسط", "heavy" to "زیاد"),
+                bleeding, "bleed"
+            ) { bleeding = if (bleeding == it) null else it }
+            if (pregnant && bleeding != null && bleeding != "none") Text("خون‌ریزی در بارداری را با پزشک یا ماما مطرح کن؛ درد شدید، غش یا خون‌ریزی زیاد به بررسی فوری نیاز دارد.", color = MahavaDanger)
         }
-        Spacer(Modifier.height(12.dp))
-        MahavaCard {
-        SectionLabel("امروز در کل چه حسی داری؟")
-        ChipsFlow(com.mahava.app.health.LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
-        SectionLabel("حالت چطور است؟")
-        MoodIconRow(
-            listOf(
-                Triple("happy", "خوشحال", R.drawable.ic_mood_happy),
-                Triple("calm", "آرام", R.drawable.ic_mood_calm),
-                Triple("anxious", "نگران", R.drawable.ic_mood_anxious),
-                Triple("irritable", "زودرنج", R.drawable.ic_mood_irritable),
-                Triple("sad", "غمگین", R.drawable.ic_mood_sad)
-            ),
-            mood
-        ) { mood = if (mood == it) null else it }
-
-        SectionLabel("انرژی از ۱ تا ۵")
-        ChipsFlow((1..5).map { it.toString() to PersianDigits.toPersian(it) }, energyScore, "energy") { energyScore = if (energyScore == it) null else it }
-        SectionLabel("اشتها")
-        ChipsFlow(listOf("low" to "کم", "normal" to "معمولی", "high" to "زیاد"), appetite, "appetite") { appetite = if (appetite == it) null else it }
-
+        FormSection("حال و انرژی", tag = "log_section_mood") {
+            FieldLabel("حس کلی امروز")
+            ChipsFlow(com.mahava.app.health.LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
+            FieldLabel("حال")
+            MoodIconRow(
+                listOf(
+                    Triple("happy", "خوشحال", R.drawable.ic_mood_happy),
+                    Triple("calm", "آرام", R.drawable.ic_mood_calm),
+                    Triple("anxious", "نگران", R.drawable.ic_mood_anxious),
+                    Triple("irritable", "زودرنج", R.drawable.ic_mood_irritable),
+                    Triple("sad", "غمگین", R.drawable.ic_mood_sad)
+                ),
+                mood
+            ) { mood = if (mood == it) null else it }
+            FieldLabel("انرژی (۱ کم، ۵ زیاد)")
+            ScaleRow((1..5).map { it.toString() to PersianDigits.toPersian(it) }, energyScore, "energy") { energyScore = if (energyScore == it) null else it }
+            FieldLabel("اشتها")
+            ScaleRow(listOf("low" to "کم", "normal" to "معمولی", "high" to "زیاد"), appetite, "appetite") { appetite = if (appetite == it) null else it }
         }
-        Spacer(Modifier.height(12.dp))
-        MahavaCard {
-        SectionLabel("بدنت چه حسی دارد؟")
-        ChoiceChipPill("هیچ علامتی ندارم", noSymptoms, tag = "sym_none") {
-            noSymptoms = !noSymptoms
-            if (noSymptoms) { symptoms = emptySet(); pain = -1 }
-        }
-        if (!noSymptoms) {
-            MultiChipsFlow(
-                listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "fatigue" to "خستگی", "nausea" to "حالت تهوع", "acne" to "جوش") + if (pregnant) listOf("severe_headache" to "سردرد شدید", "vision_changes" to "تغییر دید", "reduced_movement" to "کاهش حرکت جنین", "fluid_leak" to "خروج مایع", "fainting" to "غش") else emptyList(),
-                symptoms, "sym"
-            ) { k -> symptoms = if (k in symptoms) symptoms - k else symptoms + k }
-            if (pregnant && symptoms.any { it in setOf("severe_headache", "vision_changes", "reduced_movement", "fluid_leak", "fainting") }) Text("برای این علامت همین حالا با تیم مراقبت بارداری تماس بگیر؛ ثبت در برنامه جای تماس را نمی‌گیرد.", color = MahavaDanger)
-            SectionLabel("شدت درد از ۰ تا ۱۰ (اختیاری)")
-            Slider(
-                value = if (pain < 0) 0f else pain.toFloat(),
-                onValueChange = { pain = it.toInt() },
-                valueRange = 0f..10f,
-                steps = 9,
-                modifier = Modifier.testTag("pain_slider")
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (pain < 0) "انتخاب نشده" else PersianDigits.toPersian(pain), Modifier.weight(1f))
-                if (pain >= 0) TextButton(onClick = { pain = -1 }) { Text("پاک کردن") }
+        FormSection("بدن و درد", tag = "log_section_body") {
+            ChoiceChipPill("هیچ علامتی ندارم", noSymptoms, tag = "sym_none") {
+                noSymptoms = !noSymptoms
+                if (noSymptoms) { symptoms = emptySet(); pain = -1 }
+            }
+            if (!noSymptoms) {
+                MultiChipsFlow(
+                    listOf("pain" to "درد", "bloating" to "نفخ", "headache" to "سردرد", "breast_tenderness" to "حساسیت سینه", "fatigue" to "خستگی", "nausea" to "حالت تهوع", "acne" to "جوش") + if (pregnant) listOf("severe_headache" to "سردرد شدید", "vision_changes" to "تغییر دید", "reduced_movement" to "کاهش حرکت جنین", "fluid_leak" to "خروج مایع", "fainting" to "غش") else emptyList(),
+                    symptoms, "sym"
+                ) { k -> symptoms = if (k in symptoms) symptoms - k else symptoms + k }
+                if (pregnant && symptoms.any { it in setOf("severe_headache", "vision_changes", "reduced_movement", "fluid_leak", "fainting") }) Text("برای این علامت همین حالا با تیم مراقبت بارداری تماس بگیر؛ ثبت در برنامه جای تماس را نمی‌گیرد.", color = MahavaDanger)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FieldLabel("شدت درد: " + if (pain < 0) "انتخاب نشده" else PersianDigits.toPersian(pain) + " از ۱۰")
+                    Spacer(Modifier.weight(1f))
+                    if (pain >= 0) TextButton(onClick = { pain = -1 }) { Text("پاک کردن") }
+                }
+                Slider(
+                    value = if (pain < 0) 0f else pain.toFloat(),
+                    onValueChange = { pain = it.toInt() },
+                    valueRange = 0f..10f,
+                    steps = 9,
+                    modifier = Modifier.testTag("pain_slider")
+                )
             }
         }
+        FormSection("خواب و آب", tag = "log_section_sleep") {
+            FieldLabel("کیفیت خواب دیشب")
+            ScaleRow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), sleep, "sleep") { sleep = if (sleep == it) null else it }
+            FieldLabel("ساعت خواب")
+            SleepHoursPicker(sleepHours) { sleepHours = it }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FieldLabel("آب: " + if (waterMl < 0) "ثبت نشده" else "${PersianDigits.toPersian(waterMl)} میلی‌لیتر")
+                Spacer(Modifier.weight(1f))
+                if (waterMl >= 0) TextButton(onClick = { waterMl = -1 }) { Text("پاک کردن") }
+            }
+            Slider(
+                value = if (waterMl < 0) 0f else waterMl.toFloat().coerceIn(0f, 4000f),
+                onValueChange = { waterMl = it.toInt() },
+                valueRange = 0f..4000f,
+                steps = 15,
+                modifier = Modifier.testTag("water_ml_slider")
+            )
         }
-        Spacer(Modifier.height(12.dp))
-        MahavaCard {
-        SectionLabel("خواب دیشب (اختیاری)")
-        ChipsFlow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), sleep, "sleep") { sleep = if (sleep == it) null else it }
-        SectionLabel("چند ساعت خوابیدی؟ (اختیاری)")
-        SleepHoursPicker(sleepHours) { sleepHours = it }
+        FormSection("هوس خوراکی و ترشحات", tag = "log_section_more") {
+            FieldLabel("هوس خوراکی (چند مورد)")
+            MultiChipsFlow(com.mahava.app.content.FoodCravingKeys.ALL, cravings, "crave") { k ->
+                cravings = if (k in cravings) cravings - k else cravings + k
+            }
+            FieldLabel("ترشحات واژن")
+            ChipsFlow(
+                listOf("dry" to "خشک", "sticky" to "چسبناک", "creamy" to "کرمی", "watery" to "آبکی", "eggwhite" to "شفاف و کش‌دار"),
+                discharge, "dis"
+            ) { discharge = if (discharge == it) null else it }
         }
-        Spacer(Modifier.height(12.dp))
-        SectionLabel("چقدر آب خوردی؟ (اختیاری)")
-        Slider(
-            value = if (waterMl < 0) 0f else waterMl.toFloat().coerceIn(0f, 4000f),
-            onValueChange = { waterMl = it.toInt() },
-            valueRange = 0f..4000f,
-            steps = 15,
-            modifier = Modifier.testTag("water_ml_slider")
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(if (waterMl < 0) "ثبت نشده" else "${PersianDigits.toPersian(waterMl)} میلی‌لیتر", Modifier.weight(1f))
-            if (waterMl >= 0) TextButton(onClick = { waterMl = -1 }) { Text("پاک کردن") }
+        FormSection("یادداشت", tag = "log_section_note") {
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                modifier = Modifier.fillMaxWidth().testTag("note_field"),
+                label = { Text("یادداشت (اختیاری)") }
+            )
         }
-        SectionLabel("هوس خوراکی (اختیاری — چند مورد)")
-        QuietInfo("اگر چیزی هوس کردی ثبت کن؛ معنی رایج‌اش را نسبت به مرحلهٔ چرخه‌ات می‌گوییم.")
-        MultiChipsFlow(com.mahava.app.content.FoodCravingKeys.ALL, cravings, "crave") { k ->
-            cravings = if (k in cravings) cravings - k else cravings + k
-        }
-        SectionLabel("ترشحات واژن (اختیاری)")
-        ChipsFlow(
-            listOf("dry" to "خشک", "sticky" to "چسبناک", "creamy" to "کرمی", "watery" to "آبکی", "eggwhite" to "شفاف و کش‌دار"),
-            discharge, "dis"
-        ) { discharge = if (discharge == it) null else it }
-        OutlinedTextField(
-            value = note,
-            onValueChange = { note = it },
-            modifier = Modifier.fillMaxWidth().testTag("note_field"),
-            label = { Text("یادداشت (اختیاری)") }
-        )
-        Spacer(Modifier.height(12.dp))
         if (onPeriod != null && !pregnant) SecondaryButton(if (state.cycle?.periodOngoing == true) "ثبت پایان خون‌ریزی" else "ثبت شروع پریود", onClick = onPeriod)
         if (onTest != null) SecondaryButton("ثبت تست بارداری", onClick = onTest)
-        QuietInfo("گزینهٔ انتخاب‌نشده نامشخص است؛ خون‌ریزی روزانه به‌تنهایی شروع چرخه نیست.")
+        }
         Spacer(Modifier.height(16.dp))
         PrimaryButton("ذخیرهٔ ثبت روزانه", modifier = Modifier.testTag("save_daily")) {
             val now = System.currentTimeMillis()

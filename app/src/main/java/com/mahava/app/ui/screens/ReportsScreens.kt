@@ -96,8 +96,7 @@ fun ReportsScreen(
                     ChartFrame(shown.size, minSlot = 40.dp) {
                         BarChart(shown.map { it.length!!.toFloat() }, MahavaPrimary, maxValue = (lengths.max() + 4).toFloat(), labels = shown.map { cycleLabel(it.start) }, showValues = shown.size <= 12)
                     }
-                    QuietInfo("چرخهٔ جاری چون تمام نشده در میانگین نیست.")
-                }
+                        }
                 if (!pregnant && bleedLens.isNotEmpty()) MahavaCard(Modifier.testTag("reports_period_lengths")) {
                     SectionLabel("مدت پریودها")
                     val withBleed = cycles.filter { it.bleedDays != null }
@@ -118,8 +117,7 @@ fun ReportsScreen(
                     val counts = CycleStats.symptomCounts(logs).take(8)
                     if (counts.isEmpty()) QuietInfo("در این بازه علامتی ثبت نشده.")
                     else HorizontalBars(counts.map { LogLabels.symptomFa(it.first) to it.second.toFloat() }, MahavaAccentPeach, " روز")
-                    QuietInfo("${PersianDigits.toPersian(logs.size)} روز دارای ثبت؛ نبود ثبت به معنی نبود علامت نیست.")
-                    MoreLink("الگوهای تکرارشونده")
+                            MoreLink("الگوهای تکرارشونده")
                 }
                 val painW = series { it.painScore?.toFloat() }
                 if (painW.any { it != null }) MahavaCard(Modifier.testTag("reports_pain")) {

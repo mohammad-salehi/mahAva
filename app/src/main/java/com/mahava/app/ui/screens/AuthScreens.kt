@@ -87,6 +87,12 @@ fun LoginScreen(
         TextButton(onClick = onGoRegister, modifier = Modifier.testTag("go_register")) {
             Text("حساب نداری؟ ثبت‌نام")
         }
+        if (com.mahava.app.demo.DemoMode.enabled) {
+            // Demo is offline: login can't reach a server, so offer to re-enter the fake account.
+            SecondaryButton("ورود دوباره به دمو", modifier = Modifier.testTag("demo_reenter")) {
+                scope.launch { vm.reenterDemo() }
+            }
+        }
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -492,12 +498,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                PrimaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
-                    scope.launch {
-                        status = "در حال خروج…"
-                        status = vm.logoutAccount() ?: "خارج شدی. اطلاعاتت روی سرور می‌ماند و با ورود دوباره برمی‌گردد."
-                    }
-                }
+                LogoutButton(vm, primary = true) { status = it }
             }
             Spacer(Modifier.height(12.dp))
             MahavaCard {

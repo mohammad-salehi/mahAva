@@ -155,8 +155,7 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                         if (mood.all { it == null } && energy.all { it == null }) EmptyChartNote("هنوز حال یا انرژی‌ای ثبت نشده؛ از فرم بالا شروع کن.")
                         else {
                             ChartFrame(plan.size) { LineChart(listOf(mood to MahavaPrimary, energy to MahavaAccentGold), minValue = 1f, maxValue = 5f); TimeAxis(plan.labels, centered = false) }
-                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) { LegendDot(MahavaPrimary, "حال (۱ تا ۵)"); LegendDot(MahavaAccentGold, "انرژی (۱ تا ۵)") }
-                            QuietInfo("راست = قدیمی‌تر، چپ = امروز. بازه‌های بدون ثبت خالی مانده‌اند.")
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) { LegendDot(MahavaPrimary, "حال"); LegendDot(MahavaAccentGold, "انرژی") }
                         }
                     }
                     PhaseBars("میانگین انرژی در هر مرحلهٔ چرخه", CycleStats.byPhase(state.dailyLogs, state.periods, today) { CycleStats.energy(it) }, MahavaAccentGold, 5f)
@@ -280,8 +279,7 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                         SectionLabel("علائم پرتکرار")
                         val counts = CycleStats.symptomCounts(logged).take(8)
                         if (counts.isEmpty()) QuietInfo("هنوز علامتی ثبت نشده.") else HorizontalBars(counts.map { LogLabels.symptomFa(it.first) to it.second.toFloat() }, MahavaAccentPeach, " روز")
-                        QuietInfo("${PersianDigits.toPersian(logged.size)} روز دارای ثبت؛ روزهای بدون ثبت حساب نشده‌اند.")
-                    }
+                            }
                     MahavaCard {
                         SectionLabel("حال‌های ثبت‌شده")
                         val counts = CycleStats.moodCounts(logged).take(8)
@@ -327,7 +325,6 @@ private fun PhaseBars(title: String, data: List<Triple<String, Float, Int>>, col
     MahavaCard {
         SectionLabel(title)
         HorizontalBars(data.map { CycleStats.phaseTitleFa(it.first) to it.second }, color, max = max)
-        QuietInfo("از ${PersianDigits.toPersian(data.sumOf { it.third })} روز ثبت‌شده. هم‌زمانی به معنی علت نیست.")
     }
 }
 
@@ -409,11 +406,11 @@ private fun MoodEnergyForm(vm: AppViewModel, run: (suspend () -> Unit) -> Unit) 
     var saved by remember(date) { mutableStateOf(false) }
     MahavaCard(Modifier.testTag("form_mood_energy")) {
         DayPicker(vm, day) { date = it.toString() }
-        SectionLabel("امروز چه حسی داری؟"); ChipsFlow(LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
-        SectionLabel("حس و حال (چند مورد)")
+        FieldLabel("امروز چه حسی داری؟"); ChipsFlow(LogLabels.FEELINGS, feeling, "feel") { feeling = if (feeling == it) null else it }
+        FieldLabel("حس و حال (چند مورد)")
         val sel = moods.split(',').filter { it.isNotBlank() }.toSet()
         MultiChipsFlow(LogLabels.MOODS, sel, "moods") { k -> moods = (if (k in sel) sel - k else sel + k).joinToString(",") }
-        SectionLabel("انرژی از ۱ تا ۵"); ChipsFlow((1..5).map { it.toString() to PersianDigits.toPersian(it) }, energy, "en") { energy = if (energy == it) null else it }
+        FieldLabel("انرژی (۱ کم، ۵ زیاد)"); ScaleRow((1..5).map { it.toString() to PersianDigits.toPersian(it) }, energy, "en") { energy = if (energy == it) null else it }
         SaveRow(vm, day, saved = saved) {
             run {
                 val e = energy?.toIntOrNull()
@@ -448,9 +445,9 @@ private fun SleepForm(vm: AppViewModel, run: (suspend () -> Unit) -> Unit) {
     var saved by remember(date) { mutableStateOf(false) }
     MahavaCard(Modifier.testTag("form_sleep")) {
         DayPicker(vm, day) { date = it.toString() }
-        SectionLabel("خواب دیشب چند ساعت بود؟")
+        FieldLabel("خواب دیشب چند ساعت بود؟")
         SleepHoursPicker(hours) { hours = it }
-        SectionLabel("کیفیت خواب"); ChipsFlow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), quality, "sq") { quality = if (quality == it) null else it }
+        FieldLabel("کیفیت خواب"); ScaleRow(listOf("poor" to "بد", "ok" to "معمولی", "good" to "خوب"), quality, "sq") { quality = if (quality == it) null else it }
         SaveRow(vm, day, saved = saved) {
             run {
                 vm.tools.updateDaily(day.toEpochDay()) { it.copy(sleepMinutes = hours?.let { h -> Math.round(h * 60) }, sleepHours = hours, sleepQuality = quality) }
@@ -475,17 +472,17 @@ private fun PainForm(vm: AppViewModel, run: (suspend () -> Unit) -> Unit) {
     var saved by remember(date) { mutableStateOf(false) }
     MahavaCard(Modifier.testTag("form_pain")) {
         DayPicker(vm, day) { date = it.toString() }
-        SectionLabel("شدت درد: ${if (score < 0) "ثبت نشده" else PersianDigits.toPersian(score) + " از ۱۰"}")
+        FieldLabel("شدت درد: ${if (score < 0) "ثبت نشده" else PersianDigits.toPersian(score) + " از ۱۰"}")
         Slider(if (score < 0) 0f else score.toFloat(), { score = it.toInt() }, valueRange = 0f..10f, steps = 9, colors = SliderDefaults.colors(thumbColor = MahavaMenstruation, activeTrackColor = MahavaMenstruation))
-        SectionLabel("کجا درد داری؟")
+        FieldLabel("کجا درد داری؟")
         val sel = locs.split(',').filter { it.isNotBlank() }.toSet()
         MultiChipsFlow(LogLabels.PAIN_LOCATIONS, sel, "ploc") { k -> locs = (if (k in sel) sel - k else sel + k).joinToString(",") }
-        SectionLabel("چه نوع دردی؟"); ChipsFlow(LogLabels.PAIN_TYPES, type, "ptype") { type = if (type == it) null else it }
-        SectionLabel("چقدر طول کشید؟"); ChipsFlow(LogLabels.PAIN_DURATIONS, duration, "pdur") { duration = if (duration == it) null else it }
-        SectionLabel("چه کار کردی؟")
+        FieldLabel("چه نوع دردی؟"); ChipsFlow(LogLabels.PAIN_TYPES, type, "ptype") { type = if (type == it) null else it }
+        FieldLabel("چقدر طول کشید؟"); ChipsFlow(LogLabels.PAIN_DURATIONS, duration, "pdur") { duration = if (duration == it) null else it }
+        FieldLabel("چه کار کردی؟")
         val asel = actions.split(',').filter { it.isNotBlank() }.toSet()
         MultiChipsFlow(LogLabels.PAIN_ACTIONS, asel, "pact") { k -> actions = (if (k in asel) asel - k else asel + k).joinToString(",") }
-        SectionLabel("نتیجه"); ChipsFlow(LogLabels.PAIN_RESULTS, result, "pres") { result = if (result == it) null else it }
+        FieldLabel("نتیجه"); ChipsFlow(LogLabels.PAIN_RESULTS, result, "pres") { result = if (result == it) null else it }
         SaveRow(vm, day, saved = saved) {
             run {
                 vm.tools.updateDaily(day.toEpochDay()) {
@@ -512,8 +509,8 @@ private fun DischargeForm(vm: AppViewModel, run: (suspend () -> Unit) -> Unit) {
     var saved by remember(date) { mutableStateOf(false) }
     MahavaCard(Modifier.testTag("form_discharge")) {
         DayPicker(vm, day) { date = it.toString() }
-        SectionLabel("ترشحات امروز"); ChipsFlow(LogLabels.DISCHARGE, discharge, "dis") { discharge = if (discharge == it) null else it }
-        SectionLabel("علائم همراه")
+        FieldLabel("ترشحات امروز"); ChipsFlow(LogLabels.DISCHARGE, discharge, "dis") { discharge = if (discharge == it) null else it }
+        FieldLabel("علائم همراه")
         val sel = concerns.split(',').filter { it.isNotBlank() }.toSet()
         MultiChipsFlow(LogLabels.DISCHARGE_CONCERNS, sel, "disc") { k -> concerns = (if (k in sel) sel - k else sel + k).joinToString(",") }
         SaveRow(vm, day, saved = saved) {

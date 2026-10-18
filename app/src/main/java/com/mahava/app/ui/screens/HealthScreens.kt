@@ -333,8 +333,7 @@ private fun BarChartBlock(title: String, values: List<Float>, unit: String) {
         com.mahava.app.ui.components.BarChart(bars, MahavaPrimary, showValues = bars.size <= 8)
         val avg = values.average().toFloat()
         val f = { v: Float -> PersianDigits.toPersian(com.mahava.app.ui.components.fmt(Math.round(v * 10f) / 10f)) }
-        QuietInfo("میانگین ${f(avg)} $unit · کمترین ${f(values.min())} · بیشترین ${f(values.max())} · ${PersianDigits.toPersian(values.size)} مورد ثبت‌شده" +
-            if (bars.size < values.size) "؛ هر ستون میانگین چند مورد پشت سر هم است." else "")
+        QuietInfo("میانگین ${f(avg)} $unit · کمترین ${f(values.min())} · بیشترین ${f(values.max())} · ${PersianDigits.toPersian(values.size)} مورد ثبت‌شده")
     }
 }
 

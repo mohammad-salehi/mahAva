@@ -883,21 +883,36 @@ class AppViewModel(
     }
 
     /**
-     * Logout clears the phone's copy (the server keeps everything).
-     * Always completes: best-effort sync first, then leave — never trap the user behind "pending".
+     * Step 1 of logout: one best-effort sync (bounded), then how many changes are still not on
+     * the server. The screen warns about them and lets her leave anyway; it never blocks.
      */
-    suspend fun logoutAccount(force: Boolean = true): String? {
-        if (prefs.getAccountRole() != "male") {
-            val outcome = try { kotlinx.coroutines.withTimeoutOrNull(12_000) { app.dataSync.sync() } } catch (_: Exception) { null }
-            if (outcome !is com.mahava.app.sync.SyncOutcome.Ok && app.dataSync.pendingCount() > 0) {
-                return "تغییرهای ذخیره‌نشده در سرور داری؛ برای حفظ اطلاعات، پیش از خروج به اینترنت وصل شو و همگام‌سازی را کامل کن."
-            }
+    suspend fun unsyncedBeforeLogout(): Int {
+        if (com.mahava.app.demo.DemoMode.enabled) return 0 // fake data, nothing to lose
+        if (prefs.getAccountRole() == "male") return 0
+        try { kotlinx.coroutines.withTimeoutOrNull(6_000) { app.dataSync.sync() } } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException && e !is kotlinx.coroutines.TimeoutCancellationException) throw e
         }
-        com.mahava.app.partner.PartnerSync.cancel(app)
-        com.mahava.app.sync.DataSync.cancel(app)
+        return try { app.dataSync.pendingCount() } catch (_: Throwable) { 0 }
+    }
+
+    /**
+     * Step 2: sign out on this phone. Always works, offline or when the server call fails:
+     * tokens are cleared first, the server call is best-effort, and the whole thing runs
+     * NonCancellable because clearing the tokens closes the screen that started it (which
+     * used to cancel the job before the local copy was cleared).
+     */
+    suspend fun logoutAccount(): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+        runCatching { com.mahava.app.partner.PartnerSync.cancel(app) }
+        runCatching { com.mahava.app.sync.DataSync.cancel(app) }
         authRepository.logout()
-        clearLocalAfterSignOut()
-        return null
+        runCatching { clearLocalAfterSignOut() }
+        if (com.mahava.app.demo.DemoMode.enabled) runCatching { com.mahava.app.demo.DemoMode.onSignedOut(app) }
+        null
+    }
+
+    /** Demo only: seed the fake account again after a demo logout. */
+    suspend fun reenterDemo() = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        com.mahava.app.demo.DemoMode.onAppStart(app)
     }
 
     /** Delete the account on the server (with all synced data), then clear this phone. */
