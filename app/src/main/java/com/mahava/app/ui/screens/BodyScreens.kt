@@ -48,7 +48,7 @@ fun BodyHomeScreen(
                         QuietInfo("متناسب با موضوع مطالعهٔ تو")
                         Text(if (pregnancyTopic) "همراه بارداری" else "چرخه و تغییرات بدن", style = MaterialTheme.typography.headlineLarge)
                         Text("توضیح ساده با منابع علمی")
-                        Text("بیشتر بخوان ‹", color = MahavaPrimaryDeep)
+                        MoreLink("بیشتر بخوان")
                     }
                     Illustration(if (pregnancyTopic) R.drawable.design_mother else R.drawable.design_uterus_botanical, Modifier.width(120.dp).height(125.dp))
                 }

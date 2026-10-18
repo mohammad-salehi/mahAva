@@ -70,6 +70,7 @@ class ToolsStorageTest {
     }
     @Test fun dailyRecommendationAlwaysAtEightWithPrivateTextAndDoesNotRegenerate()=runBlocking {
         app.repository.saveProfile(UserProfileEntity(onboardingDone=true,privateNotifications=true))
+        subscribe()
         // An old saved setting must be ignored: the time is fixed at 08:00.
         app.toolsRepository.save("recommendation_settings","settings",mapOf("enabled" to false,"hour" to 10,"minute" to 45))
         val clock=app.clock as FakeAppClock
@@ -85,5 +86,64 @@ class ToolsStorageTest {
         assertEquals(1,notes.size)
         assertEquals("توصیهٔ امروز در ماه آماده است.",notes.single().extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString())
         tick();assertEquals(1,app.database.toolRecordDao().getAll().count {it.type=="recommendation"})
+        unsubscribe()
+    }
+    private suspend fun subscribe() {app.prefs.setAccessToken("t");app.prefs.setRefreshToken("r");app.prefs.setServerSubscription(true,"yearly",null,null)}
+    private suspend fun unsubscribe() {app.prefs.setServerSubscription(false,null,null,null);app.prefs.clearAuth()}
+    private fun setTime(h:Int,minute:Int) {val clock=app.clock as FakeAppClock;clock.setNowMillis(clock.today().atTime(h,minute).atZone(clock.zoneId()).toInstant().toEpochMilli())}
+    private suspend fun tick() {androidx.work.testing.TestListenableWorkerBuilder<com.mahava.app.reminders.ReminderWorker>(app).build().doWork()}
+    private fun titles():List<String> {
+        val manager=app.getSystemService(android.app.NotificationManager::class.java)
+        return org.robolectric.Shadows.shadowOf(manager).allNotifications.map {it.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString()}
+    }
+    @Test fun freeUsersGetNoMorningTip()=runBlocking {
+        unsubscribe()
+        app.repository.saveProfile(UserProfileEntity(onboardingDone=true))
+        setTime(8,0);tick()
+        assertTrue(titles().none {it=="توصیه امروز"})
+        assertTrue(app.database.toolRecordDao().getAll().filter {it.type=="recommendation"}.none {Gson().fromJson(it.payloadJson,DailyRecommendation::class.java).shown})
+    }
+    @Test fun morningTipUsesLastNightSleepFromYesterdayAndSaysWhy()=runBlocking {
+        val day=app.clock.today().toEpochDay()
+        app.repository.upsertDailyLog(DailyLogEntity(epochDay=day-1,sleepMinutes=300,createdAt=1,updatedAt=1))
+        val rec=Gson().fromJson(app.toolsRepository.ensureRecommendation().payloadJson,DailyRecommendation::class.java)
+        assertEquals("sleep",rec.category)
+        assertTrue(rec.body,rec.body.contains("۵ ساعت"))
+        assertTrue(rec.reasonText,rec.reasonText.contains("۵ ساعت"))
+    }
+    @Test fun sleepEnteredTodayCountsAsLastNight()=runBlocking {
+        val day=app.clock.today().toEpochDay()
+        app.repository.upsertDailyLog(DailyLogEntity(epochDay=day,sleepMinutes=270,createdAt=1,updatedAt=1))
+        val rec=Gson().fromJson(app.toolsRepository.ensureRecommendation().payloadJson,DailyRecommendation::class.java)
+        assertTrue(rec.body,rec.body.startsWith("دیشب فقط ۴ ساعت و نیم خوابیدی"))
+    }
+    @Test fun lowEnergyYesterdayIsNamedWithItsScore()=runBlocking {
+        val day=app.clock.today().toEpochDay()
+        app.repository.upsertDailyLog(DailyLogEntity(epochDay=day-1,energyScore=2,createdAt=1,updatedAt=1))
+        val rec=Gson().fromJson(app.toolsRepository.ensureRecommendation().payloadJson,DailyRecommendation::class.java)
+        assertEquals("energy",rec.category);assertTrue(rec.body,rec.body.contains("دیروز") && rec.body.contains("۲ از ۵"))
+    }
+    @Test fun categoryIsNotRepeatedFromYesterdayEvenWithOlderHistory()=runBlocking {
+        val day=app.clock.today().toEpochDay()
+        app.toolsRepository.save("recommendation_${day-5}","recommendation",DailyRecommendation(body="old",category="general_1",reasonType="general",reasonText="x",generatedAt=1),day-5)
+        app.toolsRepository.save("recommendation_${day-1}","recommendation",DailyRecommendation(body="yesterday",category="general_0",reasonType="general",reasonText="x",generatedAt=2),day-1)
+        val rec=Gson().fromJson(app.toolsRepository.ensureRecommendation().payloadJson,DailyRecommendation::class.java)
+        assertEquals("general_1",rec.category)
+    }
+    @Test fun generalTipsAreSelfCareNotAppInstructions() {
+        assertEquals(30,RecText.GENERAL.toSet().size)
+        RecText.GENERAL.forEach { tip -> listOf("ثبت","بارداری","ابزار","پزشک","کرده‌ای").forEach { bad -> assertFalse(tip,tip.contains(bad)) } }
+    }
+    @Test fun sleepAndWaterRemindersUseFixedTimesEvenWithOldSavedHour()=runBlocking {
+        assertEquals(22 to 30,com.mahava.app.reminders.ReminderScheduler.timeFor(ReminderPrefEntity(id="sleep",enabled=true,hour=9)))
+        assertEquals(13 to 0,com.mahava.app.reminders.ReminderScheduler.timeFor(ReminderPrefEntity(id="water",enabled=true,hour=9)))
+        assertEquals(9 to 0,com.mahava.app.reminders.ReminderScheduler.timeFor(ReminderPrefEntity(id="daily_log",enabled=true,hour=9)))
+        app.repository.saveProfile(UserProfileEntity(onboardingDone=true))
+        app.database.reminderDao().upsert(ReminderPrefEntity(id="sleep",enabled=true,hour=9))
+        app.database.reminderDao().upsert(ReminderPrefEntity(id="water",enabled=true,hour=9))
+        setTime(9,30);tick();assertTrue(titles().isEmpty())
+        setTime(13,0);tick();assertEquals(listOf("یادآوری آب"),titles())
+        setTime(22,15);tick();assertFalse(titles().contains("وقت استراحت"))
+        setTime(22,30);tick();assertTrue(titles().contains("وقت استراحت"))
     }
 }

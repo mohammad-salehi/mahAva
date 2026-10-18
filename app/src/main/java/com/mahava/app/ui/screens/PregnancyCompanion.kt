@@ -44,7 +44,7 @@ fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () ->
         SectionLabel("این هفته، کوچولوی تو")
         Text(fetal?.growthFa ?: "برای این مرحله محتوای هفتگی موجود نیست؛ برنامهٔ پزشکت را دنبال کن.")
         HealthContextNote(HealthNote.FETAL_GROWTH)
-        Text("رشد معمول و منابع علمی ‹", color = MahavaPrimaryDeep)
+        MoreLink("رشد معمول و منابع علمی")
     }
     Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf(Triple("mother", "برای مادر", R.drawable.design_mother), Triple("father", "برای پدر", R.drawable.design_father)).forEach { (kind, label, image) ->

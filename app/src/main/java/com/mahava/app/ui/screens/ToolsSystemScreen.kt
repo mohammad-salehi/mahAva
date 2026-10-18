@@ -252,12 +252,17 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(label, Modifier.weight(1f)); Switch(current.enabled, { enabled ->
                                     if (enabled && android.os.Build.VERSION.SDK_INT >= 33) notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                    vm.saveReminder(current.copy(enabled = enabled))
+                                    val fixed = com.mahava.app.reminders.ReminderScheduler.fixedTime(rid)
+                                    vm.saveReminder(current.copy(enabled = enabled, hour = fixed?.first ?: current.hour, minute = fixed?.second ?: current.minute))
                                 })
                             }
                             if (current.enabled) {
-                                SectionLabel("ساعت: ${PersianDigits.toPersian(current.hour)}:${PersianDigits.toPersian(current.minute.toString().padStart(2, '0'))}")
-                                Slider(current.hour.toFloat(), { vm.saveReminder(current.copy(hour = it.toInt())) }, valueRange = 6f..23f, steps = 16)
+                                val (h, m) = com.mahava.app.reminders.ReminderScheduler.timeFor(current)
+                                SectionLabel("ساعت: ${PersianDigits.toPersian(h)}:${PersianDigits.toPersian(m.toString().padStart(2, '0'))}")
+                                // Water (noon) and sleep (22:30) have fixed times; the rest can be moved.
+                                if (com.mahava.app.reminders.ReminderScheduler.fixedTime(rid) == null)
+                                    Slider(current.hour.toFloat(), { vm.saveReminder(current.copy(hour = it.toInt())) }, valueRange = 6f..23f, steps = 16)
+                                else QuietInfo(if (rid == "sleep") "این یادآوری همیشه شب، ساعت ۲۲:۳۰ میاد." else "این یادآوری همیشه ظهر، ساعت ۱۳ میاد.")
                                 if (rid == "medication") {
                                     var medication by rememberSaveable(rid, current.medicationLabel) { mutableStateOf(current.medicationLabel.orEmpty()) }
                                     OutlinedTextField(medication, { if (it.length <= 200) medication = it }, label = { Text("نام دارو (همان که پزشک گفته)") }, modifier = Modifier.fillMaxWidth())

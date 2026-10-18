@@ -174,10 +174,10 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 ReminderToggle(vm, "period", "یادآوری نزدیک شدن پریود", state.reminders, "set_rem_period") {
                     if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-                ReminderToggle(vm, "water", "یادآوری نوشیدن آب", state.reminders, "set_rem_water") {
+                ReminderToggle(vm, "water", "یادآوری نوشیدن آب (ظهر، ساعت ۱۳)", state.reminders, "set_rem_water") {
                     if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-                ReminderToggle(vm, "sleep", "یادآوری خواب و استراحت", state.reminders, "set_rem_sleep") {
+                ReminderToggle(vm, "sleep", "یادآوری خواب و استراحت (شب، ساعت ۲۲:۳۰)", state.reminders, "set_rem_sleep") {
                     if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
@@ -350,7 +350,9 @@ private fun ReminderToggle(vm: AppViewModel, id: String, label: String, list: Li
         Text(label, Modifier.weight(1f))
         Switch(cur?.enabled == true, { enabled ->
             if (enabled) onEnable()
-            vm.saveReminder(ReminderPrefEntity(id = id, enabled = enabled, hour = 9, minute = 0))
+            // Sleep and water have fixed times; the others keep the time already chosen (default 09:00).
+            val (h, m) = com.mahava.app.reminders.ReminderScheduler.fixedTime(id) ?: ((cur?.hour ?: 9) to (cur?.minute ?: 0))
+            vm.saveReminder((cur ?: ReminderPrefEntity(id = id)).copy(enabled = enabled, hour = h, minute = m))
         }, modifier = Modifier.testTag(tag))
     }
 }

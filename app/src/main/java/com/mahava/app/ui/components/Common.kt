@@ -83,6 +83,24 @@ fun MahavaIcon(@DrawableRes res: Int, tint: Color = MahavaPrimary, size: Dp = 24
     )
 }
 
+/**
+ * "More / details" link: the text, then a chevron pointing LEFT (forward in this RTL app).
+ * Never put "‹" / ">" characters in Persian text: bidi mirroring flips them the wrong way.
+ */
+@Composable
+fun MoreLink(
+    text: String,
+    color: Color = MahavaPrimaryDeep,
+    style: androidx.compose.ui.text.TextStyle = LocalTextStyle.current,
+    fontWeight: FontWeight? = null
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text, color = color, style = style, fontWeight = fontWeight)
+        Spacer(Modifier.width(2.dp))
+        MahavaIcon(com.mahava.app.R.drawable.design_chevron_left, color, 18.dp)
+    }
+}
+
 @Composable
 fun Illustration(@DrawableRes res: Int, modifier: Modifier = Modifier) {
     Image(

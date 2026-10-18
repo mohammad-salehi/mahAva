@@ -102,6 +102,8 @@ fun TodayScreen(
             }
         }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Accounts restored at login skip onboarding: ask once here, never again after that.
+            NotificationPermissionCard(NOTIFICATION_REASON_FA, onlyIfNeverAsked = true)
             if (state.profile?.qaSampleData == true) QuietInfo("دادهٔ نمونه برای آزمایش؛ اطلاعات واقعی نیست.")
             if (pregnant) {
                 PregnancyCompanion(vm, onPregnancy, onPregnancySetup, onDailyLog, onHealthInsight)
@@ -137,15 +139,16 @@ fun TodayScreen(
                 MahavaCard(Modifier.clickable(onClick = onAssistant)) {
                     Text(a.titleFa, color = MahavaDanger, style = MaterialTheme.typography.titleMedium)
                     Text(a.recommendedActionFa)
-                    Text("جزئیات و مبنای راهنما ‹", color = MahavaPrimaryDeep)
+                    MoreLink("جزئیات و مبنای راهنما")
                 }
             }
-            tools.find { it.id == "recommendation_${today.toEpochDay()}" && it.deletedAt == null }?.let { record ->
+            // The daily tip is a subscriber feature (same as the 08:00 notification).
+            if (premium) tools.find { it.id == "recommendation_${today.toEpochDay()}" && it.deletedAt == null }?.let { record ->
                 val recommendation = com.google.gson.Gson().fromJson(record.payloadJson, com.mahava.app.health.DailyRecommendation::class.java)
                 MahavaCard(Modifier.clickable { onTool("tools/recommendation") }.testTag("today_recommendation"), containerColor = softTint(MahavaFertility)) {
                     SectionLabel("توصیهٔ امروز")
                     Text(recommendation.body)
-                    Text("چرا این توصیه؟ و توصیه‌های قبلی ‹", color = MahavaPrimaryDeep)
+                    MoreLink("چرا این توصیه؟ و توصیه‌های قبلی")
                 }
             }
             MahavaCard(Modifier.testTag("quick_feelings")) {
@@ -170,7 +173,7 @@ fun TodayScreen(
                     Text(science.homePracticalFa.ifBlank { science.bodyFa.take(140) })
                     Spacer(Modifier.height(8.dp))
                     QuietInfo("این راهنمای کلی است؛ جای پزشک را نمی‌گیرد.")
-                    Text("بیشتر بخوان ‹", color = MahavaPrimaryDeep)
+                    MoreLink("بیشتر بخوان")
                 }
                 MahavaCard {
                     SectionLabel("پیشنهاد امروز")
@@ -211,7 +214,7 @@ fun TodayScreen(
                                 QuietInfo("با ثبت چند پریود، حدس فردا بهتر می‌شود.")
                             }
                             Spacer(Modifier.height(6.dp))
-                            Text("بیشتر ببین ‹", color = MahavaPrimaryDeep)
+                            MoreLink("بیشتر ببین")
                         }
                     }
                 }

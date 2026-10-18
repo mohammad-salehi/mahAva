@@ -33,6 +33,24 @@ class ReminderScheduler(private val context: Context) {
         /** The daily recommendation always goes out at 08:00 local time; there is no setting. */
         const val RECOMMENDATION_HOUR = 8
 
+        /**
+         * Reminders that only make sense at one time of day. Older installs saved 09:00 for
+         * every reminder, so the stored hour is ignored for these.
+         */
+        fun fixedTime(id: String): Pair<Int, Int>? = when (id) {
+            "sleep" -> 22 to 30   // wind down before bed
+            "water" -> 13 to 0    // around noon
+            else -> null
+        }
+
+        /** Delivery time (hour, minute) for a reminder: fixed for sleep/water, else the saved time. */
+        fun timeFor(pref: com.mahava.app.data.db.ReminderPrefEntity): Pair<Int, Int> =
+            fixedTime(pref.id) ?: (pref.hour to pref.minute)
+
+        /** Minutes since midnight a reminder becomes due. */
+        fun dueMinute(pref: com.mahava.app.data.db.ReminderPrefEntity): Int =
+            timeFor(pref).let { (h, m) -> h * 60 + m }
+
         /** Milliseconds from [now] to the next 08:00 (tomorrow when it is already 08:00 or later). */
         fun delayUntilNextMorning(now: java.time.ZonedDateTime): Long {
             var next = now.toLocalDate().atTime(RECOMMENDATION_HOUR, 0).atZone(now.zone)
@@ -100,8 +118,10 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
 
         val tools = app.toolsRepository
         val localTime = java.time.Instant.ofEpochMilli(app.clock.nowMillis()).atZone(app.clock.zoneId()).toLocalTime()
+        val nowMinute = localTime.hour * 60 + localTime.minute
         // Fixed 08:00; the 15-minute tick only catches up if the phone was off at 8.
-        if (localTime.hour >= ReminderScheduler.RECOMMENDATION_HOUR) {
+        // The daily tip is a subscriber feature: free accounts get no 08:00 notification.
+        if (localTime.hour >= ReminderScheduler.RECOMMENDATION_HOUR && app.authRepository.isPremiumEffectiveNow()) {
             val item = tools.ensureRecommendation()
             val recommendation = com.google.gson.Gson().fromJson(item.payloadJson,com.mahava.app.health.DailyRecommendation::class.java)
             if (!recommendation.shown) {
@@ -150,7 +170,7 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         }
         reminders["water"]?.let { pref ->
             val already = sp.getLong("water_notified_day", -1L) == today.toEpochDay()
-            if (!already && localTime.hour*60+localTime.minute >= pref.hour*60+pref.minute) {
+            if (!already && nowMinute >= ReminderScheduler.dueMinute(pref)) {
                 pending += Triple(
                     1003,
                     titleOf("یادآوری آب"),
@@ -161,8 +181,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         }
         reminders["sleep"]?.let { pref ->
             val already = sp.getLong("sleep_notified_day", -1L) == today.toEpochDay()
-            val hour = pref.hour
-            if (!already && localTime.hour*60+localTime.minute >= hour*60+pref.minute) {
+            // 22:30; the 15-minute tick delivers it between 22:30 and about 22:45.
+            if (!already && nowMinute >= ReminderScheduler.dueMinute(pref)) {
                 pending += Triple(
                     1004,
                     titleOf("وقت استراحت"),

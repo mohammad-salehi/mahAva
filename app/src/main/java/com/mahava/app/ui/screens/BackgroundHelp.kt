@@ -42,13 +42,20 @@ object BackgroundHelp {
     }
 }
 
+/** Why a woman's account needs notifications (onboarding and the one-time ask on the home screen). */
+const val NOTIFICATION_REASON_FA =
+    "برای این‌که توصیهٔ روزانهٔ ساعت ۸ صبح و یادآوری‌هات (مثل نزدیک شدن پریود) به دستت برسه، ماه باید اجازهٔ فرستادن اعلان داشته باشه."
+
 /**
  * Asks once automatically for POST_NOTIFICATIONS; the card offers one more in-app request.
+ * With [onlyIfNeverAsked] it only does the single automatic ask (for accounts that skipped
+ * onboarding) and never shows a card afterwards, so a "no" is respected.
  * [reasonFa] explains why (morning tips for women, partner updates for husbands).
  */
 @Composable
 fun NotificationPermissionCard(
-    reasonFa: String = "برای این‌که وقتی برنامه بسته است هم از ثبت‌های همسرت خبردار شوی، اجازهٔ اعلان بده."
+    reasonFa: String = "برای این‌که وقتی برنامه بسته است هم از ثبت‌های همسرت خبردار شوی، اجازهٔ اعلان بده.",
+    onlyIfNeverAsked: Boolean = false
 ) {
     if (Build.VERSION.SDK_INT < 33) return
     val context = LocalContext.current
@@ -64,7 +71,7 @@ fun NotificationPermissionCard(
         }
     }
     // Android stops showing the request after it was declined twice; then the card goes away.
-    if (canNotify || asks >= 2) return
+    if (canNotify || asks >= 2 || (onlyIfNeverAsked && asks >= 1)) return
     MahavaCard(Modifier.testTag("notif_permission_card")) {
         Text("اعلان‌ها خاموشه", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
         Text(reasonFa, style = MaterialTheme.typography.bodyMedium)
@@ -72,6 +79,27 @@ fun NotificationPermissionCard(
         PrimaryButton("اجازهٔ اعلان", modifier = Modifier.testTag("notif_permission_btn")) {
             BackgroundHelp.countAsk(context); asks += 1
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}
+
+/**
+ * Onboarding: explains why notifications matter. The system question comes when she taps the
+ * button here, or once when she taps «ورود به برنامه» (see [OnboardingFlow]); never repeated.
+ */
+@Composable
+fun OnboardingNotificationCard(asked: Boolean, onAsk: () -> Unit) {
+    if (Build.VERSION.SDK_INT < 33) return
+    val context = LocalContext.current
+    if (BackgroundHelp.canNotify(context)) return
+    MahavaCard(Modifier.testTag("onb_notif_card")) {
+        Text("اعلان‌ها", style = MaterialTheme.typography.titleMedium, color = MahavaPrimary)
+        Text(NOTIFICATION_REASON_FA, style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(8.dp))
+        if (!asked) {
+            PrimaryButton("اجازهٔ اعلان می‌دم", modifier = Modifier.testTag("onb_notif_btn"), onClick = onAsk)
+        } else {
+            Text("اجازه ندادی؛ مشکلی نیست. اگه بعداً خواستی، از تنظیمات گوشی برای «ماه» اعلان رو روشن کن.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

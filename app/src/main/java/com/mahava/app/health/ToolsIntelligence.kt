@@ -7,7 +7,9 @@ import java.security.MessageDigest
 data class StoredInsight(
     val title: String, val description: String, val dataWindow: String, val sampleCount: Int,
     /** Descriptive evidence strength, not a validated medical probability. */
-    val confidence: String = "low", val relatedMetrics: String, val generatedAt: Long
+    val confidence: String = "low", val relatedMetrics: String, val generatedAt: Long,
+    /** For pre-period patterns: in how many cycles it was logged. */
+    val cycleCount: Int = 0
 )
 
 /** Historical context uses actual adjacent period starts, never a future prediction. */
@@ -38,7 +40,7 @@ object ToolsAnalytics {
             val matching=valid.filter { key in it.physicalSymptoms.orEmpty().split(',') || key in it.moods.orEmpty().split(',') || (key=="pain" && (it.painScore ?: -1)>0) }
             val pre=matching.filter { stage(it.epochDay,ws)=="هفت روز پیش از پریود ثبت‌شده" }
             val cycles=ws.count { w -> pre.any { w.contains(it.epochDay) } }
-            if(cycles>=3) result += StoredInsight("الگوی پیش از پریود: $label", "در $cycles چرخه، $label در هفت روز پیش از پریود ثبت شده؛ ${pre.size} روز دارای این ثبت است. روزهای بدون ثبت نامشخص‌اند. این مشاهده تشخیص سندرم پیش از قاعدگی (PMS) یا نوع شدیدش (PMDD) نیست و علت را نشان نمی‌دهد.",range,pre.size,relatedMetrics="pms_$key",generatedAt=now)
+            if(cycles>=3) result += StoredInsight("الگوی پیش از پریود: $label", "در $cycles چرخه، $label در هفت روز پیش از پریود ثبت شده؛ ${pre.size} روز دارای این ثبت است. روزهای بدون ثبت نامشخص‌اند. این مشاهده تشخیص سندرم پیش از قاعدگی (PMS) یا نوع شدیدش (PMDD) نیست و علت را نشان نمی‌دهد.",range,pre.size,relatedMetrics="pms_$key",generatedAt=now,cycleCount=cycles)
         }
         listOf("sleep" to "خواب", "energy" to "انرژی", "mood" to "حال").forEach { (key,label) ->
             val observed=valid.filter { when(key) { "sleep" -> sleep(it)!=null; "energy" -> energy(it)!=null; else -> !it.moods.isNullOrBlank() } }

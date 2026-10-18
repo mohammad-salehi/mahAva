@@ -75,7 +75,7 @@ fun ReportsScreen(
                             Text("گزارش برای پزشک (PDF)", style = MaterialTheme.typography.titleMedium)
                             QuietInfo("خلاصه، جدول چرخه‌ها، علائم و درد؛ قابل ذخیره و ارسال")
                         }
-                        Text("‹", style = MaterialTheme.typography.headlineMedium, color = MahavaPrimaryDeep)
+                        MahavaIcon(com.mahava.app.R.drawable.design_chevron_left, MahavaPrimaryDeep)
                     }
                 }
                 if (pregnant) {
@@ -119,7 +119,7 @@ fun ReportsScreen(
                     if (counts.isEmpty()) QuietInfo("در این بازه علامتی ثبت نشده.")
                     else HorizontalBars(counts.map { LogLabels.symptomFa(it.first) to it.second.toFloat() }, MahavaAccentPeach, " روز")
                     QuietInfo("${PersianDigits.toPersian(logs.size)} روز دارای ثبت؛ نبود ثبت به معنی نبود علامت نیست.")
-                    Text("الگوهای تکرارشونده ‹", color=MahavaPrimaryDeep)
+                    MoreLink("الگوهای تکرارشونده")
                 }
                 val painW = series { it.painScore?.toFloat() }
                 if (painW.any { it != null }) MahavaCard(Modifier.testTag("reports_pain")) {

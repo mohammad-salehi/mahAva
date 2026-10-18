@@ -1,5 +1,6 @@
 package com.mahava.app.ui.screens
 
+import com.mahava.app.ui.components.MoreLink
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -249,7 +250,7 @@ private fun TeaserRow(label: String, teaser: String, accent: Color, tag: String,
                 }
             }
             Spacer(Modifier.width(8.dp))
-            Text("چرا؟ ‹", color = MahavaPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            MoreLink("چرا؟", MahavaPrimary, MaterialTheme.typography.labelLarge, FontWeight.Bold)
         }
     }
 }

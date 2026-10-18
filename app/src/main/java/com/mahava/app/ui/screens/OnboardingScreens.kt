@@ -45,6 +45,23 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
     var bleedUnknown by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // Notifications are asked for here, at the start, with a short reason; only ever once.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var notifAsked by remember { mutableStateOf(BackgroundHelp.askCount(context) > 0) }
+    var afterAsk by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val notifLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        notifAsked = true
+        afterAsk?.invoke(); afterAsk = null
+    }
+    fun askNotifications(then: (() -> Unit)?) {
+        BackgroundHelp.countAsk(context)
+        afterAsk = then
+        notifLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+    fun needsNotificationAsk() =
+        android.os.Build.VERSION.SDK_INT >= 33 && !notifAsked && !BackgroundHelp.canNotify(context)
 
     Column(Modifier.fillMaxSize().background(MahavaBackground).testTag("onboarding")) {
         CycleInfoStep(
@@ -58,8 +75,11 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
             bleedUnknown = bleedUnknown, onBleedUnknown = { bleedUnknown = it; if (it) bleedLen = null },
             busy = busy,
             error = error,
+            header = { OnboardingNotificationCard(asked = notifAsked) { askNotifications(null) } },
             onNext = {
                 if (busy) return@CycleInfoStep
+                val finish: () -> Unit = finish@{
+                if (busy) return@finish
                 busy = true
                 error = null
                 val now = System.currentTimeMillis()
@@ -80,6 +100,8 @@ fun OnboardingFlow(vm: AppViewModel, onFinished: () -> Unit) {
                     if (err != null) error = err
                     else onFinished()
                 }
+                }
+                if (needsNotificationAsk()) askNotifications(finish) else finish()
             },
             onBack = null
         )
@@ -98,11 +120,14 @@ private fun CycleInfoStep(
     bleedUnknown: Boolean, onBleedUnknown: (Boolean) -> Unit,
     busy: Boolean = false,
     error: String? = null,
+    header: @Composable () -> Unit = {},
     onNext: () -> Unit, onBack: (() -> Unit)?
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
         ScreenHeader("دربارهٔ چرخه‌ات", onBack = onBack)
         QuietInfo("هر جا مطمئن نیستی «نمی‌دانم» را بزن؛ چیزی را به‌جای تو حدس نمی‌زنیم.")
+        Spacer(Modifier.height(8.dp))
+        header()
         Spacer(Modifier.height(8.dp))
         SectionLabel("آخرین پریودت از چه روزی شروع شد؟")
         MahavaCard {
