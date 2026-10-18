@@ -74,7 +74,12 @@ data class MahPlansResponse(
     val message: String? = null
 )
 
-data class MahApiException(val status: Int, override val message: String) : Exception(message)
+data class MahApiException(
+    val status: Int,
+    override val message: String,
+    /** Seconds to wait before retrying (OTP cooldown / rate limit), when the server says so. */
+    val retryAfterSec: Int? = null
+) : Exception(message)
 
 data class MahForceUpdateDto(
     val mustUpdate: Boolean = false,

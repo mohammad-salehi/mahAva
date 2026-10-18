@@ -192,12 +192,16 @@ class AuthRepository(
         }
     }
 
+    /**
+     * Local sign-out first (always happens), then a best-effort, time-limited server logout.
+     * Offline, a slow server or any error can no longer keep the user signed in.
+     */
     suspend fun logout() {
-        val access = prefs.getAccessToken()
-        if (!access.isNullOrBlank()) {
-            try { api.logout(access) } catch (_: Throwable) { }
-        }
+        val access = try { prefs.getAccessToken() } catch (_: Throwable) { null }
         prefs.clearAuth()
+        if (!access.isNullOrBlank() && !BuildConfig.MAH_DEMO) {
+            try { kotlinx.coroutines.withTimeoutOrNull(5_000) { runCatching { api.logout(access) } } } catch (_: Throwable) { }
+        }
     }
 
     suspend fun setApiBaseUrl(url: String) {

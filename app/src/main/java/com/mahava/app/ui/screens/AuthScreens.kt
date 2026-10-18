@@ -27,6 +27,7 @@ import com.mahava.app.ui.AppViewModel
 import com.mahava.app.ui.components.*
 import com.mahava.app.ui.theme.MahavaPrimary
 import com.mahava.app.util.PersianDigits
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -109,6 +110,8 @@ fun RegisterScreen(
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
+    var fixedOtp by remember { mutableStateOf(false) }
+    val resend = rememberResendCountdown()
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("register_screen")
@@ -123,7 +126,8 @@ fun RegisterScreen(
         QuietInfo(
             when (step) {
                 0 -> "شماره موبایل را وارد کن تا کد تأیید برایت صادر شود."
-                1 -> "کد ۶ رقمی را وارد کن. تا راه‌اندازی پیامک، کد پیش‌فرض ۰۰۰۰۰۰ است."
+                1 -> if (fixedOtp) "کد ۶ رقمی را وارد کن. تا راه‌اندازی پیامک، کد پیش‌فرض ۰۰۰۰۰۰ است."
+                     else "کد ۶ رقمی پیامک‌شده را وارد کن."
                 else -> "رمز عبور بگذار و سیاست حریم خصوصی و شرایط استفاده را بپذیر."
             }
         )
@@ -150,12 +154,15 @@ fun RegisterScreen(
                 )
             }
             1 -> {
-                QuietInfo("کد برای ${PersianDigits.toPersian(phone)} ارسال شد.")
+                QuietInfo(
+                    if (fixedOtp) "کد برای ${phoneLabel(phone)} آماده شد."
+                    else "کد به شمارهٔ ${phoneLabel(phone)} پیامک شد."
+                )
                 OutlinedTextField(
                     value = otp,
                     onValueChange = { if (it.length <= 6) otp = it.filter { ch -> ch.isDigit() } },
                     label = { Text("کد تأیید") },
-                    placeholder = { Text("000000") },
+                    placeholder = if (fixedOtp) { { Text("000000") } } else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("register_otp")
@@ -188,12 +195,14 @@ fun RegisterScreen(
             0 -> PrimaryButton(if (busy) "صبر کن…" else "ارسال کد", enabled = !busy, modifier = Modifier.testTag("register_send_otp")) {
                 busy = true; error = null; info = null
                 scope.launch {
-                    val msg = vm.requestOtp(phone, "register")
+                    val r = vm.requestOtp(phone, "register")
                     busy = false
-                    if (msg == null) {
-                        info = "کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن."
+                    if (r.cooldownSec > 0) resend.intValue = r.cooldownSec
+                    if (r.error == null) {
+                        fixedOtp = r.fixedOtp
+                        info = if (r.fixedOtp) "کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن." else null
                         step = 1
-                    } else error = msg
+                    } else error = r.error
                 }
             }
             1 -> {
@@ -205,15 +214,21 @@ fun RegisterScreen(
                         if (msg == null) step = 2 else error = msg
                     }
                 }
-                TextButton(enabled = !busy, onClick = {
+                TextButton(enabled = !busy && resend.intValue == 0, onClick = {
                     busy = true; error = null
                     scope.launch {
-                        val msg = vm.requestOtp(phone, "register")
+                        val r = vm.requestOtp(phone, "register")
                         busy = false
-                        info = if (msg == null) "کد دوباره آماده شد." else null
-                        if (msg != null) error = msg
+                        if (r.cooldownSec > 0) resend.intValue = r.cooldownSec
+                        if (r.error == null) {
+                            fixedOtp = r.fixedOtp
+                            info = if (r.fixedOtp) "کد دوباره آماده شد." else "کد دوباره به شمارهٔ ${phoneLabel(phone)} پیامک شد."
+                        } else {
+                            info = null
+                            error = r.error
+                        }
                     }
-                }) { Text("ارسال دوباره کد") }
+                }) { Text(resendLabel(resend.intValue)) }
             }
             else -> PrimaryButton(
                 if (busy) "صبر کن…" else "ثبت‌نام",
@@ -250,6 +265,8 @@ fun PasswordRecoveryScreen(vm: AppViewModel, onBack: () -> Unit, onDone: () -> U
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
+    var fixedOtp by remember { mutableStateOf(false) }
+    val resend = rememberResendCountdown()
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).testTag("password_recovery_screen")
@@ -264,7 +281,8 @@ fun PasswordRecoveryScreen(vm: AppViewModel, onBack: () -> Unit, onDone: () -> U
         QuietInfo(
             when (step) {
                 0 -> "شماره موبایل حسابت را وارد کن."
-                1 -> "کد ۶ رقمی را وارد کن. تا راه‌اندازی پیامک، کد پیش‌فرض ۰۰۰۰۰۰ است."
+                1 -> if (fixedOtp) "کد ۶ رقمی را وارد کن. تا راه‌اندازی پیامک، کد پیش‌فرض ۰۰۰۰۰۰ است."
+                     else "کد ۶ رقمی پیامک‌شده را وارد کن."
                 else -> "رمز عبور جدید را وارد کن."
             }
         )
@@ -283,7 +301,7 @@ fun PasswordRecoveryScreen(vm: AppViewModel, onBack: () -> Unit, onDone: () -> U
                 value = otp,
                 onValueChange = { if (it.length <= 6) otp = it.filter { ch -> ch.isDigit() } },
                 label = { Text("کد تأیید") },
-                placeholder = { Text("000000") },
+                placeholder = if (fixedOtp) { { Text("000000") } } else null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().testTag("recovery_otp")
@@ -304,12 +322,15 @@ fun PasswordRecoveryScreen(vm: AppViewModel, onBack: () -> Unit, onDone: () -> U
             0 -> PrimaryButton(if (busy) "صبر کن…" else "ارسال کد", enabled = !busy, modifier = Modifier.testTag("recovery_send_otp")) {
                 busy = true; error = null; info = null
                 scope.launch {
-                    val msg = vm.requestOtp(phone, "reset")
+                    val r = vm.requestOtp(phone, "reset")
                     busy = false
-                    if (msg == null) {
-                        info = "اگر شماره ثبت شده باشد، کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن."
+                    if (r.cooldownSec > 0) resend.intValue = r.cooldownSec
+                    if (r.error == null) {
+                        fixedOtp = r.fixedOtp
+                        info = if (r.fixedOtp) "اگر شماره ثبت شده باشد، کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن."
+                               else r.serverMessage ?: "اگر شماره ثبت شده باشد، کد به شمارهٔ ${phoneLabel(phone)} پیامک می‌شود."
                         step = 1
-                    } else error = msg
+                    } else error = r.error
                 }
             }
             1 -> {
@@ -321,15 +342,22 @@ fun PasswordRecoveryScreen(vm: AppViewModel, onBack: () -> Unit, onDone: () -> U
                         if (msg == null) step = 2 else error = msg
                     }
                 }
-                TextButton(enabled = !busy, onClick = {
+                TextButton(enabled = !busy && resend.intValue == 0, onClick = {
                     busy = true; error = null
                     scope.launch {
-                        val msg = vm.requestOtp(phone, "reset")
+                        val r = vm.requestOtp(phone, "reset")
                         busy = false
-                        info = if (msg == null) "کد دوباره آماده شد." else null
-                        if (msg != null) error = msg
+                        if (r.cooldownSec > 0) resend.intValue = r.cooldownSec
+                        if (r.error == null) {
+                            fixedOtp = r.fixedOtp
+                            info = if (r.fixedOtp) "کد دوباره آماده شد."
+                                   else r.serverMessage ?: "اگر شماره ثبت شده باشد، کد دوباره پیامک می‌شود."
+                        } else {
+                            info = null
+                            error = r.error
+                        }
                     }
-                }) { Text("ارسال دوباره کد") }
+                }) { Text(resendLabel(resend.intValue)) }
             }
             else -> PrimaryButton(
                 if (busy) "صبر کن…" else "تغییر رمز",
@@ -649,3 +677,24 @@ private fun syncAgoFa(ms: Long): String {
         else -> "${PersianDigits.toPersian((min / 1440).toInt())} روز پیش"
     }
 }
+
+/** Counts [seconds] down to zero, one tick per second. */
+@Composable
+private fun rememberResendCountdown(): MutableIntState {
+    val left = remember { mutableIntStateOf(0) }
+    LaunchedEffect(left.intValue) {
+        if (left.intValue > 0) {
+            delay(1000)
+            left.intValue = (left.intValue - 1).coerceAtLeast(0)
+        }
+    }
+    return left
+}
+
+private fun resendLabel(left: Int): String {
+    if (left <= 0) return "ارسال دوباره کد"
+    val text = if (left < 100) left.toString() else "%d:%02d".format(left / 60, left % 60)
+    return "ارسال دوباره (${PersianDigits.toPersian(text)})"
+}
+
+private fun phoneLabel(phone: String): String = com.mahava.app.util.FaText.ltr(PersianDigits.toPersian(phone.trim()))

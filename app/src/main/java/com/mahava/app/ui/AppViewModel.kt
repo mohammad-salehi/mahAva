@@ -52,6 +52,9 @@ import java.time.LocalDate
 /** How long login waits for the restore before it continues in the background. */
 private const val RESTORE_WAIT_MS = 25_000L
 
+/** Matches the backend MAH_OTP_RESEND_COOLDOWN_SEC default; a 429 reply overrides it. */
+private const val OTP_RESEND_COOLDOWN_SEC = 60
+
 data class AppUiState(
     val ready: Boolean = false,
     val profile: UserProfileEntity? = null,
@@ -700,14 +703,29 @@ class AppViewModel(
         }
     }
 
-    suspend fun requestOtp(phone: String, purpose: String): String? {
+    /** Outcome of an OTP send: [error] null means sent; [fixedOtp] only when the server says SMS is off. */
+    data class OtpSendResult(
+        val error: String? = null,
+        val serverMessage: String? = null,
+        val fixedOtp: Boolean = false,
+        val cooldownSec: Int = 0
+    )
+
+    suspend fun requestOtp(phone: String, purpose: String): OtpSendResult {
         return try {
-            authRepository.requestOtp(phone.trim(), purpose)
-            null
+            val res = authRepository.requestOtp(phone.trim(), purpose)
+            OtpSendResult(
+                serverMessage = res.message?.trim()?.takeIf { m -> m.isNotEmpty() && m.any { it in '\u0600'..'\u06FF' } },
+                fixedOtp = res.debugFixedOtp == true,
+                cooldownSec = OTP_RESEND_COOLDOWN_SEC
+            )
         } catch (e: MahApiException) {
-            com.mahava.app.util.FaText.orFallback(e.message, "ارسال کد ناموفق بود.")
+            OtpSendResult(
+                error = com.mahava.app.util.FaText.orFallback(e.message, "ارسال کد ناموفق بود."),
+                cooldownSec = if (e.status == 429) (e.retryAfterSec ?: OTP_RESEND_COOLDOWN_SEC) else 0
+            )
         } catch (t: Throwable) {
-            com.mahava.app.util.FaText.orFallback(t.message, "ارسال کد ناموفق بود.")
+            OtpSendResult(error = com.mahava.app.util.FaText.orFallback(t.message, "ارسال کد ناموفق بود."))
         }
     }
 

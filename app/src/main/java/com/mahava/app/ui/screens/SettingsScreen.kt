@@ -77,12 +77,7 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                     modifier = Modifier.testTag("settings_renew")
                 ) { showRenew = true }
                 Spacer(Modifier.height(8.dp))
-                SecondaryButton("خروج از حساب", modifier = Modifier.testTag("logout_btn")) {
-                    scope.launch {
-                        status = "در حال خروج…"
-                        status = vm.logoutAccount() ?: "خارج شدی."
-                    }
-                }
+                LogoutButton(vm, primary = false) { status = it }
             }
         }
         if (showRenew) {
@@ -340,6 +335,45 @@ private fun SwitchLine(label: String, checked: Boolean, tag: String, onChange: (
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
         Switch(checked, onChange, modifier = Modifier.testTag(tag))
+    }
+}
+
+/**
+ * «خروج از حساب»: always signs out. If some changes could not reach the server (offline or
+ * rejected), it says how many and asks once; she can still leave.
+ */
+@Composable
+fun LogoutButton(vm: AppViewModel, primary: Boolean, onStatus: (String) -> Unit) {
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var unsynced by remember { mutableStateOf(0) }
+    fun doLogout() {
+        busy = true
+        onStatus("در حال خروج…")
+        scope.launch { onStatus(vm.logoutAccount() ?: "خارج شدی."); busy = false }
+    }
+    val onClick: () -> Unit = {
+        if (!busy) {
+            busy = true
+            onStatus("در حال آماده شدن برای خروج…")
+            scope.launch {
+                val n = vm.unsyncedBeforeLogout()
+                busy = false
+                if (n > 0) { unsynced = n; onStatus("") } else doLogout()
+            }
+        }
+    }
+    val label = if (busy) "صبر کن…" else "خروج از حساب"
+    if (primary) PrimaryButton(label, enabled = !busy, modifier = Modifier.testTag("logout_btn"), onClick = onClick)
+    else SecondaryButton(label, modifier = Modifier.testTag("logout_btn"), onClick = onClick)
+    if (unsynced > 0) {
+        AlertDialog(
+            onDismissRequest = { unsynced = 0 },
+            title = { Text("بعضی تغییرها هنوز به سرور نرسیده") },
+            text = { Text("${PersianDigits.toPersian(unsynced)} تغییر هنوز روی سرور ذخیره نشده. اگه الان خارج بشی، این تغییرها از این گوشی پاک می‌شن. اگه می‌تونی اول به اینترنت وصل شو و دوباره امتحان کن.") },
+            confirmButton = { TextButton(onClick = { unsynced = 0; doLogout() }, modifier = Modifier.testTag("logout_anyway")) { Text("با این حال خارج شو") } },
+            dismissButton = { TextButton(onClick = { unsynced = 0 }) { Text("بمونم") } }
+        )
     }
 }
 

@@ -30,6 +30,12 @@ object DemoMode {
         sp.edit().putBoolean(MARK, true).apply()
     }
 
+    /** After a demo logout: the next "enter demo" (or app start) seeds the fake account again. */
+    fun onSignedOut(app: MahavaApplication) {
+        if (!enabled) return
+        app.getSharedPreferences("mahava_demo", Context.MODE_PRIVATE).edit().remove(MARK).apply()
+    }
+
     /** mahava://demo/<husband|wife|pregnancy|cycle|reseed> */
     suspend fun handle(app: MahavaApplication, path: String): Boolean {
         if (!enabled) return false

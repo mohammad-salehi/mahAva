@@ -349,10 +349,17 @@ class MahApiClient(
         val text = stream?.use { BufferedReader(InputStreamReader(it, Charsets.UTF_8)).readText() } ?: "{}"
         if (code == 426) com.mahava.app.update.AppUpdateState.onUpgradeRequired(text)
         if (code !in 200..299) {
-            val msg = try {
-                gson.fromJson(text, JsonObject::class.java).get("message")?.asString
+            val obj = try {
+                gson.fromJson(text, JsonObject::class.java)
             } catch (_: Throwable) { null }
-            throw MahApiException(code, msg ?: "خطای سرور (کد ${com.mahava.app.util.PersianDigits.toPersian(code.toString())})")
+            val msg = try { obj?.get("message")?.asString } catch (_: Throwable) { null }
+            val retryAfter = (try { obj?.get("retryAfterSec")?.asInt } catch (_: Throwable) { null })
+                ?: conn.getHeaderField("Retry-After")?.trim()?.toIntOrNull()
+            throw MahApiException(
+                code,
+                msg ?: "خطای سرور (کد ${com.mahava.app.util.PersianDigits.toPersian(code.toString())})",
+                retryAfter?.takeIf { it > 0 }
+            )
         }
         text
     }
