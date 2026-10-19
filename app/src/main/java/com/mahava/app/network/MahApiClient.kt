@@ -222,6 +222,15 @@ class MahApiClient(
             snapshot = snapshot,
             logs = arr("logs"),
             periods = arr("periods"),
+            tools = root.get("tools")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { el ->
+                try { if (el.isJsonObject) gson.fromJson(el, PartnerToolDto::class.java) else null }
+                catch (_: Throwable) { null }
+            },
+            permissions = root.get("permissions")?.takeIf { it.isJsonObject }?.asJsonObject?.entrySet()
+                ?.mapNotNull { (key, value) ->
+                    try { if (value.isJsonPrimitive && value.asJsonPrimitive.isBoolean) key to value.asBoolean else null }
+                    catch (_: Throwable) { null }
+                }?.toMap(),
             updatedAt = updated,
             version = root.get("version")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asInt ?: 0
         )

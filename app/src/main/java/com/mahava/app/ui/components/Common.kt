@@ -43,9 +43,10 @@ fun MahavaCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(containerColor)
-            .padding(16.dp),
+            .border(1.dp, MahavaBorder, RoundedCornerShape(24.dp))
+            .padding(20.dp),
         content = content
     )
 }
@@ -55,9 +56,9 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
         shape = RoundedCornerShape(18.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MahavaPrimaryDeep, contentColor = Color.White),
+        colors = ButtonDefaults.buttonColors(containerColor = MahavaPrimary, contentColor = Color.White),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium.copy(color = Color.White))
@@ -69,7 +70,7 @@ fun SecondaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolea
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(0.dp, Color.Transparent),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -120,7 +121,7 @@ fun Illustration(@DrawableRes res: Int, modifier: Modifier = Modifier) {
 @Composable
 fun ScreenHeader(title: String, onBack: (() -> Unit)? = null, onSettings: (() -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (onBack != null) {
@@ -151,7 +152,7 @@ fun ChoiceChipPill(
     val fg = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
     Box(
         modifier = modifier
-            .heightIn(min = 40.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(bg)
             .border(1.dp, if (selected) selectedColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), RoundedCornerShape(12.dp))

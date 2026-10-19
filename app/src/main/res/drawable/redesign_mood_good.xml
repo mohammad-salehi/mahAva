@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- From Mah-Redesign-Kit/assets/icons (good.svg), on a soft filled circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:fillColor="#FFD3E3" android:strokeColor="#F34E88" android:strokeWidth="1.6" android:pathData="M12,3a9,9 0,1 1,0 18a9,9 0,1 1,0 -18z"/>
+  <path android:fillColor="#00000000" android:strokeColor="#F34E88" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M8,9h0.1M16,9h0.1M8,14c2,3 6,3 8,0"/>
+</vector>

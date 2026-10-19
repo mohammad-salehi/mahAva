@@ -3,6 +3,15 @@ package com.mahava.app.ui.components
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import com.mahava.app.R
@@ -24,7 +33,15 @@ fun MainNavigation(current: String?, onNavigate: (String) -> Unit) {
                 else -> false
             }
             NavigationBarItem(selected = selected, onClick = { onNavigate(route) }, modifier = Modifier.testTag("nav_$route"),
-                icon = { Icon(painterResource(icon),contentDescription=label) },
+                icon = {
+                    if (route == Routes.LOG_HUB) {
+                        Box(Modifier.offset(y = (-6).dp).size(48.dp).clip(CircleShape).background(MahavaPrimary),
+                            contentAlignment = Alignment.Center) {
+                            Icon(painterResource(icon), contentDescription = label,
+                                tint = Color.White, modifier = Modifier.size(26.dp))
+                        }
+                    } else Icon(painterResource(icon),contentDescription=label)
+                },
                 label = {
                     // Five labels share a small phone's width: let them grow with the system font only up to 1.15×.
                     val base = MaterialTheme.typography.bodySmall

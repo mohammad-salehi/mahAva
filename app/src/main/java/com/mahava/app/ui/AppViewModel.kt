@@ -606,6 +606,32 @@ class AppViewModel(
         pushWomanDataToServer(await = false)
     }
 
+    /** Where today's mood pick ended up (shown under the three options; never a fake success). */
+    enum class MoodSave { SYNCED, LOCAL_ONLY, OFFLINE_PENDING, FAILED }
+
+    /**
+     * One tap on «خوبم / معمولی‌ام / حال ندارم»: saved into today's daily log (overallFeeling),
+     * then pushed to the server. Tapping the same option again keeps it (she changes it by
+     * tapping another one).
+     */
+    suspend fun saveTodayMood(key: String): MoodSave {
+        try {
+            todaySignalSaveMutex.withLock {
+                val epochDay = today().toEpochDay()
+                val now = clock.nowMillis()
+                val current = repo.getDailyLog(epochDay) ?: DailyLogEntity(epochDay = epochDay, createdAt = now, updatedAt = now)
+                repo.upsertDailyLog(current.copy(overallFeeling = key, updatedAt = now))
+            }
+        } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (_: Throwable) { return MoodSave.FAILED }
+        if (prefs.getAccountRole() == "male" || !authRepository.hasSessionTokens()) return MoodSave.LOCAL_ONLY
+        com.mahava.app.sync.DataSync.ensurePeriodic(app)
+        val outcome = try { kotlinx.coroutines.withTimeoutOrNull(15_000) { app.dataSync.sync() } } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (_: Throwable) { null }
+        return when (outcome) {
+            is com.mahava.app.sync.SyncOutcome.Ok -> MoodSave.SYNCED
+            is com.mahava.app.sync.SyncOutcome.Skipped -> MoodSave.LOCAL_ONLY
+            else -> { com.mahava.app.sync.DataSync.syncNow(app); MoodSave.OFFLINE_PENDING }
+        }
+    }
     fun saveTodaySignals(food: Set<String>, body: Set<String>, mood: String?) = viewModelScope.launch {
         todaySignalSaveMutex.withLock {
             val epochDay = today().toEpochDay()

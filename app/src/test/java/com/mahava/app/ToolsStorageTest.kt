@@ -84,7 +84,7 @@ class ToolsStorageTest {
         val manager=app.getSystemService(android.app.NotificationManager::class.java)
         val notes=org.robolectric.Shadows.shadowOf(manager).allNotifications
         assertEquals(1,notes.size)
-        assertEquals("توصیهٔ امروز در ماه آماده است.",notes.single().extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString())
+        assertEquals("پیشنهاد امروزت تو ماه آماده‌ست.",notes.single().extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString())
         tick();assertEquals(1,app.database.toolRecordDao().getAll().count {it.type=="recommendation"})
         unsubscribe()
     }
@@ -100,7 +100,7 @@ class ToolsStorageTest {
         unsubscribe()
         app.repository.saveProfile(UserProfileEntity(onboardingDone=true))
         setTime(8,0);tick()
-        assertTrue(titles().none {it=="توصیه امروز"})
+        assertTrue(titles().none {it=="پیشنهاد امروز"})
         assertTrue(app.database.toolRecordDao().getAll().filter {it.type=="recommendation"}.none {Gson().fromJson(it.payloadJson,DailyRecommendation::class.java).shown})
     }
     @Test fun morningTipUsesLastNightSleepFromYesterdayAndSaysWhy()=runBlocking {

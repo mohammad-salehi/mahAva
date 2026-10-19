@@ -37,8 +37,8 @@ android {
         buildConfigField("String", "MAH_FCM_API_KEY", mahLiteral(((mahClient["api_key"] as? List<*>)?.firstOrNull() as? Map<*, *>)?.get("current_key")))
         minSdk = 24
         targetSdk = 35
-        versionCode = 130
-        versionName = "1.3.5"
+        versionCode = 133
+        versionName = "1.4.1"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
@@ -75,6 +75,7 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".redesign"
             versionNameSuffix = "-local"
         }
         release {
@@ -122,6 +123,8 @@ android {
 
 dependencies {
     implementation("com.google.firebase:firebase-messaging:25.0.1")
+    // Use the installed compatible FIS artifact; the transitive 18.0.0 is not available here.
+    implementation("com.google.firebase:firebase-installations:19.0.1")
     val composeBom = platform("androidx.compose:compose-bom:2024.09.02")
     implementation(composeBom)
     androidTestImplementation(composeBom)

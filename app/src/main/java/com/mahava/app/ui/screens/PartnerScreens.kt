@@ -84,7 +84,7 @@ import java.time.format.DateTimeFormatter
 
 /** Shown wherever she approves a request (hub card and the in-app dialog). */
 const val PARTNER_APPROVE_FA =
-    "تأیید اتصال به‌تنهایی اجازهٔ دیدن اطلاعات سلامت نیست. از ابزار «اشتراک با همسر» دسته‌های مجاز را خودت فعال کن؛ یادداشت خصوصی، رابطه و جزئیات پزشکی به اشتراک گذاشته نمی‌شوند. هر زمان می‌توانی اشتراک یا اتصال را متوقف کنی."
+    "اگر اتصال را تأیید کنی، همسرت به همهٔ اطلاعاتی که در ماه ثبت کرده‌ای دسترسی پیدا می‌کند؛ مثل چرخه، حال و علائم، هوس‌ها، یادداشت‌ها و اطلاعات بارداری. هر وقت بخواهی می‌توانی اتصال را قطع کنی."
 
 /** Woman's side: make a code, approve, remove. */
 @Composable
@@ -174,7 +174,7 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
                         Spacer(Modifier.width(8.dp))
                         CardTitle("به همسرت وصلی${if (phone.isNotBlank()) " (${com.mahava.app.util.FaText.ltr(com.mahava.app.util.PersianDigits.toPersian(phone))})" else ""}")
                     }
-                    Text("همسرت همهٔ چیزهایی را که ثبت می‌کنی می‌بیند.", style = MaterialTheme.typography.bodyMedium)
+                    Text("همسرت به همهٔ اطلاعاتی که در ماه ثبت می‌کنی دسترسی دارد.", style = MaterialTheme.typography.bodyMedium)
                     if (shared) {
                         Spacer(Modifier.height(4.dp))
                         Text("اشتراک ویژه‌ات از اشتراک همسرت است؛ تا وقتی وصلید هر دو استفاده می‌کنید.", style = MaterialTheme.typography.bodyMedium, color = MahavaTextSecondary)

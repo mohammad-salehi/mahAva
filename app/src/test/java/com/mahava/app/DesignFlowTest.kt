@@ -85,11 +85,58 @@ class DesignFlowTest {
         show(vm) { TodayScreen(vm,{},{},{},{},{},{},{}) }
         rule.onNodeWithTag("cycle_status_card").assertExists()
         shot("cycle")
-        rule.onNodeWithTag("quick_fatigue").performClick()
+        rule.onNodeWithTag("checkin_body_fatigue").performScrollTo().performClick()
         rule.waitUntil(15000) { org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); vm.logFor(vm.today())?.physicalSymptoms?.contains("fatigue")==true }
         Assert.assertEquals(1,vm.state.value.dailyLogs.count { it.epochDay==vm.today().toEpochDay() })
     }
-    @Test fun calendarSelection() {
+    @Test @Config(qualifiers="fa-rIR-w411dp-h2200dp-xhdpi") fun todayMoodPickChartAndFullPage() {
+        val vm=model()
+        val app=(RuntimeEnvironment.getApplication() as MahavaApplication)
+        val today=app.clock.today().toEpochDay()
+        runBlocking {
+            mapOf(9L to "good", 8L to "ordinary", 7L to "ordinary", 5L to "bad", 4L to "good", 3L to "good", 1L to "ordinary").forEach { (back, f) ->
+                app.database.dailyLogDao().upsert(DailyLogEntity(epochDay=today-back, overallFeeling=f, createdAt=1, updatedAt=1))
+            }
+        }
+        show(vm) { TodayScreen(vm,{},{},{},{},{},{},{}) }
+        rule.onNodeWithTag("today_body_now").assertExists()
+        rule.onNodeWithText("الان توی بدنت چه خبره؟").assertExists()
+        rule.onNodeWithTag("home_tool_cards").assertDoesNotExist()
+        rule.onNodeWithText("بینش‌های من").assertDoesNotExist()
+        rule.onNodeWithText("وضعیت امروزت").assertDoesNotExist()
+        rule.onNodeWithText("ردیاب درد").assertDoesNotExist()
+        shot("today-cycle-full")
+        rule.onNodeWithTag("today_mood_good").performScrollTo().performClick()
+        rule.waitUntil(15000) { org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); vm.logFor(vm.today())?.overallFeeling=="good" }
+        rule.waitUntil(15000) { rule.onAllNodesWithTag("today_mood_status").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithTag("today_mood_good").assertIsSelected()
+        // Change today's pick: same row is updated, no second log.
+        rule.onNodeWithTag("today_mood_bad").performScrollTo().performClick()
+        rule.waitUntil(15000) { org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); vm.logFor(vm.today())?.overallFeeling=="bad" }
+        Assert.assertEquals(1,vm.state.value.dailyLogs.count { it.epochDay==today })
+        rule.waitForIdle()
+        rule.onNodeWithTag("today_mood_chart_info").assertTextContains("امروز", substring = true)
+        shot("today-cycle-mood-picked")
+    }
+    @Test @Config(qualifiers="fa-rIR-w411dp-h891dp-xhdpi") fun todayMoodChartEmptyState() {
+        val vm=model()
+        show(vm) { TodayScreen(vm,{},{},{},{},{},{},{}) }
+        rule.onNodeWithTag("today_mood_chart_empty").performScrollTo().assertExists()
+        rule.onNodeWithText("حالت رو ثبت کن تا کم‌کم روندش رو اینجا ببینی.").assertExists()
+    }
+    @Test @Config(qualifiers="fa-rIR-w411dp-h2200dp-xhdpi") fun pregnancyTodayFullPage() {
+        val vm=model()
+        val app=(RuntimeEnvironment.getApplication() as MahavaApplication)
+        runBlocking {
+            app.repository.upsertPregnancy(PregnancyEntity(lmpEpochDay=app.clock.today().minusDays(130).toEpochDay(),estimatedDueEpochDay=app.clock.today().plusDays(150).toEpochDay()))
+        }
+        show(vm) { TodayScreen(vm,{},{},{},{},{},{},{}) }
+        rule.waitUntil(15000) { vm.state.value.health?.pregnancyProgress!=null }
+        rule.waitForIdle()
+        rule.onNodeWithTag("today_body_now").assertExists()
+        rule.onNodeWithText("بر اساس هفتهٔ بارداریت").assertExists()
+        shot("today-pregnancy-full")
+    }    @Test fun calendarSelection() {
         val vm=model()
         show(vm, "calendar") { CalendarScreen(vm,{}) {} }
         rule.onNodeWithTag("cal_selected_card").assertExists()

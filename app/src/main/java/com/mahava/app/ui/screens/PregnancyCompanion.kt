@@ -15,36 +15,43 @@ import com.mahava.app.util.JalaliDate
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
+enum class PregnancyPart { HERO, REST }
+
 @Composable
-fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () -> Unit, onDaily: () -> Unit, onInsight: (String) -> Unit) {
+fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () -> Unit, onDaily: () -> Unit, onInsight: (String) -> Unit, part: PregnancyPart = PregnancyPart.HERO) {
     val state by vm.state.collectAsState()
     val tools by vm.toolRecords.collectAsState()
     val scope = rememberCoroutineScope()
     val health = state.health
     val p = health?.pregnancyProgress
-    MahavaCard(containerColor = MahavaMenstruationSoft) {
+    if (part == PregnancyPart.HERO) MahavaCard(containerColor = MahavaLavenderSoft) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            HomeOrbit(p?.completedWeeks, "هفتهٔ بارداری",
+                p?.progressFraction)
+        }
+        Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(p?.labelFa ?: "همراه بارداری تو", style = MaterialTheme.typography.headlineLarge)
                 if (p != null) {
                     Text(when { p.completedWeeks < 13 -> "سه‌ماههٔ اول"; p.completedWeeks < 28 -> "سه‌ماههٔ دوم"; else -> "سه‌ماههٔ سوم" }, color = MahavaPrimaryDeep)
-                    Text("زایمان احتمالی: ${JalaliDate.from(LocalDate.parse(p.estimatedDueDate)).formatShortFa()}")
+                    Text("زایمان حدودی: ${JalaliDate.from(LocalDate.parse(p.estimatedDueDate)).formatShortFa()}")
                     QuietInfo(if (health.pregnancy?.datingMethod == "clinician_edd") "مبنا: تاریخ ثبت‌شده از پزشک" else "مبنا: اولین روز آخرین پریود")
-                } else QuietInfo("برای محاسبهٔ سن بارداری، تاریخ مبنا را ثبت کن.")
+                } else QuietInfo("برای حساب کردن هفتهٔ بارداریت، تاریخ مبنا رو ثبت کن.")
             }
-            Illustration(R.drawable.design_mother, Modifier.width(90.dp).height(130.dp))
+            Illustration(R.drawable.redesign_pregnancy, Modifier.width(90.dp).height(130.dp))
         }
         if (p != null) LinearProgressIndicator(progress = { p.progressFraction }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(6.dp), color = MahavaMenstruation, trackColor = MahavaSurface)
         TextButton(onClick = onSetup) { Text("تنظیم تاریخ مبنا") }
     }
-    if (p == null) return
+    if (p == null || part == PregnancyPart.HERO) return
     val week = p.contentWeek.coerceAtMost(42)
     val fetal = vm.fetalWeek(week)
     MahavaCard(Modifier.clickable { onInsight("preg_week_$week") }) {
         SectionLabel("این هفته، کوچولوی تو")
-        Text(fetal?.growthFa ?: "برای این مرحله محتوای هفتگی موجود نیست؛ برنامهٔ پزشکت را دنبال کن.")
+        Text(fetal?.growthFa ?: "برای این هفته هنوز توضیحی نداریم؛ برنامهٔ پزشکت رو دنبال کن.")
         HealthContextNote(HealthNote.FETAL_GROWTH)
-        MoreLink("رشد معمول و منابع علمی")
+        MoreLink("بیشتر بدون")
     }
     Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf(Triple("mother", "برای مادر", R.drawable.design_mother), Triple("father", "برای پدر", R.drawable.design_father)).forEach { (kind, label, image) ->
@@ -60,7 +67,7 @@ fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () ->
         val checklistId="pregnancy_checklist_${p.estimatedDueDate.replace("-", "")}_$week"
         val record=tools.find {it.id==checklistId && it.deletedAt==null}
         val fields=record?.let { com.google.gson.JsonParser.parseString(it.payloadJson).asJsonObject } ?: com.google.gson.JsonObject()
-        listOf("care" to "برنامهٔ مراقبت این هفته را مرور کردم", "questions" to "سؤال‌هایم برای پزشک یا ماما را یادداشت کردم").forEach { (key,label) ->
+        listOf("care" to "برنامهٔ مراقبت این هفته رو مرور کردم", "questions" to "سؤال‌هام برای پزشک یا ماما رو نوشتم").forEach { (key,label) ->
             Row(verticalAlignment=Alignment.CenterVertically) {
                 Checkbox(fields.get(key)?.asBoolean==true,{checked -> scope.launch {
                     fields.addProperty(key,checked)
@@ -73,8 +80,8 @@ fun PregnancyCompanion(vm: AppViewModel, onPregnancy: () -> Unit, onSetup: () ->
             val appointment=com.google.gson.JsonParser.parseString(item.payloadJson).asJsonObject
             QuietInfo("مراجعهٔ ثبت‌شده: ${appointment.get("text")?.asString.orEmpty()} — ${com.mahava.app.util.DateFa.iso(appointment.get("date")?.asString.orEmpty())}")
         }
-        CompanionAction("مرور برنامهٔ مراقبت‌ها", "زمان مراجعه‌ها را با پزشک یا ماما هماهنگ کن.", R.drawable.design_calendar, onPregnancy)
-        CompanionAction("ثبت حال و علائم امروز", "علائم مهم را در زمان مناسب پیگیری کن.", R.drawable.design_notes, onDaily)
+        CompanionAction("مرور برنامهٔ مراقبت‌ها", "وقت مراجعه‌هات رو با پزشک یا ماما هماهنگ کن.", R.drawable.design_calendar, onPregnancy)
+        CompanionAction("ثبت علائم امروز", "علائم مهم رو به‌موقع ثبت و پیگیری کن.", R.drawable.design_notes, onDaily)
         HealthContextNote(HealthNote.GENERAL)
     }
 }

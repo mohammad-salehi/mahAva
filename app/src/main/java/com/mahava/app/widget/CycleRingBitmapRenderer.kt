@@ -25,13 +25,13 @@ import kotlin.math.sin
  */
 object CycleRingBitmapRenderer {
 
-    private const val COLOR_MENSTRUATION = 0xFFDC7E8F.toInt()
-    private const val COLOR_FERTILITY = 0xFF8BAA9A.toInt()
-    private const val COLOR_PRIMARY = 0xFF7962CA.toInt()
-    private const val COLOR_LUTEAL = 0xFF9B7ED9.toInt()
-    private const val COLOR_TRACK = 0x55E6DFED
-    private const val COLOR_TEXT_PRIMARY = 0xFFF8F4FF.toInt()
-    private const val COLOR_TEXT_SECONDARY = 0xFFB8A9D0.toInt()
+    private const val COLOR_MENSTRUATION = 0xFFF34E88.toInt()
+    private const val COLOR_FERTILITY = 0xFF54B99E.toInt()
+    private const val COLOR_PRIMARY = 0xFFF34E88.toInt()
+    private const val COLOR_LUTEAL = 0xFF8F83ED.toInt()
+    private const val COLOR_TRACK = 0xFFECEBF4.toInt()
+    private const val COLOR_TEXT_PRIMARY = 0xFF23243E.toInt()
+    private const val COLOR_TEXT_SECONDARY = 0xFF66687D.toInt()
 
     data class RingModel(
         val cycleDay: Int?,
@@ -42,7 +42,8 @@ object CycleRingBitmapRenderer {
         val isLate: Boolean,
         val periodOngoing: Boolean,
         /** When set (husband's widget), this one word is the main text inside the ring. */
-        val summaryWord: String? = null
+        val summaryWord: String? = null,
+        val summarySubline: String? = null
     )
 
     fun render(context: Context, model: RingModel, sizePx: Int): Bitmap {
@@ -173,7 +174,8 @@ object CycleRingBitmapRenderer {
                     textSize = 12f * density
                     typeface = regular
                 }
-                canvas.drawText("روز ${PersianDigits.toPersian(day)}", cx, size * 0.52f + 22f * density, smallPaint)
+                canvas.drawText(model.summarySubline ?: "روز ${PersianDigits.toPersian(day)}", cx,
+                    size * 0.52f + 22f * density, smallPaint)
             }
             return
         }

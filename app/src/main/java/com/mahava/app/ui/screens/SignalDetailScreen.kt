@@ -85,7 +85,7 @@ fun SignalDetailScreen(vm: AppViewModel, kind: String, key: String, onBack: () -
             MahavaCard {
                 Text("این روزها در بدنت", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaPrimary)
                 Spacer(Modifier.height(4.dp))
-                Text(TodaySignalContent.bodyTodayFa(phaseGroup), style = MaterialTheme.typography.bodyLarge)
+                Text(TodaySignalContent.bodyTodayShortFa(phaseGroup), style = MaterialTheme.typography.bodyLarge)
             }
             ex.sections.forEach { section ->
                 MahavaCard {

@@ -121,26 +121,29 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         val nowMinute = localTime.hour * 60 + localTime.minute
         // Fixed 08:00; the 15-minute tick only catches up if the phone was off at 8.
         // The daily tip is a subscriber feature: free accounts get no 08:00 notification.
-        if (localTime.hour >= ReminderScheduler.RECOMMENDATION_HOUR && app.authRepository.isPremiumEffectiveNow()) {
+        if (localTime.hour >= ReminderScheduler.RECOMMENDATION_HOUR &&
+            sp.getLong("daily_message_day", -1L) != today.toEpochDay() &&
+            app.authRepository.isPremiumEffectiveNow()) {
             val item = tools.ensureRecommendation()
             val recommendation = com.google.gson.Gson().fromJson(item.payloadJson,com.mahava.app.health.DailyRecommendation::class.java)
             if (!recommendation.shown) {
-                val message=if(private) "توصیهٔ امروز در ماه آماده است." else recommendation.body
+                val message=if(private) "پیشنهاد امروزت تو ماه آماده‌ست." else recommendation.body
                 val intent=Intent(Intent.ACTION_VIEW,android.net.Uri.parse("mahava://screen/recommendation"),applicationContext,MainActivity::class.java)
                 val pi=PendingIntent.getActivity(applicationContext,1005,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 val note=NotificationCompat.Builder(applicationContext,ReminderScheduler.CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_bell).setContentTitle(if(private) "ماه" else "توصیه امروز")
+                    .setSmallIcon(R.drawable.ic_bell).setContentTitle(if(private) "ماه" else "پیشنهاد امروز")
                     .setContentText(message).setStyle(NotificationCompat.BigTextStyle().bigText(message))
                     .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setContentIntent(pi).setAutoCancel(true).build()
                 try {
                     NotificationManagerCompat.from(applicationContext).notify(1005,note)
                     tools.save(item.id,item.type,recommendation.copy(shown=true),item.epochDay)
+                    sp.edit().putLong("daily_message_day", today.toEpochDay()).apply()
                 } catch (_: SecurityException) { }
             }
         }
 
         reminders["daily_log"]?.let { pref ->
-            val already = sp.getLong("daily_notified_day", -1L) == today.toEpochDay()
+            val already = sp.getLong("daily_message_day", -1L) == today.toEpochDay()
             val logged = app.database.dailyLogDao().getByDay(today.toEpochDay()) != null
             if (!already && !logged && localTime.hour*60+localTime.minute >= pref.hour*60+pref.minute) {
                 pending += Triple(
@@ -149,6 +152,7 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
                     applicationContext.getString(R.string.notification_daily_text)
                 )
                 sp.edit().putLong("daily_notified_day", today.toEpochDay()).apply()
+                sp.edit().putLong("daily_message_day", today.toEpochDay()).apply()
             }
         }
         reminders["period"]?.let {
@@ -193,17 +197,17 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         }
         reminders["medication"]?.let { pref ->
             if (sp.getLong("medication_day",-1)!=today.toEpochDay() && localTime.hour*60+localTime.minute>=pref.hour*60+pref.minute) {
-                pending += Triple(1006,titleOf("یادآوری داروی ثبت‌شده"),pref.medicationLabel ?: "یادآوری دارویی که خودت ثبت کرده‌ای؛ مطابق دستور پزشکت عمل کن.")
+                pending += Triple(1006,titleOf("یادآوری داروی ثبت‌شده"),pref.medicationLabel ?: "وقت داروییه که خودت ثبت کردی؛ همون‌طور که پزشکت گفته مصرفش کن.")
                 sp.edit().putLong("medication_day",today.toEpochDay()).apply()
             }
         }
         if (pending.isEmpty()) return Result.success()
-        val intent = Intent(applicationContext, MainActivity::class.java)
-        val pi = PendingIntent.getActivity(
-            applicationContext, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
         pending.forEach { (id, title, text) ->
+            val intent = if (id == 1001) Intent(Intent.ACTION_VIEW,
+                android.net.Uri.parse("mahava://screen/daily"), applicationContext, MainActivity::class.java)
+                else Intent(applicationContext, MainActivity::class.java)
+            val pi = PendingIntent.getActivity(applicationContext, id, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             val notif = NotificationCompat.Builder(applicationContext, ReminderScheduler.CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_bell)
                 .setContentTitle(title)

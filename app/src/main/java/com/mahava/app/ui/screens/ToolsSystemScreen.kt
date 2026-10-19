@@ -41,7 +41,6 @@ object ToolCatalog {
     val groups: List<Pair<String, List<ToolEntry>>> = listOf(
         "بدن و چرخه" to listOf(
             ToolEntry("cycle", "الگوی چرخه", "طول چرخه‌ها و پریودها", R.drawable.design_cycle, MahavaPrimary),
-            ToolEntry("pain", "ردیاب درد", "جا، شدت، نوع و نتیجه", R.drawable.design_pain, MahavaMenstruation),
             ToolEntry("discharge", "ردیاب ترشحات", "نوع و علائم همراه", R.drawable.design_droplet, MahavaAccentSky),
             ToolEntry("symptoms", "تحلیل علائم", "پرتکرارترین علائمت", R.drawable.design_chart, MahavaAccentPeach),
             ToolEntry("pms", "پیش از پریود من", "علائم پیش از قاعدگی (PMS)", R.drawable.design_calendar, MahavaMenstruation),

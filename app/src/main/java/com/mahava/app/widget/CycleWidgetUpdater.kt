@@ -72,6 +72,10 @@ object CycleWidgetUpdater {
         if (!active) return@withContext WidgetSnapshot.empty().copy(phaseShort = "وصل نیست")
         val share = try { repo.share.first() } catch (_: Throwable) { null }
         val s = share?.snapshot ?: return@withContext WidgetSnapshot.empty().copy(phaseShort = "در انتظار")
+        if (s.pregnancyWeek != null) return@withContext WidgetSnapshot.empty().copy(
+            hasData = true, cycleDay = s.pregnancyWeek, cycleLength = 40,
+            phaseShort = "بارداری", pregnancyWeek = s.pregnancyWeek
+        )
         val todayEpoch = app.clock.today().toEpochDay()
         val elapsed = s.today?.epochDay?.let { (todayEpoch - it).toInt().coerceAtLeast(0) } ?: 0
         val len = s.cycleLength
@@ -113,6 +117,15 @@ object CycleWidgetUpdater {
         val app = context.applicationContext as? MahavaApplication
             ?: return@withContext WidgetSnapshot.empty()
         val profile = app.database.profileDao().get()
+        if (profile?.pregnancyMode == true) {
+            val pregnancy = app.database.pregnancyDao().getActive()
+            if (pregnancy == null) return@withContext WidgetSnapshot.empty().copy(phaseShort = "تاریخ بارداری را ثبت کن")
+            val progress = com.mahava.app.health.PregnancyService.progressFromEntity(pregnancy, app.clock.today())
+            return@withContext WidgetSnapshot.empty().copy(
+                hasData = true, cycleDay = progress.completedWeeks, cycleLength = 40,
+                phaseShort = "بارداری", pregnancyWeek = progress.completedWeeks
+            )
+        }
         val periods = app.database.periodDao().getAll()
         val result = app.repository.computeCycle(profile, periods)
         val dayCtx = CycleDayContextResolver.resolve(result)
@@ -203,7 +216,10 @@ object CycleWidgetUpdater {
                 daysUntilPeriod = if (snap.hasData) snap.daysUntil else null,
                 isLate = snap.isLate,
                 periodOngoing = snap.periodOngoing,
-                summaryWord = if (partnerView && snap.oneWord) snap.phaseShort else null
+                summaryWord = if (snap.pregnancyWeek != null)
+                    "هفته ${com.mahava.app.util.PersianDigits.toPersian(snap.pregnancyWeek)}"
+                    else if (partnerView && snap.oneWord) snap.phaseShort else null,
+                summarySubline = if (snap.pregnancyWeek != null) "بارداری" else null
             )
             CycleRingBitmapRenderer.render(context, model, sizePx)
         }
@@ -222,7 +238,8 @@ object CycleWidgetUpdater {
         val daysLate: Int?,
         val periodOngoing: Boolean,
         /** Husband's widget: phaseShort is her one-word status, drawn big inside the ring. */
-        val oneWord: Boolean = false
+        val oneWord: Boolean = false,
+        val pregnancyWeek: Int? = null
     ) {
         companion object {
             fun empty() = WidgetSnapshot(
