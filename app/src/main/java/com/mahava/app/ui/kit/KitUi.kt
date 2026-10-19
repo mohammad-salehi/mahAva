@@ -150,7 +150,7 @@ fun KitRowCard(
             Text(title, style = Kit.cardTitle)
             if (text != null) {
                 Spacer(Modifier.height(4.dp))
-                Text(text, style = Kit.body, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(text, style = Kit.body) // full text; the card grows to fit
             }
         }
         if (chevron) {

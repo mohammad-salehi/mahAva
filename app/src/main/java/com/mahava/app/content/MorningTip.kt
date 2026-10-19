@@ -37,7 +37,7 @@ object MorningTip {
                 }
             }
         }
-        val body = if (practical.length > 220) practical.take(217) + "…" else practical
+        val body = practical // never cut mid-sentence; the card grows to fit
         return Tip(title, body)
     }
 
