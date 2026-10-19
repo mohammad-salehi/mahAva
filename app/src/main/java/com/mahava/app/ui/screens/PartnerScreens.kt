@@ -220,7 +220,7 @@ fun PartnerHomeScreen(
             Text("همسرم", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
             NotificationBell(vm, onNotifications)
             androidx.compose.material3.IconButton(onClick = onSettings, modifier = Modifier.size(48.dp).testTag("partner_open_settings")) {
-                com.mahava.app.ui.components.MahavaIcon(com.mahava.app.R.drawable.ic_settings, MahavaTextPrimary)
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(com.mahava.app.R.drawable.ic_settings), contentDescription = "تنظیمات", tint = MahavaTextPrimary, modifier = Modifier.size(24.dp))
             }
         }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

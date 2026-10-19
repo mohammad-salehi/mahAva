@@ -135,6 +135,7 @@ class DataSyncRoundTripTest {
         db.dailyLogDao().upsert(DailyLogEntity(epochDay = today - 1, bleeding = "heavy", moods = "sad", createdAt = t0, updatedAt = t0 + 5))
         db.dailyLogDao().upsert(DailyLogEntity(epochDay = today - 40, noSymptoms = true, createdAt = t0, updatedAt = t0 + 6))
         db.reminderDao().upsert(ReminderPrefEntity(id = "daily_log", enabled = true, hour = 21, minute = 30))
+        db.reminderDao().upsert(ReminderPrefEntity(id = "ovulation", enabled = true, hour = 9, minute = 0))
         db.reminderDao().upsert(ReminderPrefEntity(id = "medication", enabled = false, medicationLabel = "آهن"))
     }
 
@@ -151,7 +152,7 @@ class DataSyncRoundTripTest {
         assertEquals(setOf("main"), server.live("profile").keys)
         assertEquals(2, server.live("period").size)
         assertEquals(3, server.live("log").size)
-        assertEquals(setOf("daily_log", "medication"), server.live("reminder").keys)
+        assertEquals(setOf("daily_log", "medication", "ovulation"), server.live("reminder").keys)
         assertTrue(server.live("settings").isEmpty())
         val serverLog = server.live("log")[today.toString()]!!
         assertEquals("یادداشت فارسی ✓", serverLog.get("note").asString)
@@ -211,17 +212,18 @@ class DataSyncRoundTripTest {
             db.dailyLogDao().getByDay(today)!!.comparable())
         assertEquals(periodsBefore.first { it.startEpochDay == today - 2 }, db.periodDao().getAll().first().comparable())
 
-        // 5) His view shows every field of the log she saved (what the share endpoint returns).
+        // 5) His view shows the log she saved, except her private sex log.
         val shared = JsonParser.parseString(server.rows["log/$today"]!!.data).asJsonObject.apply { addProperty("epochDay", today) }
         val labels = PartnerLogFormat.lines(shared).associate { it.label to it.value }
         assertEquals("تازه‌ترین", labels["یادداشت"])
-        assertEquals("ثبت کرده", labels["رابطه"])
+        assertNull("sex log is private", labels["رابطه"])
+        assertTrue(labels.keys.none { it.contains("رابطه") || it.contains("میل جنسی") })
         assertEquals("متوسط", labels["خون‌ریزی"])
         assertEquals("گاهی", labels["لخته"])
         assertTrue(labels.getValue("هوس").contains("شکلات"))
         assertTrue(labels.getValue("شدت درد").contains("۶"))
         assertEquals("ibuprofen 400", labels["دارو"])
-        assertTrue(labels.containsKey("وزن") && labels.containsKey("دمای پایهٔ بدن") && labels.containsKey("میل جنسی"))
+        assertTrue(labels.containsKey("وزن") && labels.containsKey("دمای پایهٔ بدن"))
     }
 
     @Test fun serverCopyMissingFields_keepsEntityDefaults() = runBlocking {

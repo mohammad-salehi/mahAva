@@ -29,7 +29,9 @@ data class DataSyncStatus(
     val lastOkAt: Long = 0L,
     val pending: Int = 0,
     val running: Boolean = false,
-    val lastError: String? = null
+    val lastError: String? = null,
+    /** Of [pending]: items the server refused as data (kept on the phone, sent again when edited). */
+    val rejected: Int = 0
 )
 
 sealed class SyncOutcome {
@@ -102,6 +104,8 @@ class DataSyncRepository(
     private val remote: DataSyncRemote = MahDataSyncRemote(api, auth)
 ) {
     private val sp = context.getSharedPreferences("mahava_data_sync", Context.MODE_PRIVATE)
+    /** Owner of data kept on this phone after a logout with items not yet uploaded. */
+    private val holdSp = context.getSharedPreferences("mahava_data_hold", Context.MODE_PRIVATE)
     private val gson = Gson()
     private val mutex = Mutex()
     private val _status = MutableStateFlow(DataSyncStatus(lastOkAt = sp.getLong(K_LAST_OK, 0L)))
@@ -117,7 +121,11 @@ class DataSyncRepository(
         private const val K_LOCAL_WINS = "local_wins"
         /** Clears fake "synced" hashes from an older client that soft-dropped rejected pushes. */
         private const val K_RESYNC_SOFT = "resync_soft_v1"
+        /** id -> "hash|httpCode|time|appVersion": the server refused exactly this content. */
+        private const val K_REJECTED = "rejected"
         private const val BATCH = 200
+        /** A refused item that did not change is offered again after this long (or after an app update). */
+        internal const val REJECT_RETRY_MS = 6 * 60 * 60 * 1000L
 
         /** Data errors (400/413) are isolated per record; anything else stops the round at once. */
         internal fun isRecordError(t: Throwable): Boolean {
@@ -388,14 +396,16 @@ class DataSyncRepository(
     private data class PushResult(
         val conflicts: List<SyncRecord>,
         /** Successfully accepted by the server (HTTP 2xx). Never includes faked local accepts. */
-        val acceptedIds: Set<String>
+        val acceptedIds: Set<String>,
+        /** Refused one by one as bad data (400/413/422): id -> (code, server message). */
+        val rejected: Map<String, Pair<Int?, String?>> = emptyMap()
     )
 
     /**
      * Push changes with valid server timestamps. If a batch fails, retry one-by-one so
      * good records still upload; failed ones stay dirty for the next sync.
      */
-    private suspend fun pushAll(changes: List<SyncRecord>): PushResult {
+    private suspend fun pushAll(changes: List<SyncRecord>, synced: Map<String, String> = emptyMap()): PushResult {
         if (changes.isEmpty()) return PushResult(emptyList(), emptySet())
         val now = clock.nowMillis().coerceAtLeast(DataSyncEngine.MIN_SERVER_TS)
         var firstFailure: Throwable? = null
@@ -412,6 +422,7 @@ class DataSyncRepository(
         }
         val conflicts = mutableListOf<SyncRecord>()
         val accepted = linkedSetOf<String>()
+        val rejected = linkedMapOf<String, Pair<Int?, String?>>()
 
         /**
          * Send [part]; when the server rejects the data (400/413), split it in halves so the good
@@ -428,6 +439,7 @@ class DataSyncRepository(
                 if (!isRecordError(err)) throw err
                 if (part.size == 1) {
                     if (firstFailure == null) firstFailure = err
+                    rejected[part[0].id] = SyncFailure.of(err).second to err.message
                     return
                 }
                 val half = part.size / 2
@@ -436,9 +448,24 @@ class DataSyncRepository(
             }
         }
         prepared.chunked(BATCH).forEach { chunk -> send(chunk) }
+
+        // Same time on both sides but different content, while the server still holds exactly what
+        // this phone last synced: the phone changed the item without a newer time (an app update
+        // added a field, or an edit kept the old stamp). Taking the server copy would silently undo
+        // her edit and leave it "pending" forever, so send the phone's copy once more, 1 ms newer.
+        val sentById = prepared.associateBy { it.id }
+        val ties = conflicts.filter { c ->
+            val mine = sentById[c.id] ?: return@filter false
+            c.updatedAt == mine.updatedAt && !DataSyncEngine.sameContent(mine, c) &&
+                synced[c.id] != null && DataSyncEngine.hash(c) == synced[c.id]
+        }
+        if (ties.isNotEmpty()) {
+            conflicts.removeAll { c -> ties.any { it.id == c.id } }
+            ties.map { sentById.getValue(it.id).copy(updatedAt = it.updatedAt + 1) }.chunked(BATCH).forEach { send(it) }
+        }
         if (firstFailure != null && accepted.isEmpty() && prepared.isNotEmpty()) throw firstFailure!!
-        // Partial success: keep going so pull can run; pendingCount will retry the rest.
-        return PushResult(conflicts, accepted)
+        // Partial success: keep going so pull can run; refused items are remembered and offered again later.
+        return PushResult(conflicts, accepted - rejected.keys, rejected)
     }
 
     @Suppress("FunctionName")
@@ -482,10 +509,38 @@ class DataSyncRepository(
         return prefs.accountUserId.first()?.takeIf { it.isNotBlank() }
     }
 
-    suspend fun pendingCount(): Int = withContext(Dispatchers.IO) {
-        if (canSync() == null) return@withContext 0
-        DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size
+    /** Waits for a round in progress, so it never counts a half-saved state. */
+    suspend fun pendingCount(): Int = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (canSync() == null) return@withContext 0
+            DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size
+        }
     }
+
+    /** Same as [pendingCount], and writes what is pending (kinds and counts only) to the log. */
+    suspend fun pendingForLogout(): Int = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (canSync() == null) return@withContext 0
+            val synced = readMap(K_SYNCED)
+            val list = DataSyncEngine.localChanges(collectLocal(), synced, clock.nowMillis())
+            val kinds = list.groupingBy { it.kind }.eachCount()
+            SyncLog.i("logout check unsent=${list.size} kinds=$kinds deleted=${list.count { it.deleted }} " +
+                "initial=${sp.getBoolean(K_INITIAL, false)} synced=${synced.size} refused=${list.count { it.id in readMap(K_REJECTED).keys }} ${SyncLog.ids(list.map { it.id })}")
+            list.size
+        }
+    }
+
+    /**
+     * Logout while some items are not on the server yet: nothing is deleted. The data and the
+     * sync state stay on this phone; the same account picks up where it left off after login,
+     * another account first clears them (see [sync]).
+     */
+    suspend fun holdLocalForAccount(userId: String) = withContext(Dispatchers.IO) {
+        holdSp.edit().putString("user", userId).commit()
+        SyncLog.i("logout kept local data for the same account")
+    }
+
+    fun heldForAccount(): String? = holdSp.getString("user", null)
 
     /** Ids still not on the server (diagnostics and tests). */
     suspend fun pendingIds(): List<String> = withContext(Dispatchers.IO) {
@@ -494,7 +549,50 @@ class DataSyncRepository(
 
     suspend fun refreshPending() {
         val n = try { pendingCount() } catch (_: Throwable) { 0 }
-        _status.value = _status.value.copy(pending = n)
+        _status.value = _status.value.copy(pending = n, rejected = minOf(n, readMap(K_REJECTED).size))
+    }
+
+    private data class Rejected(val hash: String, val code: Int?, val at: Long, val version: Int)
+
+    private fun readRejected(): MutableMap<String, Rejected> = readMap(K_REJECTED).mapNotNull { (id, v) ->
+        val p = v.split('|')
+        if (p.size < 4) null else id to Rejected(p[0], p[1].toIntOrNull(), p[2].toLongOrNull() ?: 0L, p[3].toIntOrNull() ?: 0)
+    }.toMap().toMutableMap()
+
+    private fun writeRejected(map: Map<String, Rejected>) {
+        sp.edit().putString(K_REJECTED, gson.toJson(map.mapValues { (_, r) -> "${r.hash}|${r.code ?: ""}|${r.at}|${r.version}" })).apply()
+    }
+
+    private fun contentKey(r: SyncRecord?): String = DataSyncEngine.hash(r) ?: "deleted"
+
+    /**
+     * Refused items whose content did not change are not sent again on every round (each one
+     * would make the whole round look failed); they go again when she edits them, after an app
+     * update, or every [REJECT_RETRY_MS]. They stay on the phone and count as not uploaded.
+     */
+    private fun parked(changes: List<SyncRecord>, now: Long): Set<String> {
+        val rej = readRejected()
+        val version = com.mahava.app.BuildConfig.VERSION_CODE
+        return changes.filter { c ->
+            val r = rej[c.id] ?: return@filter false
+            r.hash == contentKey(c) && r.version == version && now - r.at in 0 until REJECT_RETRY_MS
+        }.map { it.id }.toSet()
+    }
+
+    private fun rememberRejections(pushed: PushResult, sent: List<SyncRecord>, current: Map<String, SyncRecord>, now: Long) {
+        val rej = readRejected()
+        val before = rej.size
+        rej.keys.retainAll(current.keys + readMap(K_SYNCED).keys) // forget items that are gone
+        pushed.acceptedIds.forEach { rej.remove(it) }
+        val byId = sent.associateBy { it.id }
+        pushed.rejected.forEach { (id, err) ->
+            rej[id] = Rejected(contentKey(byId[id]), err.first, now, com.mahava.app.BuildConfig.VERSION_CODE)
+        }
+        if (rej.size != before || pushed.rejected.isNotEmpty() || pushed.acceptedIds.isNotEmpty()) writeRejected(rej)
+        if (pushed.rejected.isNotEmpty()) {
+            SyncLog.w("server refused ${pushed.rejected.size}: " +
+                pushed.rejected.entries.take(20).joinToString("; ") { (id, e) -> "$id ${e.first}: ${e.second?.take(60)}" })
+        }
     }
 
     fun isInitialDone(): Boolean = sp.getBoolean(K_INITIAL, false)
@@ -511,6 +609,13 @@ class DataSyncRepository(
             val userId = canSync() ?: return@withContext SyncOutcome.Skipped
             _status.value = _status.value.copy(running = true)
             try {
+                val held = holdSp.getString("user", null)
+                if (held != null && held != userId) {
+                    // Another account signs in on this phone: the previous account's kept data must not mix in.
+                    SyncLog.w("other account signed in: clearing data kept from the previous one")
+                    clearTables()
+                }
+                if (held != null) holdSp.edit().remove("user").commit()
                 if (sp.getString(K_USER, null) != userId) resetState(userId)
                 recoverSoftDroppedHashes()
                 if (!sp.getBoolean(K_INITIAL, false)) initialSync() else incrementalSync()
@@ -519,12 +624,18 @@ class DataSyncRepository(
                     DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), now).size
                 } catch (_: Throwable) { 0 }
                 sp.edit().putLong(K_LAST_OK, now).apply()
+                val unsent = try {
+                    DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), now).map { it.id }
+                } catch (_: Throwable) { emptyList() }
+                val rejectedIds = readRejected().keys
                 _status.value = DataSyncStatus(
                     lastOkAt = now,
                     pending = pending,
                     running = false,
-                    lastError = if (pending > 0) "بعضی تغییرها هنوز به سرور نرسیده" else null
+                    lastError = if (pending > 0) "بعضی تغییرها هنوز به سرور نرسیده" else null,
+                    rejected = unsent.count { it in rejectedIds }
                 )
+                SyncLog.i("round done unsent=${unsent.size} ${SyncLog.ids(unsent)} refused=${unsent.count { it in rejectedIds }}")
                 if (pending > 0) SyncOutcome.Failed(_status.value.lastError, SyncFailure.REJECTED, restored = true) else SyncOutcome.Ok
             } catch (t: Throwable) {
                 if(t is kotlinx.coroutines.CancellationException) {
@@ -534,6 +645,7 @@ class DataSyncRepository(
                 val pending = try { DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).size } catch (_: Throwable) { 0 }
                 _status.value = _status.value.copy(running = false, lastError = t.message, pending = pending)
                 val (reason, code) = SyncFailure.of(t)
+                SyncLog.w("round failed $reason ${code ?: ""} ${t.javaClass.simpleName}: ${t.message?.take(80)} unsent=$pending")
                 SyncOutcome.Failed(t.message, reason, code, restored = sp.getBoolean(K_INITIAL, false))
             }
         }
@@ -559,7 +671,25 @@ class DataSyncRepository(
         val local = collectLocal()
         val plan = DataSyncEngine.planInitial(local, server, clock.nowMillis())
         val applied = applyUnchanged(plan.applyLocal,local)
+        // Checkpoint before uploading: what already matches the server counts as synced even if the
+        // upload fails or the round is cut short (the logout check waits only a few seconds). Before,
+        // a first round that did not finish left "synced" empty, so every item on the phone was
+        // reported as not uploaded (e.g. 181) although almost all of it was already on the server.
+        run {
+            val now0 = collectLocal()
+            val cp = mutableMapOf<String, String>()
+            plan.same.forEach { id -> DataSyncEngine.hash(local[id])?.let { cp[id] = it } }
+            applied.forEach { r -> DataSyncEngine.hash(now0[r.id])?.let { cp[r.id] = it } }
+            sp.edit()
+                .putString(K_SYNCED, gson.toJson(cp))
+                .putString(K_DETECTED, "{}")
+                .putLong(K_CURSOR, cursor)
+                .putBoolean(K_INITIAL, true)
+                .commit()
+            SyncLog.i("initial pulled=${serverList.size} same=${plan.same.size} applied=${applied.size} toPush=${plan.push.size}")
+        }
         val pushed = pushAll(plan.push)
+        rememberRejections(pushed, plan.push, local, clock.nowMillis())
         stampLegacyReminders(pushed.acceptedIds, local)
         val appliedConflicts=applyUnchanged(pushed.conflicts,local)
         val after = collectLocal()
@@ -597,7 +727,11 @@ class DataSyncRepository(
         val localWins = sp.getBoolean(K_LOCAL_WINS, false)
         val changes = DataSyncEngine.localChanges(local, synced, now, detected)
             .let { list -> if (localWins) list.map { it.copy(updatedAt = now) } else list }
-        val pushed = pushAll(changes)
+        val skip = parked(changes, now)
+        val toSend = changes.filter { it.id !in skip }
+        val pushed = pushAll(toSend, synced)
+        rememberRejections(pushed, toSend, local, now)
+        if (changes.isNotEmpty()) SyncLog.i("push sent=${toSend.size} accepted=${pushed.acceptedIds.size} conflicts=${pushed.conflicts.size} refused=${pushed.rejected.size} held=${skip.size}")
         stampLegacyReminders(pushed.acceptedIds, local)
         if (localWins) sp.edit().putBoolean(K_LOCAL_WINS, false).apply()
         val conflictIds = pushed.conflicts.map { it.id }.toSet()
@@ -612,6 +746,7 @@ class DataSyncRepository(
         val toApply = DataSyncEngine.remoteToApply(remote.distinctBy { it.id to it.updatedAt }, local, pushedIds + changes.map { it.id })
             .groupBy { it.id }.map { (_, v) -> v.maxBy { it.updatedAt } }
         val applied=applyUnchanged(toApply,local)
+        if (remote.isNotEmpty()) SyncLog.i("pull got=${remote.size} applied=${applied.size}")
 
         val touched = (applied.map { it.id } + appliedConflicts.map { it.id }).toSet()
         if (touched.isNotEmpty()) {
@@ -653,6 +788,12 @@ class DataSyncRepository(
 
     /** Logout: drop the local cache (the server keeps everything). */
     suspend fun clearLocalCache() = withContext(Dispatchers.IO) {
+        clearTables()
+        holdSp.edit().remove("user").commit()
+        resetAll()
+    }
+
+    private suspend fun clearTables() {
         db.withTransaction {
             db.profileDao().clear()
             db.periodDao().clear()
@@ -660,8 +801,7 @@ class DataSyncRepository(
             db.reminderDao().clear()
             db.pregnancyDao().clear()
             db.healthAlertDao().clear()
-        db.toolRecordDao().clear()
+            db.toolRecordDao().clear()
         }
-        resetAll()
     }
 }

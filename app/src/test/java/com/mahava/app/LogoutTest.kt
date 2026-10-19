@@ -43,7 +43,7 @@ class LogoutTest {
         assertFalse(app.authRepository.isPremiumEffectiveNow())
     }
 
-    @Test fun offlineLogoutWithUnsyncedChangesWarnsButStillSignsOutAndClearsPhone() = runBlocking {
+    @Test fun offlineLogoutWithUnsyncedChangesWarnsSignsOutAndKeepsUnsyncedData() = runBlocking {
         signIn()
         val day = app.clock.today().toEpochDay()
         app.repository.upsertDailyLog(DailyLogEntity(epochDay = day, note = "not on server yet", createdAt = 1, updatedAt = 1))
@@ -51,6 +51,8 @@ class LogoutTest {
         assertTrue("unsynced change should be reported", vm.unsyncedBeforeLogout() > 0)
         assertNull(vm.logoutAccount())
         assertFalse(app.prefs.hasSessionTokensNow())
-        assertTrue(app.database.dailyLogDao().getAll().isEmpty())
+        // Not on the server yet, so it is never deleted: kept on the phone for the same account.
+        assertFalse(app.database.dailyLogDao().getAll().isEmpty())
+        assertEquals("user-1", app.dataSync.heldForAccount())
     }
 }

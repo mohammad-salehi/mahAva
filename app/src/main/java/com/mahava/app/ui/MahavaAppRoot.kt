@@ -192,8 +192,9 @@ fun MahavaAppRoot(
             return@LaunchedEffect
         }
         if (host == "screen" && setupDone && loggedIn) {
+            if (path == "tab") { deepLink.getQueryParameter("to")?.let { navigateTab(nav, it) }; return@LaunchedEffect }
             val route = when (path) {
-                "recommendation" -> "tools/recommendation"
+                "recommendation" -> Routes.TODAY // the 08:00 tip; the recommendation tool was removed
                 "today" -> Routes.TODAY
                 "calendar" -> Routes.CALENDAR
                 "log" -> Routes.LOG_HUB
@@ -216,6 +217,7 @@ fun MahavaAppRoot(
                 else -> null
             }
             if (route != null) nav.navigate(route) { launchSingleTop = true }
+            deepLink.getQueryParameter("scroll")?.toIntOrNull()?.let { com.mahava.app.ui.kit.KitDebug.scroll.value = it to System.nanoTime() }
         }
     }
     val backStack by nav.currentBackStackEntryAsState()
@@ -234,21 +236,7 @@ fun MahavaAppRoot(
         bottomBar = {
             if (showBottom) {
                 com.mahava.app.ui.components.MainNavigation(route) { target ->
-                    // Leave overlay screens (settings, tickets, …) so bottom tabs always work.
-                    val mainTabs = setOf(
-                        Routes.TODAY, Routes.CALENDAR, Routes.LOG_HUB, Routes.REPORTS, Routes.TOOLS
-                    )
-                    var guard = 0
-                    while (guard++ < 12) {
-                        val r = nav.currentBackStackEntry?.destination?.route ?: break
-                        if (r in mainTabs) break
-                        if (!nav.popBackStack()) break
-                    }
-                    nav.navigate(target) {
-                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navigateTab(nav, target)
                 }
             }
         },
@@ -671,6 +659,28 @@ private fun ForceUpdateScreen(info: com.mahava.app.network.MahForceUpdateDto) {
                     } catch (_: Throwable) { }
                 }
             }
+        }
+    }
+}
+
+
+/** Bottom-bar navigation (also used by the debug `mahava://screen/tab?to=` link to verify it on a device). */
+internal fun navigateTab(nav: androidx.navigation.NavController, target: String) {
+    // Tabs always open their root screen. Before, every tab was navigate(target) with
+    // popUpTo(graph start){saveState} + restoreState: Today is (or after login replaces) the
+    // start, so tapping «امروز» either restored Today's saved sub-stack (a detail page came
+    // back instead of Today) or popped to a start destination (LOGIN) that was not in the
+    // stack at all, leaving the old screen on top. Now Today is reached by popping back to it.
+    val todayInStack = runCatching { nav.getBackStackEntry(Routes.TODAY) }.isSuccess
+    val current = nav.currentBackStackEntry?.destination?.route
+    if (target == Routes.TODAY) {
+        if (current != Routes.TODAY && !(todayInStack && nav.popBackStack(Routes.TODAY, inclusive = false))) {
+            nav.navigate(Routes.TODAY) { popUpTo(nav.graph.id) { inclusive = true }; launchSingleTop = true }
+        }
+    } else if (current != target) {
+        nav.navigate(target) {
+            if (todayInStack) popUpTo(Routes.TODAY) { inclusive = false } else popUpTo(nav.graph.id) { inclusive = true }
+            launchSingleTop = true
         }
     }
 }

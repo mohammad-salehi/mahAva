@@ -632,6 +632,20 @@ class AppViewModel(
             else -> { com.mahava.app.sync.DataSync.syncNow(app); MoodSave.OFFLINE_PENDING }
         }
     }
+    /** «رابطه» on Today: same field as the daily log; null clears it. */
+    suspend fun saveTodayIntimacy(choice: String?): MoodSave {
+        try {
+            todaySignalSaveMutex.withLock {
+                val epochDay = today().toEpochDay()
+                val now = clock.nowMillis()
+                val current = repo.getDailyLog(epochDay) ?: DailyLogEntity(epochDay = epochDay, createdAt = now, updatedAt = now)
+                repo.upsertDailyLog(com.mahava.app.content.IntimacyLog.apply(current, choice).copy(updatedAt = now))
+            }
+        } catch (c: kotlinx.coroutines.CancellationException) { throw c } catch (_: Throwable) { return MoodSave.FAILED }
+        if (prefs.getAccountRole() == "male" || !authRepository.hasSessionTokens()) return MoodSave.LOCAL_ONLY
+        pushWomanDataToServer(await = false)
+        return MoodSave.LOCAL_ONLY
+    }
     fun saveTodaySignals(food: Set<String>, body: Set<String>, mood: String?) = viewModelScope.launch {
         todaySignalSaveMutex.withLock {
             val epochDay = today().toEpochDay()
@@ -915,10 +929,11 @@ class AppViewModel(
     suspend fun unsyncedBeforeLogout(): Int {
         if (com.mahava.app.demo.DemoMode.enabled) return 0 // fake data, nothing to lose
         if (prefs.getAccountRole() == "male") return 0
-        try { kotlinx.coroutines.withTimeoutOrNull(6_000) { app.dataSync.sync() } } catch (e: Exception) {
+        // 20 s: a slow mobile link needs more than a few seconds to send a large backlog.
+        try { kotlinx.coroutines.withTimeoutOrNull(20_000) { app.dataSync.sync() } } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException && e !is kotlinx.coroutines.TimeoutCancellationException) throw e
         }
-        return try { app.dataSync.pendingCount() } catch (_: Throwable) { 0 }
+        return try { app.dataSync.pendingForLogout() } catch (_: Throwable) { 0 }
     }
 
     /**
@@ -930,8 +945,18 @@ class AppViewModel(
     suspend fun logoutAccount(): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
         runCatching { com.mahava.app.partner.PartnerSync.cancel(app) }
         runCatching { com.mahava.app.sync.DataSync.cancel(app) }
+        // Counted before the tokens go (afterwards nothing counts as pending). Anything not yet on
+        // the server is never deleted: it stays on this phone for the same account.
+        val owner = runCatching { prefs.accountUserId.first() }.getOrNull()
+        val pending = if (com.mahava.app.demo.DemoMode.enabled || prefs.getAccountRole() == "male") 0
+            else runCatching { app.dataSync.pendingCount() }.getOrDefault(1)
         authRepository.logout()
-        runCatching { clearLocalAfterSignOut() }
+        if (pending > 0 && !owner.isNullOrBlank()) runCatching {
+            app.dataSync.holdLocalForAccount(owner)
+            reminderScheduler.cancelAll()
+            _locked.value = false
+            com.mahava.app.notice.AppNotices.clear(app)
+        } else runCatching { clearLocalAfterSignOut() }
         if (com.mahava.app.demo.DemoMode.enabled) runCatching { com.mahava.app.demo.DemoMode.onSignedOut(app) }
         null
     }

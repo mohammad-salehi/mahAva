@@ -238,7 +238,7 @@ object PartnerAdvice {
             parts += "هوس " + today!!.cravings!!.joinToString("، ") { FoodCravingKeys.labelFa(it) }
         if ("flow" in changes) parts += "خون‌ریزی را ثبت کرد"
         if ("note" in changes) parts += "یادداشت نوشت"
-        if ("intimacy" in changes) parts += "رابطه را ثبت کرد"
+        // "intimacy" is private: never mentioned to the husband
         if (parts.isEmpty()) return "$N چیز تازه‌ای ثبت کرد."
         return "$N: " + parts.distinct().joinToString(" · ")
     }

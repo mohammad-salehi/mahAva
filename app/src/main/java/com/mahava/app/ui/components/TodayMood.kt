@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mahava.app.R
 import com.mahava.app.content.BodyNowContent
 import com.mahava.app.data.db.DailyLogEntity
@@ -40,45 +41,66 @@ import com.mahava.app.util.JalaliDate
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-/** «الان توی بدنت چه خبره؟»: 2–3 short lines, the woman illustration, a link to the science page. */
+/** «الان توی بدنت چه خبره؟» in the approved-home body card: text at the start, the kit illustration at the end. */
 @Composable
 fun BodyNowCard(data: BodyNowContent.BodyNow, pregnant: Boolean, onMore: () -> Unit) {
+    val k = com.mahava.app.ui.kit.Kit
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(MahavaLavenderSoft)
-            .clickable(onClick = onMore).padding(16.dp).testTag("today_body_now")
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(k.cardRadius))
+            .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFF3F0FE), Color(0xFFF6F3FD))))
+            .clickable(onClickLabel = "بیشتر بدون", onClick = onMore).padding(start = 10.dp, end = 18.dp, top = 12.dp, bottom = 12.dp).testTag("today_body_now")
     ) {
-        Row(verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("الان توی بدنت چه خبره؟", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                data.points.forEach { line ->
-                    Row(verticalAlignment = Alignment.Top) {
-                        Box(Modifier.padding(top = 9.dp).size(5.dp).clip(RoundedCornerShape(50)).background(MahavaPrimary))
-                        Spacer(Modifier.width(8.dp))
-                        Text(line, style = MaterialTheme.typography.bodyMedium, color = MahavaTextPrimary)
-                    }
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            Image(painterResource(if (pregnant) R.drawable.redesign_pregnancy else R.drawable.redesign_woman), null,
-                Modifier.size(width = 84.dp, height = 112.dp), contentScale = ContentScale.Fit)
-        }
-        Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            MahavaIcon(R.drawable.design_info, MahavaTextSecondary, 16.dp)
+            Image(painterResource(if (pregnant) R.drawable.redesign_pregnancy else R.drawable.redesign_woman), null,
+                Modifier.size(width = 96.dp, height = 96.dp), contentScale = ContentScale.Fit)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("الان توی بدنت چه خبره؟", style = k.cardTitle)
+                Spacer(Modifier.height(2.dp))
+                val first = data.rows.firstOrNull()
+                if (first == null) data.points.forEach { line -> Text(line, style = k.body.copy(color = MahavaTextSecondary)) }
+                else BodyNowRowItem(first)
+            }
+        }
+        // The rest of the rows run full width under the picture: short label, one sentence each.
+        if (data.rows.size > 1) {
+            Spacer(Modifier.height(6.dp))
+            Column(Modifier.padding(start = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                data.rows.drop(1).forEach { BodyNowRowItem(it) }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        // The whole card opens «بیشتر بدون» (the science page); a small chevron hints at it.
+        Row(Modifier.padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            MahavaIcon(R.drawable.kit_info, MahavaTextSecondary, 16.dp)
             Spacer(Modifier.width(6.dp))
-            Text(data.basisFa, style = MaterialTheme.typography.bodySmall, color = MahavaTextSecondary, modifier = Modifier.weight(1f).testTag("today_body_basis"))
-            Text("بیشتر بدون", style = MaterialTheme.typography.bodySmall, color = MahavaPrimaryDeep, fontWeight = FontWeight.SemiBold)
+            Text(data.basisFa, style = k.small, modifier = Modifier.weight(1f).testTag("today_body_basis"))
+            MahavaIcon(R.drawable.kit_chevron_left, MahavaTextSecondary, 16.dp)
         }
     }
 }
 
+@Composable
+private fun BodyNowRowItem(row: BodyNowContent.Row) {
+    val k = com.mahava.app.ui.kit.Kit
+    val accent = when (row.key) { "warn" -> MahavaDanger; "limit" -> MahavaLavender; else -> MahavaPrimary }
+    Column(Modifier.fillMaxWidth().testTag("today_body_row_${row.key}")) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(6.dp).clip(RoundedCornerShape(50)).background(accent))
+            Spacer(Modifier.width(6.dp))
+            Text(row.label, style = k.small.copy(color = accent, fontWeight = FontWeight.Bold))
+        }
+        Text(row.text, style = k.body.copy(color = MahavaTextSecondary), modifier = Modifier.padding(start = 12.dp))
+    }
+}
+
 private val moodIcons = mapOf("good" to R.drawable.redesign_mood_good, "ordinary" to R.drawable.redesign_mood_ordinary, "bad" to R.drawable.redesign_mood_bad)
-private val moodTint = mapOf("good" to Color(0xFFFFF0F6), "ordinary" to Color(0xFFEFF3FF), "bad" to Color(0xFFF0EDFF))
+private val moodTint = mapOf("good" to Color(0xFFFCEEF4), "ordinary" to Color(0xFFEDF1FC), "bad" to Color(0xFFF1F0FA))
 private val moodAccent = mapOf("good" to MahavaPrimary, "ordinary" to Color(0xFF6F8FE8), "bad" to MahavaLavender)
 
 /** «حال امروزت چطوره؟» + three options + the mood chart, with nothing in between. */
 @Composable
-fun TodayMoodSection(vm: AppViewModel, logs: List<DailyLogEntity>, today: LocalDate) {
+fun TodayMoodSection(vm: AppViewModel, logs: List<DailyLogEntity>, today: LocalDate, showIntimacy: Boolean = false) {
     val scope = rememberCoroutineScope()
     val todayLog = logs.find { it.epochDay == today.toEpochDay() }
     val saved = BodyNowContent.moodOf(todayLog)
@@ -86,27 +108,26 @@ fun TodayMoodSection(vm: AppViewModel, logs: List<DailyLogEntity>, today: LocalD
     var result by remember(today) { mutableStateOf<AppViewModel.MoodSave?>(null) }
     val shown = pending ?: saved
     Column(Modifier.fillMaxWidth().testTag("today_mood_section"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("حال امروزت چطوره؟", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("حال امروزت چطوره؟", style = com.mahava.app.ui.kit.Kit.cardTitle)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             BodyNowContent.MOODS.forEach { (key, label) ->
                 val on = shown == key
                 val accent = moodAccent.getValue(key)
                 Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(moodTint.getValue(key))
-                        .border(if (on) 2.dp else 0.dp, if (on) accent else Color.Transparent, RoundedCornerShape(20.dp))
+                    Modifier.weight(1f).height(76.dp).clip(RoundedCornerShape(16.dp)).background(moodTint.getValue(key))
+                        .border(if (on) 1.5.dp else 0.dp, if (on) accent else Color.Transparent, RoundedCornerShape(16.dp))
                         .clickable(role = Role.Button) {
                             if (pending != null) return@clickable
                             pending = key; result = null
                             scope.launch { result = vm.saveTodayMood(key); pending = null }
                         }
                         .semantics { selected = on }
-                        .padding(vertical = 12.dp).testTag("today_mood_$key"),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .testTag("today_mood_$key"),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
                 ) {
-                    Image(painterResource(moodIcons.getValue(key)), null, Modifier.size(if (on) 40.dp else 34.dp))
+                    Image(painterResource(moodIcons.getValue(key)), null, Modifier.size(30.dp))
                     Spacer(Modifier.height(6.dp))
-                    Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
-                        color = if (on) accent else MahavaTextPrimary)
+                    Text(label, style = com.mahava.app.ui.kit.Kit.label, color = if (on) MahavaPrimaryDeep else MahavaTextPrimary)
                 }
             }
         }
@@ -119,7 +140,39 @@ fun TodayMoodSection(vm: AppViewModel, logs: List<DailyLogEntity>, today: LocalD
             else -> null
         }
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = if (result == AppViewModel.MoodSave.FAILED) MahavaDanger else MahavaTextSecondary, modifier = Modifier.testTag("today_mood_status")) }
+        if (showIntimacy) TodayIntimacyRow(vm, todayLog, today)
         MoodTrendChart(BodyNowContent.moodSeries(logs, today.toEpochDay()), today.toEpochDay())
+    }
+}
+
+/** «رابطه»: one compact row under the mood options, same look; saved into today's log. */
+@Composable
+private fun TodayIntimacyRow(vm: AppViewModel, todayLog: DailyLogEntity?, today: LocalDate) {
+    val scope = rememberCoroutineScope()
+    val saved = com.mahava.app.content.IntimacyLog.of(todayLog)
+    var busy by remember(today) { mutableStateOf(false) }
+    var pending by remember(today) { mutableStateOf<String?>(null) }
+    val shown = if (busy) pending else saved
+    Row(Modifier.fillMaxWidth().testTag("today_intimacy"), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("رابطه", style = com.mahava.app.ui.kit.Kit.label, color = MahavaTextPrimary)
+        com.mahava.app.content.IntimacyLog.OPTIONS.forEach { (key, label) ->
+            val on = shown == key
+            Box(
+                Modifier.weight(1f).height(40.dp).clip(RoundedCornerShape(14.dp)).background(if (on) MahavaPrimarySoft else Color(0xFFF4F3F8))
+                    .border(if (on) 1.5.dp else 0.dp, if (on) MahavaPrimary else Color.Transparent, RoundedCornerShape(14.dp))
+                    .clickable(role = Role.Button) {
+                        if (busy) return@clickable
+                        val next = if (saved == key) null else key
+                        busy = true; pending = next
+                        scope.launch { try { vm.saveTodayIntimacy(next) } finally { busy = false } }
+                    }
+                    .semantics { selected = on }
+                    .testTag("today_intim_$key"),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(label, style = com.mahava.app.ui.kit.Kit.label, color = if (on) MahavaPrimaryDeep else MahavaTextPrimary, maxLines = 1)
+            }
+        }
     }
 }
 
@@ -131,10 +184,10 @@ fun MoodTrendChart(series: List<Pair<Long, String?>>, todayEpoch: Long) {
     var picked by remember(series) { mutableStateOf<Int?>(null) }
     val lastIdx = series.indexOfLast { it.second != null }
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFFFFF8FB))
-            .border(1.dp, MahavaBorder, RoundedCornerShape(24.dp)).padding(14.dp).testTag("today_mood_chart")
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(com.mahava.app.ui.kit.Kit.cardRadius)).background(Color.White)
+            .border(1.dp, MahavaBorder, RoundedCornerShape(com.mahava.app.ui.kit.Kit.cardRadius)).padding(14.dp).testTag("today_mood_chart")
     ) {
-        Text("حال این روزهات", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("حال این روزهات", style = com.mahava.app.ui.kit.Kit.cardTitle.copy(fontSize = 15.sp))
         Spacer(Modifier.height(8.dp))
         if (lastIdx < 0) {
             Text("حالت رو ثبت کن تا کم‌کم روندش رو اینجا ببینی.", style = MaterialTheme.typography.bodyMedium,

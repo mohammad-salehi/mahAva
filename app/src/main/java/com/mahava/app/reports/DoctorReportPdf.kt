@@ -27,9 +27,9 @@ data class DoctorReportData(
     val today: Long,
     val allPeriods: List<PeriodEventEntity>,
     val logs: List<DailyLogEntity>,
-    val includeNotes: Boolean,
-    val includeIntimate: Boolean,
-    val includeTests: Boolean,
+    val includeNotes: Boolean = true,
+    val includeIntimate: Boolean = true,
+    val includeTests: Boolean = true,
     val pregnancyLine: String? = null,
     val questions: List<String> = emptyList()
 )
@@ -114,24 +114,22 @@ object DoctorReportPdf {
                 })
         }
 
-        p.section("چرخه‌ها")
-        if (cycles.isEmpty()) p.paragraph("در این بازه شروع پریودی ثبت نشده.")
-        else p.table(listOf("شروع پریود", "پایان", "مدت پریود", "طول چرخه"), listOf(1.4f, 1.4f, 1f, 1f),
+        // Only sections that have something in them.
+        if (cycles.isNotEmpty()) p.section("چرخه‌ها")
+        if (cycles.isNotEmpty()) p.table(listOf("شروع پریود", "پایان", "مدت پریود", "طول چرخه"), listOf(1.4f, 1.4f, 1f, 1f),
             cycles.map { c ->
                 val pe = d.allPeriods.firstOrNull { it.startEpochDay == c.start }
                 listOf(day(c.start), pe?.endEpochDay?.let { day(it) } ?: if (pe?.stillOngoing == true) "ادامه دارد" else "ثبت نشده",
                     c.bleedDays?.let { "${fa(it)} روز" } ?: "—", c.length?.let { "${fa(it)} روز" } ?: "چرخهٔ جاری")
             })
 
-        p.section("علائم پرتکرار")
         val sym = CycleStats.symptomCounts(logs).take(10)
-        if (sym.isEmpty()) p.paragraph("علامتی ثبت نشده.")
-        else p.table(listOf("علامت", "تعداد روز", "درصد روزهای ثبت‌شده"), listOf(1.6f, 1f, 1.2f),
+        if (sym.isNotEmpty()) p.section("علائم پرتکرار")
+        if (sym.isNotEmpty()) p.table(listOf("علامت", "تعداد روز", "درصد روزهای ثبت‌شده"), listOf(1.6f, 1f, 1.2f),
             sym.map { (k, c) -> listOf(LogLabels.symptomFa(k), fa(c), "${fa(Math.round(100f * c / logs.size.coerceAtLeast(1)))}٪") })
 
-        p.section("درد")
-        if (painDays.isEmpty()) p.paragraph("در این بازه دردی ثبت نشده.")
-        else p.table(listOf("روز", "شدت", "جا", "نوع", "اقدام / نتیجه"), listOf(1.2f, 0.6f, 1.3f, 1f, 1.5f),
+        if (painDays.isNotEmpty()) p.section("درد")
+        if (painDays.isNotEmpty()) p.table(listOf("روز", "شدت", "جا", "نوع", "اقدام / نتیجه"), listOf(1.2f, 0.6f, 1.3f, 1f, 1.5f),
             painDays.map { l ->
                 listOf(day(l.epochDay), "${fa(l.painScore ?: 0)}/۱۰",
                     l.painLocations.orEmpty().split(',').filter { it.isNotBlank() }.joinToString("، ") { LogLabels.painLocationFa(it) }.ifBlank { "—" },
@@ -159,15 +157,15 @@ object DoctorReportPdf {
             d.questions.forEach { p.paragraph("• $it") }
         }
 
-        p.section("ثبت‌های روزانه")
-        if (logs.isEmpty()) p.paragraph("در این بازه ثبتی نیست.")
-        else p.table(listOf("روز", "خون‌ریزی", "علائم و حال", "سایر"), listOf(1.1f, 0.8f, 2f, 1.6f),
+        if (logs.isEmpty() && cycles.isEmpty() && d.questions.isEmpty() && d.pregnancyLine == null) { p.section("ثبت‌ها"); p.paragraph("در این بازه هنوز چیزی ثبت نشده.") }
+        if (logs.isNotEmpty()) p.section("ثبت‌های روزانه")
+        if (logs.isNotEmpty()) p.table(listOf("روز", "خون‌ریزی", "علائم و حال", "سایر"), listOf(1.1f, 0.8f, 2f, 1.6f),
             logs.map { l ->
                 val bits = mutableListOf<String>()
                 CycleStats.sleepHours(l)?.let { bits += "خواب ${fa(it)} ساعت" }
                 l.discharge?.let { bits += "ترشحات ${LogLabels.labelOf(LogLabels.DISCHARGE, it)}" }
                 if (d.includeTests && l.pregnancyTest != null) bits += "تست بارداری ${when (l.pregnancyTest) { "positive" -> "مثبت"; "negative" -> "منفی"; else -> "نامعتبر" }}"
-                if (d.includeIntimate && l.intimacyLogged) bits += "رابطه ثبت‌شده"
+                if (d.includeIntimate) com.mahava.app.content.IntimacyLog.reportFa(l)?.let { bits += it }
                 if (d.includeNotes && !l.note.isNullOrBlank()) bits += "یادداشت: ${l.note}"
                 listOf(day(l.epochDay), com.mahava.app.ui.screens.bleedingFa(l.bleeding) ?: "—",
                     (l.physicalSymptoms.orEmpty().split(',').filter { it.isNotBlank() }.map { LogLabels.symptomFa(it) } +

@@ -9,8 +9,9 @@
     <string name="notification_channel_reminders">یادآوری‌ها</string>
     <string name="notification_private_text">یک پیام از ماه داری</string>
     <string name="notification_daily_text">امروز حالت چطوره؟ چند ثانیه وقت بذار و تو ماه ثبتش کن.</string>
-    <string name="notification_period_text">پریود بعدی‌ات شاید تا چند روز دیگه شروع بشه. پد یا دارو رو آماده کن.</string>
-    <string name="notification_water_text">ظهر شده؛ یه لیوان آب بخور. یادآوری آب رو خودت تو تنظیمات روشن کردی.</string>
+    <string name="notification_period_text">احتمالاً پریودت تا یکی دو روز دیگه شروع می‌شه. پد و مسکنی که معمولاً استفاده می‌کنی رو دم دستت بذار.</string>
+    <string name="notification_ovulation_text">طبق تخمین ماه، این روزها احتمالاً نزدیک تخمک‌گذاری هستی. این فقط تخمینه و برای پیشگیری از بارداری بهش تکیه نکن.</string>
+    <string name="notification_water_text">ظهر شده؛ یه لیوان آب بخور. بدنت ممنونت می‌شه.</string>
     <string name="notification_sleep_text">ساعت ۱۰ و نیم شبه؛ کم‌کم گوشی رو بذار کنار و برای خواب آماده شو. یادآوری خواب رو خودت تو تنظیمات روشن کردی.</string>
     <string name="lock_title">باز کردن ماه</string>
     <string name="lock_subtitle">با اثر انگشت یا رمز گوشی قفل را باز کن</string>

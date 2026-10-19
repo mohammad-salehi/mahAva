@@ -9,6 +9,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,15 +71,24 @@ fun BarChart(
             }
         }
         if (labels.isNotEmpty()) {
-            // When month names do not fit under every bar (small phone, large font), label every 2nd/3rd bar.
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val need = 52.dp * androidx.compose.ui.platform.LocalDensity.current.fontScale
-                val step = kotlin.math.ceil(need.value / (maxWidth.value / labels.size).coerceAtLeast(1f)).toInt().coerceAtLeast(1)
+            // Labels never overlap: "month yy" is split into two lines, the widest line is measured
+            // for real (font + system font scale), and only every Nth bar is labelled when it does not fit.
+            val style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp)
+            val lines = labels.map { l -> l.substringBeforeLast(' ', l) + (if (' ' in l) "\n" + l.substringAfterLast(' ') else "") }
+            val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val widest = remember(lines, style, density) {
+                lines.flatMap { it.split('\n') }.maxOfOrNull { measurer.measure(it, style).size.width } ?: 0
+            }
+            BoxWithConstraints(Modifier.fillMaxWidth().testTag("bar_labels")) {
+                val slot = maxWidth / labels.size
+                val need = with(density) { widest.toDp() } + 6.dp
+                val step = kotlin.math.ceil(need.value / slot.value.coerceAtLeast(1f)).toInt().coerceAtLeast(1)
                 Row(Modifier.fillMaxWidth()) {
-                    labels.forEachIndexed { i, label ->
+                    lines.forEachIndexed { i, label ->
                         val show = step == 1 || (labels.size - 1 - i) % step == 0
-                        Text(if (show) label else "", Modifier.weight(1f).wrapContentWidth(unbounded = true), style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false,
+                        Text(if (show) label else "", Modifier.weight(1f).wrapContentWidth(unbounded = step > 1), style = style,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, softWrap = false,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                 }

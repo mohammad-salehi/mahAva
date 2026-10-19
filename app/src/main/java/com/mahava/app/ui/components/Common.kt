@@ -132,7 +132,7 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)? = null, onSettings: (() ->
         Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.Start)
         if (onSettings != null) {
             IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)) {
-                MahavaIcon(com.mahava.app.R.drawable.ic_settings, MahavaTextPrimary)
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(com.mahava.app.R.drawable.ic_settings), contentDescription = "تنظیمات", tint = MahavaTextPrimary, modifier = Modifier.size(24.dp))
             }
         }
     }

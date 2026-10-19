@@ -45,11 +45,12 @@ class PartnerContentTest {
             today = PartnerTodayDto(moods = listOf("sad"), symptoms = listOf("pain"), cravings = listOf("chocolate"), painScore = 5))
         val line = PartnerAdvice.changeLineFa(listOf("period", "mood", "symptoms", "pain", "cravings", "flow", "note", "intimacy"), snap)
         assertTrue(line.startsWith("همسرت"))
-        listOf("پریودش شروع شد", "غمگین", "درد ۵ از ۱۰", "شکلات", "خون‌ریزی", "یادداشت", "رابطه").forEach { assertTrue(it, line.contains(it)) }
+        listOf("پریودش شروع شد", "غمگین", "درد ۵ از ۱۰", "شکلات", "خون‌ریزی", "یادداشت").forEach { assertTrue(it, line.contains(it)) }
+        assertFalse("sex log is private", line.contains("رابطه"))
         assertTrue(PartnerAdvice.dailyLineFa(snap).startsWith("همسرت"))
     }
 
-    @Test fun logFormatShowsEveryField_includingUnknownOnes() {
+    @Test fun logFormatShowsEveryField_exceptThePrivateSexLog() {
         val o = JsonObject().apply {
             addProperty("epochDay", 20000); addProperty("note", "سلام"); addProperty("intimacyLogged", true)
             addProperty("desire", "high"); addProperty("bleeding", "spotting"); addProperty("sleepHours", 7.5)
@@ -57,8 +58,8 @@ class PartnerContentTest {
         }
         val labels = PartnerLogFormat.lines(o).associate { it.label to it.value }
         assertEquals("سلام", labels["یادداشت"])
-        assertEquals("ثبت کرده", labels["رابطه"])
-        assertEquals("زیاد", labels["میل جنسی"])
+        org.junit.Assert.assertNull(labels["رابطه"])
+        org.junit.Assert.assertNull(labels["میل جنسی"])
         assertEquals("لکه‌بینی", labels["خون‌ریزی"])
         assertTrue(labels.getValue("ساعت خواب").startsWith("۷"))
         assertEquals("x", labels["someFutureField"])

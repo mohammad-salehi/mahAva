@@ -12,7 +12,8 @@ import com.mahava.app.util.PersianDigits
 object PartnerLogFormat {
     data class Line(val label: String, val value: String)
 
-    private val SKIP = setOf("id", "epochDay", "createdAt", "updatedAt", "pregnancyTestEpochDay", "physicalSymptomSeverities")
+    private val SKIP = setOf("id", "epochDay", "createdAt", "updatedAt", "pregnancyTestEpochDay", "physicalSymptomSeverities") +
+        com.mahava.app.content.IntimacyLog.PRIVATE_FIELDS // private: never shown to the husband
 
     private val ORDER = listOf(
         "overallFeeling", "bleeding", "clots", "painScore", "painLocations", "painType", "painDurationMinutes", "painAction", "painResult", "painActivityImpact", "noSymptoms", "physicalSymptoms",

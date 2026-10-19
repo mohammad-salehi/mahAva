@@ -51,6 +51,34 @@ class ReminderScheduler(private val context: Context) {
         fun dueMinute(pref: com.mahava.app.data.db.ReminderPrefEntity): Int =
             timeFor(pref).let { (h, m) -> h * 60 + m }
 
+        /** The estimated ovulation day (middle of the app's ovulation range), or null when no reliable estimate. */
+        fun estimatedOvulationDay(result: com.mahava.app.cycle.CycleEngineResult, pregnant: Boolean): java.time.LocalDate? {
+            if (pregnant) return null
+            // Only a normal estimate: not for irregular / unknown cycles, hormonal contraception, postpartum,
+            // perimenopause, pregnancy mode or when she turned fertility off.
+            // (INSUFFICIENT_DATA still has an estimate from her typical cycle length, like the period reminder.)
+            if (result.restriction != com.mahava.app.cycle.PredictionRestriction.NONE &&
+                result.restriction != com.mahava.app.cycle.PredictionRestriction.INSUFFICIENT_DATA) return null
+            val est = result.prediction as? com.mahava.app.cycle.PredictionKind.Estimate ?: return null
+            val span = est.ovulationLatest.toEpochDay() - est.ovulationEarliest.toEpochDay()
+            return est.ovulationEarliest.plusDays(span / 2)
+        }
+
+        /**
+         * Once per cycle: due from the morning one day before the estimated ovulation day through that day
+         * (the 15-minute tick catches up if the phone was off). [alreadyKey] = the ovulation day already notified.
+         */
+        fun ovulationDue(ovulationDay: java.time.LocalDate?, today: java.time.LocalDate, nowMinute: Int, dueMinute: Int, alreadyKey: Long): Boolean {
+            if (ovulationDay == null) return false
+            if (alreadyKey == ovulationDay.toEpochDay()) return false
+            if (today.isBefore(ovulationDay.minusDays(1)) || today.isAfter(ovulationDay)) return false
+            return nowMinute >= dueMinute
+        }
+
+        /** Approaching period: 0–2 days before the central estimate, not while bleeding, once per predicted start. */
+        fun periodDue(daysUntil: Int?, periodOngoing: Boolean, nowMinute: Int, dueMinute: Int): Boolean =
+            daysUntil != null && daysUntil in 0..2 && !periodOngoing && nowMinute >= dueMinute
+
         /** Milliseconds from [now] to the next 08:00 (tomorrow when it is already 08:00 or later). */
         fun delayUntilNextMorning(now: java.time.ZonedDateTime): Long {
             var next = now.toLocalDate().atTime(RECOMMENDATION_HOUR, 0).atZone(now.zone)
@@ -160,7 +188,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             val result = app.repository.computeCycle(profile, periods)
             val est = result.prediction as? com.mahava.app.cycle.PredictionKind.Estimate
             val days = result.daysUntilCentralPeriod
-            if (est != null && days != null && days in 0..2 && !result.periodOngoing && localTime.hour*60+localTime.minute>=it.hour*60+it.minute) {
+            val pregnantNow = app.database.pregnancyDao().getActive() != null
+            if (est != null && !pregnantNow && ReminderScheduler.periodDue(days, result.periodOngoing, nowMinute, ReminderScheduler.dueMinute(it))) {
                 val key = est.nextPeriodStartCentral.toEpochDay()
                 if (sp.getLong("period_notified_central", -1L) != key) {
                     pending += Triple(
@@ -170,6 +199,20 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
                     )
                     sp.edit().putLong("period_notified_central", key).apply()
                 }
+            }
+        }
+        reminders["ovulation"]?.let { pref ->
+            val periods = app.database.periodDao().getAll()
+            val result = app.repository.computeCycle(profile, periods)
+            val pregnantNow = app.database.pregnancyDao().getActive() != null
+            val ovDay = ReminderScheduler.estimatedOvulationDay(result, pregnantNow)
+            if (ReminderScheduler.ovulationDue(ovDay, today, nowMinute, ReminderScheduler.dueMinute(pref), sp.getLong("ovulation_notified_day", -1L))) {
+                pending += Triple(
+                    1007,
+                    titleOf("زمان احتمالی تخمک‌گذاری"),
+                    applicationContext.getString(R.string.notification_ovulation_text)
+                )
+                sp.edit().putLong("ovulation_notified_day", ovDay!!.toEpochDay()).apply()
             }
         }
         reminders["water"]?.let { pref ->

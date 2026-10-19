@@ -92,19 +92,37 @@ fun TodayScreen(
     val symptoms = log?.physicalSymptoms?.split(',')?.filter { it.isNotBlank() }?.toSet().orEmpty()
     val tools by vm.toolRecords.collectAsState()
     LaunchedEffect(today) { runCatching { vm.tools.ensureRecommendation() } }
-    Column(Modifier.fillMaxSize().background(MahavaBackground).verticalScroll(rememberScrollState()).testTag("today_screen")) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("سلام، امروز چطوری؟", style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                QuietInfo(JalaliDate.from(today).formatShortFa())
-            }
-            NotificationBell(vm, onNotifications)
-            androidx.compose.material3.IconButton(onClick = onSettings, modifier = Modifier.testTag("open_settings")) {
-                MahavaIcon(R.drawable.design_settings, MahavaTextPrimary)
+    val notices by vm.notices.collectAsState()
+    val inbox by vm.inboxItems.collectAsState()
+    val unread = notices.count { !it.read } + inbox.size
+    val k = com.mahava.app.ui.kit.Kit
+    Column(Modifier.fillMaxSize().background(MahavaBackground).verticalScroll(com.mahava.app.ui.kit.rememberKitScroll()).testTag("today_screen")) {
+        // approved-home header: bell (start/right), centred greeting, smile button (end/left) for the account.
+        com.mahava.app.ui.kit.KitHeader(
+            title = if (pregnant) "سلام، امروز تو:" else "سلام، امروز چطوری؟",
+            start = { com.mahava.app.ui.kit.KitCircleButton(R.drawable.kit_bell, dot = unread > 0, tag = "open_notifications", onClick = onNotifications) },
+            end = { com.mahava.app.ui.kit.KitCircleButton(R.drawable.kit_settings, tag = "open_settings", contentDescription = "تنظیمات", onClick = onSettings) }
+        )
+        val pred0 = pred
+        val periodDays = remember(state.periods, today) {
+            buildSet {
+                state.periods.forEach { pe ->
+                    val end = pe.endEpochDay ?: if (pe.stillOngoing) today.toEpochDay() else pe.startEpochDay
+                    for (d in pe.startEpochDay..end) add(d)
+                }
             }
         }
-        Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            HomeWeekStrip(today, onCalendar)
+        val bleed = (state.profile?.typicalBleedLength ?: 5).coerceIn(2, 10)
+        fun dotFor(d: java.time.LocalDate): androidx.compose.ui.graphics.Color = when {
+            d == today -> k.lavender
+            d.toEpochDay() in periodDays -> k.pink.copy(alpha = .55f)
+            !pregnant && pred0 != null && !d.isBefore(pred0.nextPeriodStartCentral) && d.isBefore(pred0.nextPeriodStartCentral.plusDays(bleed.toLong())) -> k.pink.copy(alpha = .4f)
+            !pregnant && pred0 != null && !d.isBefore(pred0.fertilityEarliest) && !d.isAfter(pred0.fertilityLatest) -> k.lavender.copy(alpha = .35f)
+            else -> androidx.compose.ui.graphics.Color(0xFFE7E4F2)
+        }
+        Spacer(Modifier.height(6.dp))
+        com.mahava.app.ui.kit.KitWeekStrip(today, ::dotFor, onCalendar)
+        Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Accounts restored at login skip onboarding: ask once here, never again after that.
             NotificationPermissionCard(NOTIFICATION_REASON_FA, onlyIfNeverAsked = true)
             if (state.profile?.qaSampleData == true) QuietInfo("این‌ها دادهٔ نمونه‌ان، نه اطلاعات واقعی.")
@@ -112,36 +130,62 @@ fun TodayScreen(
                 ctx.subWindow, cycle?.phase, state.profile?.hormonalContraception == true, state.profile?.regularCycles
             )
             if (pregnant) {
-                PregnancyCompanion(vm, onPregnancy, onPregnancySetup, onDailyLog, onHealthInsight, part = PregnancyPart.HERO)
-                BodyNowCard(com.mahava.app.content.BodyNowContent.forPregnancy(health?.pregnancyProgress?.contentWeek), pregnant = true) {
-                    health?.pregnancyProgress?.contentWeek?.let { onHealthInsight("preg_week_${it.coerceAtMost(42)}") } ?: onPregnancySetup()
+                val p = health?.pregnancyProgress
+                Box(Modifier.fillMaxWidth().clickable(onClick = onPregnancy).testTag("pregnancy_hero")) {
+                    com.mahava.app.ui.kit.KitOrbit(
+                        number = p?.completedWeeks?.let { PersianDigits.toPersian(it) } ?: "—",
+                        caption = if (p != null) "هفته و ${PersianDigits.toPersian(p.daysIntoWeek)} روز" else "هفتهٔ بارداری",
+                        sub = p?.let { (when { it.completedWeeks < 13 -> "سه‌ماههٔ اول"; it.completedWeeks < 28 -> "سه‌ماههٔ دوم"; else -> "سه‌ماههٔ سوم" }) + " · تخمینی" }
+                            ?: "برای حساب کردن هفته، تاریخ مبنا رو ثبت کن",
+                        progress = p?.progressFraction
+                    )
+                    Row(
+                        Modifier.align(Alignment.TopEnd).clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(MahavaPrimarySoft)
+                            .clickable(onClick = onPregnancySetup).padding(horizontal = 10.dp, vertical = 5.dp).testTag("pregnancy_mode_chip"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MahavaIcon(R.drawable.kit_pregnancy, MahavaPrimary, 18.dp)
+                        Spacer(Modifier.width(4.dp))
+                        Text("بارداری", style = k.small.copy(color = MahavaTextPrimary, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold))
+                        Spacer(Modifier.width(2.dp))
+                        MahavaIcon(R.drawable.kit_chevron_left, MahavaTextSecondary, 14.dp)
+                    }
+                }
+                BodyNowCard(com.mahava.app.content.BodyNowContent.forPregnancy(p?.contentWeek), pregnant = true) {
+                    p?.contentWeek?.let { onHealthInsight("preg_week_${it.coerceAtMost(42)}") } ?: onPregnancySetup()
                 }
             } else {
-                Column(Modifier.fillMaxWidth().testTag("cycle_status_card"), horizontalAlignment = Alignment.CenterHorizontally) {
-                    val length = pred?.medianCycleLength ?: state.profile?.typicalCycleLength
-                    val day = cycle?.cycleDay
-                    HomeOrbit(day, "روز چرخه", if (length != null && day != null) day.toFloat() / length else null)
-                    Text(ctx.subWindow.titleFa, color = MahavaPrimaryDeep, style = MaterialTheme.typography.titleMedium)
-                    if (pred != null) {
-                        Text("پریود بعدیت حدود ${JalaliDate.from(pred.nextPeriodStartCentral).formatShortFa()} · تخمینی", color = MahavaTextSecondary)
-                    } else QuietInfo("برای دیدن چرخه‌ت، آخرین پریودت رو ثبت کن.")
+                val length = pred?.medianCycleLength ?: state.profile?.typicalCycleLength
+                val day = cycle?.cycleDay
+                val until = cycle?.daysUntilCentralPeriod?.takeIf { it > 0 && cycle.isLate.not() }
+                val progress = if (length != null && day != null) (day.toFloat() / length).coerceIn(0f, 1f) else null
+                val marks = if (pred != null && length != null && day != null && cycle?.lastPeriodStart != null) {
+                    val start = cycle.lastPeriodStart
+                    (0..length).map { start.plusDays(it.toLong()) }
+                        .filter { !it.isBefore(pred.fertilityEarliest) && !it.isAfter(pred.fertilityLatest) }
+                        .map { (it.toEpochDay() - start.toEpochDay() + 1).toInt() }
+                        .filter { it > day }.take(6).map { it.toFloat() / length }
+                } else emptyList()
+                Box(Modifier.fillMaxWidth().clickable { onPhaseDetail(vm.phaseTodaySelection().item.id) }.testTag("cycle_status_card")) {
+                    com.mahava.app.ui.kit.KitOrbit(
+                        number = (until ?: day)?.let { PersianDigits.toPersian(it) } ?: "—",
+                        caption = if (until != null) "روز تا پریود بعدی" else if (day != null) "روز چرخه" else "چرخهٔ تو",
+                        sub = when {
+                            until != null && day != null -> "روز ${PersianDigits.toPersian(day)} چرخه · تخمینی"
+                            day != null -> ctx.subWindow.titleFa
+                            else -> "برای دیدن چرخه‌ت، آخرین پریودت رو ثبت کن."
+                        },
+                        progress = progress,
+                        marks = marks
+                    )
                 }
-                BodyNowCard(com.mahava.app.content.BodyNowContent.forCycle(phaseGroup, log), pregnant = false, onMore = onScience)
+                BodyNowCard(com.mahava.app.content.BodyNowContent.forCycle(phaseGroup, log, ctx.subWindow), pregnant = false, onMore = onScience)
             }
-            TodayMoodSection(vm, state.dailyLogs, today)
-            PrimaryButton("ثبت علائم امروز", modifier = Modifier.testTag("today_log_button"), onClick = onDailyLog)
-            TodayCheckIn(
-                log = log,
-                phaseGroup = if (pregnant) "general" else phaseGroup,
-                onSave = vm::saveTodaySignals,
-                onDetail = onSignal
-            )
+            TodayMoodSection(vm, state.dailyLogs, today, showIntimacy = !pregnant)
+            com.mahava.app.ui.kit.KitPillButton("ثبت حال امروز", modifier = Modifier.testTag("today_log_button"), onClick = onDailyLog)
             health?.activeAlerts?.take(2)?.forEach { a ->
-                MahavaCard(Modifier.clickable(onClick = onAssistant)) {
-                    Text(a.titleFa, color = MahavaDanger, style = MaterialTheme.typography.titleMedium)
-                    Text(a.recommendedActionFa)
-                    MoreLink("بیشتر بدون")
-                }
+                com.mahava.app.ui.kit.KitRowCard(a.titleFa, a.recommendedActionFa, MahavaPrimarySoft, onClick = onAssistant,
+                    art = { com.mahava.app.ui.kit.KitIconTile(R.drawable.kit_warning, MahavaDanger) })
             }
             // One «پیشنهاد امروز»: the subscriber's daily tip, else a simple care tip for this time of the cycle.
             val rec = if (premium) tools.find { it.id == "recommendation_${today.toEpochDay()}" && it.deletedAt == null }?.let { record ->
@@ -149,37 +193,18 @@ fun TodayScreen(
             } else null
             val tip = rec ?: if (!pregnant) science.careTipsFa.firstOrNull() else null
             if (tip != null) {
-                Row(
-                    Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp)).background(MahavaPrimarySoft)
-                        .clickable { if (rec != null) onTool("tools/recommendation") else onCareDetail(vm.careToday().item.id) }
-                        .padding(16.dp).testTag("today_recommendation"),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("پیشنهاد امروز", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                        Spacer(Modifier.height(4.dp))
-                        Text(tip, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    MahavaIcon(R.drawable.design_chevron_left, MahavaTextSecondary, 18.dp)
-                }
+                com.mahava.app.ui.kit.KitRowCard(
+                    "پیشنهاد امروز", tip, k.cardPink, tag = "today_recommendation",
+                    art = { if (pregnant) com.mahava.app.ui.kit.KitIconTile(R.drawable.kit_food, MahavaPrimary, size = 64.dp, iconSize = 34.dp)
+                        else androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.kit_art_bed), null,
+                            Modifier.size(64.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)).background(androidx.compose.ui.graphics.Color.White).padding(8.dp)) },
+                    onClick = { onCareDetail(vm.careToday().item.id) }
+                )
             }
-            if (pregnant) PregnancyCompanion(vm, onPregnancy, onPregnancySetup, onDailyLog, onHealthInsight, part = PregnancyPart.REST)
-            Row(
-                Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp)).background(MahavaLavenderSoft)
-                    .clickable(onClick = onPartner).padding(16.dp).testTag("home_partner_card"),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("اتصال به همسر", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text("اگه بخوای، همسرت هم می‌تونه چیزهایی رو که اینجا ثبت می‌کنی ببینه.", style = MaterialTheme.typography.bodyMedium)
-                }
-                Spacer(Modifier.width(8.dp))
-                MahavaIcon(R.drawable.design_heart, MahavaPrimary, 30.dp)
-                Spacer(Modifier.width(6.dp))
-                MahavaIcon(R.drawable.design_chevron_left, MahavaTextSecondary, 18.dp)
-            }
+            com.mahava.app.ui.kit.KitRowCard(
+                "اتصال به همسر", "اگه بخوای، همسرت هم می‌تونه چیزهایی رو که اینجا ثبت می‌کنی ببینه.", k.cardLavender,
+                tag = "home_partner_card", art = { com.mahava.app.ui.kit.KitHearts() }, onClick = onPartner
+            )
             Spacer(Modifier.height(16.dp))
         }
     }

@@ -85,8 +85,13 @@ class DesignFlowTest {
         show(vm) { TodayScreen(vm,{},{},{},{},{},{},{}) }
         rule.onNodeWithTag("cycle_status_card").assertExists()
         shot("cycle")
-        rule.onNodeWithTag("checkin_body_fatigue").performScrollTo().performClick()
-        rule.waitUntil(15000) { org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); vm.logFor(vm.today())?.physicalSymptoms?.contains("fatigue")==true }
+        // approved-home: no symptom check-in block on Today; the kit ring, week strip and capsule log button are there.
+        rule.onNodeWithTag("checkin_body_fatigue").assertDoesNotExist()
+        rule.onNodeWithTag("kit_orbit", useUnmergedTree = true).assertExists()
+        rule.onNodeWithTag("home_week_strip", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("ثبت حال امروز").assertExists()
+        rule.onNodeWithTag("today_mood_bad").performScrollTo().performClick()
+        rule.waitUntil(15000) { org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); vm.logFor(vm.today())?.overallFeeling=="bad" }
         Assert.assertEquals(1,vm.state.value.dailyLogs.count { it.epochDay==vm.today().toEpochDay() })
     }
     @Test @Config(qualifiers="fa-rIR-w411dp-h2200dp-xhdpi") fun todayMoodPickChartAndFullPage() {
@@ -202,13 +207,12 @@ class DesignFlowTest {
         Assert.assertEquals("great",vm.logFor(vm.today())?.overallFeeling)
         Assert.assertEquals("medium",vm.logFor(vm.today())?.energy)
     }
-    @Test fun doctorQuestionPersistsPrivately() {
+    @Test fun removedToolsCloseAndKeepData() {
         val vm=model()
-        show(vm) { ToolsDetailScreen(vm,"doctor",{}) {} }
-        rule.onNode(hasSetTextAction()).performTextInput("سؤال خصوصی برای پزشک")
-        rule.onNodeWithText("ذخیره",useUnmergedTree=true).performClick()
-        rule.waitUntil(15000) {org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();vm.toolRecords.value.any {it.type=="doctor"}}
-        shot("doctor-questions")
+        var closed = 0
+        show(vm) { ToolsDetailScreen(vm,"doctor",{ closed++ }) {} }
+        rule.waitUntil(5000) { org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle(); closed > 0 }
+        rule.onNodeWithTag("tool_screen_doctor").assertDoesNotExist()
     }
     @Test fun sleepToolStoresHoursAndMinutes() {
         val vm=model()

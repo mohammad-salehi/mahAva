@@ -19,7 +19,7 @@ import kotlin.random.Random
  */
 object DemoMode {
     val enabled: Boolean get() = BuildConfig.MAH_DEMO
-    private const val MARK = "demo_seeded_v1"
+    private const val MARK = "demo_seeded_v2" // v2: adds the «رابطه» log
     private val gson = Gson()
 
     fun onAppStart(app: MahavaApplication) {
@@ -110,7 +110,9 @@ object DemoMode {
                 val feeling = when (energy) { 1 -> "bad"; 2 -> "ordinary"; 3 -> "good"; 4 -> "good"; else -> "great" }.let { if (phase == "pre" && rnd.nextFloat() < 0.4f) "bad" else it }
                 val sleep = (when (phase) { "pre" -> 6.0f; "m" -> 7.5f; else -> 7.0f } + listOf(-1f, -0.5f, 0f, 0.5f, 1f).random(rnd)).coerceIn(4f, 10f)
                 val bleeding = if (phase == "m") when (cd) { 1 -> "medium"; 2 -> "heavy"; 3 -> "medium"; else -> "light" } else if (cd == bleed + 1 && rnd.nextBoolean()) "spotting" else "none"
-                repo.upsertDailyLog(DailyLogEntity(
+                // Sample «رابطه» entries (today: with protection) for the Today row and the doctor report.
+                val intim = if (d == t) "protected" else if (phase != "m" && rnd.nextFloat() < 0.14f) (if (rnd.nextFloat() < 0.75f) "protected" else "unprotected") else null
+                repo.upsertDailyLog(com.mahava.app.content.IntimacyLog.apply(DailyLogEntity(
                     epochDay = d.toEpochDay(), bleeding = bleeding, noSymptoms = sym.isEmpty(),
                     painScore = pain.takeIf { it > 0 || rnd.nextFloat() < 0.3f },
                     painLocations = if (pain > 0) (if (phase == "m") "lower_abdomen,back" else if ("headache" in sym) "head" else "lower_abdomen") else null,
@@ -129,7 +131,7 @@ object DemoMode {
                     foodCravings = if (phase == "pre" && rnd.nextBoolean()) "sweet" else null,
                     note = if (rnd.nextFloat() < 0.12f) notes.random(rnd) else null,
                     createdAt = now, updatedAt = now
-                ))
+                ), intim))
             }
             d = d.plusDays(1)
         }

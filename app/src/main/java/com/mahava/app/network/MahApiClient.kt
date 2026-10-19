@@ -246,7 +246,7 @@ class MahApiClient(
     }
 
     suspend fun dataPull(token: String, since: Long): DataPullDto =
-        gson.fromJson(requestRaw("GET", "/api/mah/data?since=$since", null, token, DATA_READ_TIMEOUT_MS), DataPullDto::class.java)
+        SyncJson.parsePull(requestRaw("GET", "/api/mah/data?since=$since", null, token, DATA_READ_TIMEOUT_MS))
 
     suspend fun dataPush(token: String, changes: List<com.mahava.app.sync.SyncRecord>): DataPushDto {
         // Build a real JsonObject so nested record `data` is not lost (Map+Any + Gson can drop JsonObject).
@@ -263,7 +263,7 @@ class MahApiClient(
             })
         }
         root.add("changes", arr)
-        return gson.fromJson(requestRaw("POST", "/api/mah/data/sync", gson.toJson(root), token, DATA_READ_TIMEOUT_MS), DataPushDto::class.java)
+        return SyncJson.parsePush(requestRaw("POST", "/api/mah/data/sync", gson.toJson(root), token, DATA_READ_TIMEOUT_MS))
     }
 
     suspend fun dataWipe(token: String) {

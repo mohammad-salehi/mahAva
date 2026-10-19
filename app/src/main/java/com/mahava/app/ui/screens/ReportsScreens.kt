@@ -184,10 +184,6 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
     val state by vm.state.collectAsState()
     val records by vm.toolRecords.collectAsState()
     val ctx = LocalContext.current
-    var includeNotes by remember { mutableStateOf(false) }
-    var includeIntimate by remember { mutableStateOf(false) }
-    var includeTests by remember { mutableStateOf(true) }
-    var includeQuestions by remember { mutableStateOf(true) }
     var status by remember { mutableStateOf("") }
     var lastFile by remember { mutableStateOf<java.io.File?>(null) }
 
@@ -200,9 +196,9 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
 
     fun data() = DoctorReportData(
         from = from, to = to, today = vm.today().toEpochDay(), allPeriods = state.periods, logs = state.dailyLogs,
-        includeNotes = includeNotes, includeIntimate = includeIntimate, includeTests = includeTests,
+        includeNotes = true, includeIntimate = true, includeTests = true,
         pregnancyLine = state.health?.pregnancy?.let { p -> "تاریخ تخمینی زایمان ${JalaliDate.from(LocalDate.ofEpochDay(p.estimatedDueEpochDay)).formatFa()}؛ مبنا ${if (p.datingMethod == "clinician_edd") "تاریخ پزشک" else "آخرین پریود"}" },
-        questions = if (!includeQuestions) emptyList() else records.filter { it.type == "doctor" && it.deletedAt == null }.mapNotNull {
+        questions = records.filter { it.type == "doctor" && it.deletedAt == null }.mapNotNull {
             runCatching { com.google.gson.JsonParser.parseString(it.payloadJson).asJsonObject.get("text")?.asString }.getOrNull()?.takeIf { t -> t.isNotBlank() }
         }
     )
@@ -250,12 +246,19 @@ fun DoctorReportScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Un
                 StatTile("روز درد", PersianDigits.toPersian(logs.count { (it.painScore ?: 0) > 0 }), "روز", MahavaMenstruation, Modifier.weight(1f).fillMaxHeight())
             }
             Spacer(Modifier.height(6.dp))
-            QuietInfo("خلاصه • خلاصهٔ ماه‌به‌ماه • جدول چرخه‌ها • علائم پرتکرار • جدول درد • حال، انرژی و خواب در مراحل چرخه • ثبت‌های روزانه")
+            val parts = buildList {
+                add("خلاصه")
+                if (logs.isNotEmpty() || cycles.isNotEmpty()) add("خلاصهٔ ماه‌به‌ماه")
+                if (cycles.isNotEmpty()) add("جدول چرخه‌ها")
+                if (CycleStats.symptomCounts(logs).isNotEmpty()) add("علائم پرتکرار")
+                if (logs.any { (it.painScore ?: 0) > 0 }) add("جدول درد")
+                if (logs.any { CycleStats.mood(it) != null || CycleStats.energy(it) != null || CycleStats.sleepHours(it) != null }) add("حال، انرژی و خواب در مراحل چرخه")
+                if (records.any { it.type == "doctor" && it.deletedAt == null }) add("سؤال‌هات از پزشک")
+                if (logs.isNotEmpty()) add("ثبت‌های روزانه")
+            }
+            QuietInfo(parts.joinToString(" • "))
+            QuietInfo("هر بخشی که توش چیزی ثبت کردی خودش میاد و بخش‌های خالی نمیان. یادداشت، تست و رابطه هم اگه ثبت کرده باشی توی ثبت‌های روزانه هست.")
         }
-        Row(verticalAlignment = Alignment.CenterVertically) { androidx.compose.material3.Checkbox(includeQuestions, { includeQuestions = it }); Text("سؤال‌هایم از پزشک هم بیاید") }
-        Row(verticalAlignment = Alignment.CenterVertically) { androidx.compose.material3.Checkbox(includeNotes, { includeNotes = it }); Text("یادداشت‌ها هم بیاید") }
-        Row(verticalAlignment = Alignment.CenterVertically) { androidx.compose.material3.Checkbox(includeIntimate, { includeIntimate = it }); Text("روزهای رابطهٔ جنسی هم بیاید") }
-        Row(verticalAlignment = Alignment.CenterVertically) { androidx.compose.material3.Checkbox(includeTests, { includeTests = it }); Text("نتیجهٔ تست‌ها هم بیاید") }
         PrimaryButton("ارسال برای پزشک", modifier = Modifier.testTag("doctor_share")) { share() }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SecondaryButton("دیدن PDF", modifier = Modifier.weight(1f).testTag("doctor_preview")) { open() }

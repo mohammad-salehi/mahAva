@@ -2,6 +2,8 @@ package com.mahava.app
 
 import androidx.room.Room
 import com.mahava.app.content.BodyNowContent
+import com.mahava.app.content.CravingContent
+import com.mahava.app.cycle.CycleSubWindow
 import com.mahava.app.data.db.DailyLogEntity
 import com.mahava.app.data.db.MahavaDatabase
 import com.mahava.app.sync.DataSyncRepository
@@ -18,33 +20,74 @@ import java.time.LocalDate
 
 class BodyNowContentTest {
     private val banned = listOf("ممکن است تجربه کنید", "توصیه می‌شود", "در این مرحله از چرخه قاعدگی", "افزایش سطح پروژسترون",
-        "نوسانات خلقی و علائم جسمانی", "فعالیت بدنی با شدت متوسط", "هورمونت بالاست", "بی‌حوصله‌ای", "عزیز دلم", "خوشگلم")
+        "نوسانات خلقی", "علائم جسمانی", "فعالیت بدنی با شدت متوسط", "هورمونت بالاست", "بی‌حوصله‌ای", "عزیز دلم", "خوشگلم", "می‌باشد")
+    private val labels = listOf(BodyNowContent.LABEL_HORMONES, BodyNowContent.LABEL_FEEL, BodyNowContent.LABEL_EAT, BodyNowContent.LABEL_DO, BodyNowContent.LABEL_LIMIT)
 
-    @Test fun everyPhaseGivesTwoOrThreeShortDistinctLines() {
-        listOf("menstrual", "follicular", "fertile", "early_luteal", "late_luteal", "general", "unknown").forEach { g ->
-            val b = BodyNowContent.forCycle(g, null)
-            assertTrue(g, b.points.size in 2..3)
-            assertEquals(b.points.size, b.points.distinct().size)
-            assertEquals("بر اساس زمان تقریبی چرخه‌ت", b.basisFa)
-            b.points.forEach { line -> assertTrue(line, line.length <= 90); banned.forEach { assertFalse(line, line.contains(it)) } }
+    private fun checkFull(name: String, b: BodyNowContent.BodyNow) {
+        val got = b.rows.map { it.label }
+        labels.forEach { assertTrue("$name misses $it", it in got) }
+        b.rows.forEach { r ->
+            assertTrue("$name ${r.key} empty", r.text.isNotBlank())
+            assertTrue("$name ${r.key} too long", r.text.length <= 190)
+            banned.forEach { assertFalse("$name: ${r.text}", r.text.contains(it)) }
         }
+        assertTrue("$name has no sources", b.sourceIds.isNotEmpty())
+        b.sourceIds.forEach { assertTrue("$name unknown source $it", it in BodyNowContent.SOURCES) }
+    }
+
+    @Test fun everySubWindowHasEveryRow() {
+        CycleSubWindow.entries.forEach { sw ->
+            assertTrue(sw.name, sw in BodyNowContent.cycleStates)
+            val group = if (sw == CycleSubWindow.LATE_PERIOD || sw == CycleSubWindow.UNKNOWN) "general" else CravingContent.phaseGroupOf(sw, null)
+            val b = BodyNowContent.forCycle(group, null, sw)
+            assertEquals(sw.name, BodyNowContent.cycleStates.getValue(sw).hormones, b.rows.first().text)
+            assertEquals("بر اساس زمان تقریبی چرخه‌ت", b.basisFa)
+            checkFull(sw.name, b)
+        }
+    }
+
+    @Test fun neighbouringSubWindowsDiffer() {
+        val all = BodyNowContent.cycleStates.values.toList()
+        assertEquals(all.size, all.map { it.hormones }.distinct().size)
+        assertEquals(all.size, all.map { it.eat }.distinct().size)
+        assertEquals(all.size, all.map { it.limit }.distinct().size)
+    }
+
+    @Test fun oldPhaseGroupsStillWork() {
+        listOf("menstrual", "follicular", "fertile", "early_luteal", "late_luteal", "general", "unknown").forEach { g ->
+            checkFull(g, BodyNowContent.forCycle(g, null))
+        }
+        // Contraception / irregular cycles come in as "general": no phase guess even if the calendar says ovulation.
+        assertEquals(CycleSubWindow.UNKNOWN, BodyNowContent.pickSubWindow("general", CycleSubWindow.PERI_OVULATORY))
+        assertEquals(CycleSubWindow.LATE_PERIOD, BodyNowContent.pickSubWindow("general", CycleSubWindow.LATE_PERIOD))
+        assertEquals(CycleSubWindow.LUTEAL_MID, BodyNowContent.pickSubWindow("early_luteal", CycleSubWindow.LUTEAL_MID))
     }
 
     @Test fun loggedSymptomReplacesTheGenericGuess() {
         val log = DailyLogEntity(epochDay = 1, physicalSymptoms = "headache", overallFeeling = "bad", createdAt = 1, updatedAt = 1)
-        val b = BodyNowContent.forCycle("late_luteal", log)
-        assertTrue(b.points.any { it.contains("سردرد ثبت کردی") })
-        assertFalse(b.points.any { it.contains("نفخ یا حساسیت سینه") })
-        assertTrue(b.points.any { it.contains("حال نداری") })
+        val b = BodyNowContent.forCycle("late_luteal", log, CycleSubWindow.LUTEAL_LATE_PREMENSTRUAL)
+        val feel = b.rows.first { it.key == "feel" }.text
+        assertTrue(feel.contains("سردرد ثبت کردی"))
+        assertTrue(feel.contains("حال نداری"))
+        assertFalse(feel.contains("حساسیت سینه داشته باشی"))
         assertEquals("بر اساس ثبت امروزت و زمان تقریبی چرخه‌ت", b.basisFa)
     }
 
-    @Test fun pregnancyShowsWeekNotesNotCycle() {
-        listOf(null, 8, 20, 34).forEach { w ->
+    @Test fun everyPregnancyWeekHasEveryRowAndNoCycleTalk() {
+        (1..42).forEach { w ->
             val b = BodyNowContent.forPregnancy(w)
-            assertTrue(b.points.isNotEmpty() && b.points.size <= 3)
-            assertFalse(b.points.any { it.contains("چرخه") || it.contains("پریود") })
+            checkFull("week $w", b)
+            assertTrue(b.rows.any { it.key == "warn" })
+            assertEquals("بر اساس هفتهٔ بارداریت", b.basisFa)
+            b.rows.forEach { assertFalse("week $w: ${it.text}", it.text.contains("چرخه") || it.text.contains("پریود")) }
         }
+        assertEquals(9, BodyNowContent.pregnancyStates.map { it.second.hormones }.distinct().size)
+        assertTrue(BodyNowContent.forPregnancy(null).points.isNotEmpty())
+    }
+
+    @Test fun pregnancyFoodSafetyIsCovered() {
+        val all = BodyNowContent.pregnancyStates.joinToString(" ") { it.second.limit + it.second.eat }
+        listOf("الکل", "۲۰۰ میلی‌گرم", "غیرپاستوریزه", "پرجیوه", "نیم‌پز").forEach { assertTrue(it, all.contains(it)) }
     }
 
     @Test fun moodSeriesKeepsUnloggedDaysEmpty() {

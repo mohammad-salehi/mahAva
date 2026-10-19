@@ -25,6 +25,7 @@ import com.mahava.app.health.*
 import com.mahava.app.ui.AppViewModel
 import com.mahava.app.ui.components.*
 import com.mahava.app.ui.theme.*
+import androidx.compose.ui.unit.sp
 import com.mahava.app.util.JalaliDate
 import com.mahava.app.util.PersianDigits
 import kotlinx.coroutines.launch
@@ -40,20 +41,16 @@ data class ToolEntry(val id: String, val title: String, val subtitle: String, va
 object ToolCatalog {
     val groups: List<Pair<String, List<ToolEntry>>> = listOf(
         "بدن و چرخه" to listOf(
-            ToolEntry("cycle", "الگوی چرخه", "طول چرخه‌ها و پریودها", R.drawable.design_cycle, MahavaPrimary),
+            ToolEntry("cycle", "الگوی چرخه", "طول چرخه‌ها، پریودها و مقایسه‌شون", R.drawable.design_cycle, MahavaPrimary),
             ToolEntry("discharge", "ردیاب ترشحات", "نوع و علائم همراه", R.drawable.design_droplet, MahavaAccentSky),
             ToolEntry("symptoms", "تحلیل علائم", "پرتکرارترین علائمت", R.drawable.design_chart, MahavaAccentPeach),
-            ToolEntry("pms", "پیش از پریود من", "علائم پیش از قاعدگی (PMS)", R.drawable.design_calendar, MahavaMenstruation),
-            ToolEntry("comparison", "مقایسهٔ چرخه‌ها", "هر چرخه کنار بقیه", R.drawable.design_chart, MahavaFertility)
+            ToolEntry("pms", "پیش از پریود من", "علائم پیش از قاعدگی (PMS)", R.drawable.design_calendar, MahavaMenstruation)
         ),
         "حال و خواب" to listOf(
             ToolEntry("mood_energy", "حال و انرژی، همگام با چرخه", "ثبت و نمودار حال و انرژی", R.drawable.design_smile, MahavaAccentGold),
-            ToolEntry("sleep", "خواب و چرخه", "ساعت و کیفیت خواب", R.drawable.design_moon, MahavaPrimaryDeep),
-            ToolEntry("insights", "بینش‌های من", "الگوهایی که از ثبت‌هایت پیدا شد", R.drawable.design_sun, MahavaFertility),
-            ToolEntry("recommendation", "توصیهٔ روزانه", "هر روز ساعت ۸ صبح", R.drawable.design_leaf, MahavaFertility)
+            ToolEntry("sleep", "خواب و چرخه", "ساعت و کیفیت خواب", R.drawable.design_moon, MahavaPrimaryDeep)
         ),
         "پزشک و مراقبت" to listOf(
-            ToolEntry("doctor", "سؤال‌های پزشک", "سؤال‌هایت را جمع کن", R.drawable.design_chat, MahavaPrimary),
             ToolEntry("appointments", "مراجعه‌های من", "قرارهای پزشکی", R.drawable.design_calendar, MahavaAccentSky),
             ToolEntry("doctor_report", "گزارش برای پزشک", "فایل PDF با جدول و خلاصه", R.drawable.design_document, MahavaPrimaryDeep, route = "doctor_pdf"),
             ToolEntry("test", "زمان تست بارداری", "اگر پریود دیر کرده", R.drawable.design_pregnancy_test, MahavaMenstruation, route = "late"),
@@ -61,11 +58,13 @@ object ToolCatalog {
         ),
         "بیشتر" to listOf(
             ToolEntry("body", "شناخت بدن", "مطالب علمی ساده با منبع", R.drawable.design_book, MahavaPrimary, route = "body"),
-            ToolEntry("reminders", "یادآورها", "ثبت روزانه، پریود، آب، دارو", R.drawable.design_notes, MahavaAccentPeach),
+            ToolEntry("reminders", "یادآورها", "پریود، تخمک‌گذاری، آب، دارو", R.drawable.design_notes, MahavaAccentPeach),
             ToolEntry("partner", "همسر", "اتصال یا قطع اتصال", R.drawable.design_heart, MahavaMenstruation, route = "partner_hub")
         )
     )
     val all = groups.flatMap { it.second }
+    /** Tools taken out of the app (data kept and synced). «مقایسهٔ چرخه‌ها» lives inside «الگوی چرخه». */
+    val REMOVED = setOf("insights", "recommendation", "doctor", "pain")
     fun find(id: String) = all.firstOrNull { it.id == id }
     fun routeFor(e: ToolEntry) = e.route ?: "tools/${e.id}"
 }
@@ -77,32 +76,39 @@ private fun shortDay(d: Long) = JalaliDate.from(LocalDate.ofEpochDay(d)).formatS
 private fun monthYear(d: Long) = JalaliDate.from(LocalDate.ofEpochDay(d)).let { JalaliDate.monthNameFa(it.month) + " " + PersianDigits.toPersian(it.year % 100).padStart(2, '۰') }
 
 @Composable
-fun ToolTile(e: ToolEntry, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun ToolTile(e: ToolEntry, modifier: Modifier = Modifier, bg: Color = softTint(e.color), onClick: () -> Unit) {
+    val k = com.mahava.app.ui.kit.Kit
+    // A-main-screens «ابزارها» tile: soft fill, white rounded icon square, centred title and line.
     Column(
-        modifier.clip(RoundedCornerShape(20.dp)).background(softTint(e.color)).clickable(onClick = onClick)
-            .padding(14.dp).heightIn(min = 112.dp).testTag("tool_${e.id}"),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        modifier.clip(RoundedCornerShape(k.cardRadius)).background(bg).clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 12.dp).heightIn(min = 104.dp).testTag("tool_${e.id}"),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(e.color.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
-            MahavaIcon(e.icon, Color.White, 24.dp)
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = .85f)), contentAlignment = Alignment.Center) {
+            MahavaIcon(e.icon, if (e.color == MahavaAccentPeach) MahavaLavender else e.color, 24.dp)
         }
-        Text(e.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-        Text(e.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(2.dp))
+        Text(e.title, style = k.label.copy(fontSize = 15.sp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(e.subtitle, style = k.small, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
-/** The Tools tab: every tool as a colourful tile, grouped. */
+/** The Tools tab (A-main-screens): centred title, bold group titles, two soft tiles per row. */
 @Composable
 fun ToolsHomeScreen(onBack: (() -> Unit)?, onOpen: (String) -> Unit) {
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).testTag("tools_screen")) {
-        ScreenHeader("ابزارها", onBack = onBack)
-        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            QuietInfo("هر ابزار یک کار مشخص دارد؛ ثبت کامل روزانه از دکمهٔ «ثبت» در پایین صفحه است.")
-            ToolCatalog.groups.forEach { (group, items) ->
-                SectionLabel(group)
+    val k = com.mahava.app.ui.kit.Kit
+    Column(Modifier.fillMaxSize().background(MahavaBackground).verticalScroll(com.mahava.app.ui.kit.rememberKitScroll()).testTag("tools_screen")) {
+        com.mahava.app.ui.kit.KitHeader("ابزارها", start = if (onBack != null) { { com.mahava.app.ui.kit.KitBack(onBack) } } else null)
+        Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            ToolCatalog.groups.forEachIndexed { gi, (group, items) ->
+                Text(group, style = k.cardTitle, modifier = Modifier.padding(top = 6.dp))
                 items.chunked(2).forEach { row ->
                     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEach { e -> ToolTile(e, Modifier.weight(1f).fillMaxHeight()) { onOpen(ToolCatalog.routeFor(e)) } }
+                        row.forEachIndexed { ci, e ->
+                            val pinkFirst = gi % 2 == 0
+                            val bg = if ((ci == 0) == pinkFirst) k.cardPink else k.cardLavender
+                            ToolTile(e, Modifier.weight(1f).fillMaxHeight(), bg) { onOpen(ToolCatalog.routeFor(e)) }
+                        }
                         if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
@@ -115,8 +121,10 @@ fun ToolsHomeScreen(onBack: (() -> Unit)?, onOpen: (String) -> Unit) {
 @Composable
 fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRoute: (String) -> Unit) {
     // Old links (checkin, mood, energy, sharing, privacy, education) land on their replacement.
-    val id = when (tool) { "mood", "energy" -> "mood_energy"; else -> tool }
+    val id = when (tool) { "mood", "energy" -> "mood_energy"; "comparison" -> "cycle"; else -> tool }
     when (id) {
+        // Removed tools: their records stay in the DB and keep syncing; old links just go back.
+        in ToolCatalog.REMOVED -> { LaunchedEffect(Unit) { onBack() }; return }
         "checkin" -> { LaunchedEffect(Unit) { onBack(); onRoute("daily_log?day=${vm.today().toEpochDay()}") }; return }
         "sharing" -> { LaunchedEffect(Unit) { onBack(); onRoute("partner_hub") }; return }
         "privacy" -> { LaunchedEffect(Unit) { onBack(); onRoute("settings") }; return }
@@ -132,8 +140,7 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
     var error by remember { mutableStateOf<String?>(null) }
     val run: (suspend () -> Unit) -> Unit = { action -> scope.launch { try { action(); error = null } catch (e: Exception) { error = "ذخیره نشد؛ دوباره تلاش کن." } } }
     LaunchedEffect(id, state.dailyLogs, state.periods) {
-        if (id in setOf("cycle", "pms", "sleep", "mood_energy", "insights", "symptoms", "comparison")) runCatching { vm.tools.regenerateInsights() }
-        if (id == "recommendation") runCatching { vm.tools.ensureRecommendation() }
+        if (id in setOf("cycle", "pms", "sleep", "mood_energy", "symptoms")) runCatching { vm.tools.regenerateInsights() }
     }
     val today = vm.today().toEpochDay()
     val entry = ToolCatalog.find(id)
@@ -244,7 +251,7 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                     }
                 }
                 "reminders" -> {
-                    listOf("daily_log" to "ثبت روزانه", "period" to "نزدیک شدن پریود", "water" to "نوشیدن آب", "sleep" to "خواب", "medication" to "داروی خودم").forEach { (rid, label) ->
+                    listOf("daily_log" to "ثبت روزانه", "period" to "نزدیک شدن پریود", "ovulation" to "زمان احتمالی تخمک‌گذاری", "water" to "نوشیدن آب", "sleep" to "خواب", "medication" to "داروی خودم").forEach { (rid, label) ->
                         val current = state.reminders.find { it.id == rid } ?: ReminderPrefEntity(id = rid)
                         MahavaCard {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -270,7 +277,7 @@ fun ToolsDetailScreen(vm: AppViewModel, tool: String, onBack: () -> Unit, onRout
                         }
                     }
                 }
-                "cycle", "comparison" -> CycleTool(vm, id == "comparison")
+                "cycle" -> CycleTool(vm, comparison = true)
                 "symptoms" -> {
                     val r = rememberReportRange(vm, "tool_symptoms", months = listOf(1, 3, 6, 12), allowCustom = false, tagPrefix = "tool_range")
                     val logged = state.dailyLogs.filter { it.epochDay in r.from..r.to }

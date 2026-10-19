@@ -169,6 +169,9 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                 ReminderToggle(vm, "period", "یادآوری نزدیک شدن پریود", state.reminders, "set_rem_period") {
                     if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
+                ReminderToggle(vm, "ovulation", "یادآوری زمان احتمالی تخمک‌گذاری", state.reminders, "set_rem_ovulation") {
+                    if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
                 ReminderToggle(vm, "water", "یادآوری نوشیدن آب (ظهر، ساعت ۱۳)", state.reminders, "set_rem_water") {
                     if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
@@ -373,8 +376,8 @@ fun LogoutButton(vm: AppViewModel, primary: Boolean, onStatus: (String) -> Unit)
     if (unsynced > 0) {
         AlertDialog(
             onDismissRequest = { unsynced = 0 },
-            title = { Text("بعضی تغییرها هنوز به سرور نرسیده") },
-            text = { Text("${PersianDigits.toPersian(unsynced)} تغییر هنوز روی سرور ذخیره نشده. اگه الان خارج بشی، این تغییرها از این گوشی پاک می‌شن. اگه می‌تونی اول به اینترنت وصل شو و دوباره امتحان کن.") },
+            title = { Text("چند تا تغییر هنوز به سرور نرسیده") },
+            text = { Text("${PersianDigits.toPersian(unsynced)} تا تغییر هنوز رو سرور نیست. اگه الان خارج بشی پاک نمی‌شن؛ روی همین گوشی می‌مونن و وقتی دوباره با همین حساب وارد بشی خودشون فرستاده می‌شن. فقط اگه با یه حساب دیگه وارد بشی، پاک می‌شن. بهتره اول یه کم با اینترنت صبر کنی.") },
             confirmButton = { TextButton(onClick = { unsynced = 0; doLogout() }, modifier = Modifier.testTag("logout_anyway")) { Text("با این حال خارج شو") } },
             dismissButton = { TextButton(onClick = { unsynced = 0 }) { Text("بمونم") } }
         )

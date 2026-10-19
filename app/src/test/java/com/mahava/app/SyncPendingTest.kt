@@ -30,6 +30,10 @@ class StrictDataServer : DataSyncRemote {
     private val gson = Gson()
     val rows = LinkedHashMap<String, Row>()
     val rejected = mutableListOf<String>()
+    /** Extra per-record refusal (like a real-server validation the client cannot see). */
+    var refuse: (SyncRecord) -> String? = { null }
+    /** Every record id that reached push(), in order. */
+    val pushedIds = mutableListOf<String>()
     private var tick = 1000L
     private val keyRules = mapOf(
         "tool" to Regex("^[a-zA-Z0-9_-]{1,64}$"), "profile" to Regex("^main$"), "period" to Regex("^-?\\d{1,7}$"),
@@ -43,7 +47,7 @@ class StrictDataServer : DataSyncRemote {
             !c.deleted && c.data == null -> "data"
             !c.deleted && c.data!!.size() > 80 -> "fields"
             !c.deleted && c.data!!.entrySet().any { (_, v) -> !v.isJsonNull && (!v.isJsonPrimitive || (v.asJsonPrimitive.isString && v.asString.length > 4000)) } -> "value"
-            else -> null
+            else -> refuse(c)
         }
         if (bad != null) { rejected += "${c.kind}/${c.key}:$bad"; throw MahApiException(400, bad) }
     }
@@ -51,7 +55,11 @@ class StrictDataServer : DataSyncRemote {
         val list = if (since <= 0) rows.values.filter { !it.deleted } else rows.values.filter { it.serverTs > since }
         return DataPullDto(now = tick, cursor = tick, more = false, full = since <= 0, records = list.sortedBy { it.serverTs }.map(::dto))
     }
+    /** When set, every push fails with it (e.g. a dropped mobile link). */
+    var pushError: Throwable? = null
     override suspend fun push(changes: List<SyncRecord>): DataPushDto {
+        pushError?.let { throw it }
+        pushedIds += changes.map { it.id }
         changes.forEach(::check)
         val conflicts = mutableListOf<SyncRecordDto>()
         for (c in changes) {

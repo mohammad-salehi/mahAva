@@ -271,6 +271,8 @@ fun PregnancyPage(
         } else if (progress.contentWeek > 40) {
             QuietInfo("سن بارداری از هفته ۴۰ گذشته؛ محتوای هفته‌ای قفل نشده و سن واقعی بالا نشان داده می‌شود.")
         }
+        // Moved from Today (the approved pregnancy Today shows only the hero, body card, tip and partner).
+        PregnancyCompanion(vm, onPregnancy = {}, onSetup = onSetup, onDaily = onDailyLog, onInsight = onInsight, part = PregnancyPart.REST)
         Text("نقاط عطف عمومی", style = MaterialTheme.typography.titleMedium)
         vm.pregnancyMilestones().forEach { m ->
             MahavaCard {

@@ -656,7 +656,8 @@ fun DataSyncCard(vm: AppViewModel) {
         QuietInfo("اطلاعات چرخه و ثبت‌هایت روی سرور ماه امن نگه داشته می‌شود تا با عوض کردن گوشی یا ورود دوباره گم نشود. بدون اینترنت هم کار می‌کنی؛ تغییرها بعداً خودکار فرستاده می‌شوند.")
         val line = when {
             st.running -> "در حال همگام‌سازی…"
-            st.pending > 0 -> "${PersianDigits.toPersian(st.pending)} تغییر منتظر اینترنت است."
+            st.pending > 0 && st.rejected >= st.pending -> "${PersianDigits.toPersian(st.pending)} تا تغییر رو سرور قبول نکرد؛ روی گوشیت سالم می‌مونه و دفعهٔ بعد که ویرایشش کنی دوباره فرستاده می‌شه."
+            st.pending > 0 -> "${PersianDigits.toPersian(st.pending)} تا تغییر هنوز به سرور نرسیده؛ با اینترنت خودش فرستاده می‌شه."
             st.lastOkAt > 0 -> "آخرین همگام‌سازی: ${syncAgoFa(st.lastOkAt)}"
             else -> "هنوز همگام نشده."
         }
