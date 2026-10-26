@@ -33,6 +33,11 @@ import com.mahava.app.ui.components.PrimaryButton
 import com.mahava.app.ui.components.QuietInfo
 import com.mahava.app.ui.navigation.Routes
 import com.mahava.app.ui.screens.*
+import com.mahava.app.ui.auth.IntroExit
+import com.mahava.app.ui.auth.LoginScreen
+import com.mahava.app.ui.auth.MahIntroScreen
+import com.mahava.app.ui.auth.PasswordRecoveryScreen
+import com.mahava.app.ui.auth.RegisterScreen
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.mahava.app.ui.theme.MahavaBackground
@@ -74,6 +79,13 @@ fun MahavaAppRoot(
 
     val onboardingDone = state.profile?.onboardingDone == true
     val loggedIn by vm.isLoggedIn.collectAsState()
+    val introSeen by vm.introSeen.collectAsState()
+    // Anyone who has signed in on this phone never needs the pre-login intro again.
+    LaunchedEffect(loggedIn) { if (loggedIn) vm.markIntroSeen() }
+    if (!loggedIn && introSeen == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
     val nav = rememberNavController()
     val goAccountOrLogin: () -> Unit = {
         if (loggedIn) nav.navigate(Routes.SETTINGS) { launchSingleTop = true }
@@ -226,7 +238,7 @@ fun MahavaAppRoot(
         route != null && route !in Routes.authOnly && route != Routes.ONBOARDING
 
     val startDestination = when {
-        !loggedIn -> Routes.LOGIN
+        !loggedIn -> if (introSeen == true) Routes.LOGIN else Routes.INTRO
         isPartnerAccount -> Routes.PARTNER_HOME
         !onboardingDone -> Routes.ONBOARDING
         else -> Routes.TODAY
@@ -278,8 +290,19 @@ fun MahavaAppRoot(
         NavHost(
             navController = nav,
             startDestination = startDestination,
-            modifier = Modifier.padding(padding)
+            // The redesigned entry screens draw their own top panel behind the status bar.
+            modifier = if (route in Routes.authFullBleed) Modifier else Modifier.padding(padding)
         ) {
+            composable(Routes.INTRO) {
+                MahIntroScreen { exit ->
+                    vm.markIntroSeen()
+                    nav.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.INTRO) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                    if (exit == IntroExit.REGISTER) nav.navigate(Routes.REGISTER) { launchSingleTop = true }
+                }
+            }
             composable(Routes.ONBOARDING) {
                 OnboardingFlow(vm) {
                     nav.navigate(Routes.TODAY) {

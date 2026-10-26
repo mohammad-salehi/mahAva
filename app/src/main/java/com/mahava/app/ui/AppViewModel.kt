@@ -101,6 +101,14 @@ class AppViewModel(
     val isLoggedIn: StateFlow<Boolean> = authRepository.isLoggedIn
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    /** Pre-login intro already shown (or the user has an account here); null until loaded. */
+    val introSeen: StateFlow<Boolean?> = combine(prefs.introSeen, authRepository.isLoggedIn) { seen, logged -> seen || logged }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun markIntroSeen() {
+        viewModelScope.launch { prefs.setIntroSeen() }
+    }
+
     private val _forceUpdate = MutableStateFlow<com.mahava.app.network.MahForceUpdateDto?>(null)
     val forceUpdate: StateFlow<com.mahava.app.network.MahForceUpdateDto?> = _forceUpdate
 

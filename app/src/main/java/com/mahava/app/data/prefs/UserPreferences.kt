@@ -38,6 +38,7 @@ class UserPreferences(private val context: Context) {
 
     // Partner pairing
     private val KEY_ROLE = stringPreferencesKey("mah_account_role") // female | male | ""
+    private val KEY_INTRO_SEEN = booleanPreferencesKey("mah_intro_seen") // pre-login intro shown once
     private val KEY_INTENDED_ROLE = stringPreferencesKey("mah_intended_role") // chosen before login
     private val KEY_SHARED_FROM_PARTNER = booleanPreferencesKey("mah_sub_shared_from_partner")
     private val KEY_OWN_SUB_ACTIVE = booleanPreferencesKey("mah_own_sub_active")
@@ -65,6 +66,8 @@ class UserPreferences(private val context: Context) {
     val yearlyPriceTomans: Flow<Int> = store.data.map { it[KEY_YEARLY_PRICE] ?: 0 }
     val apiBaseUrlFlow: Flow<String?> = store.data.map { it[KEY_API_BASE] }
     val accountRole: Flow<String> = store.data.map { it[KEY_ROLE] ?: "" }
+    val introSeen: Flow<Boolean> = store.data.map { it[KEY_INTRO_SEEN] ?: false }
+    suspend fun setIntroSeen() { store.edit { it[KEY_INTRO_SEEN] = true } }
     val intendedRole: Flow<String> = store.data.map { it[KEY_INTENDED_ROLE] ?: "" }
     val sharedFromPartner: Flow<Boolean> = store.data.map { it[KEY_SHARED_FROM_PARTNER] ?: false }
     val ownSubscriptionActive: Flow<Boolean> = store.data.map { it[KEY_OWN_SUB_ACTIVE] ?: false }

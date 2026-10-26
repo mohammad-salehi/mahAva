@@ -2,6 +2,7 @@ package com.mahava.app.ui.navigation
 
 object Routes {
     const val ONBOARDING = "onboarding"
+    const val INTRO = "intro"
     const val TOOLS = "tools"
     const val TOOL_DETAIL = "tools/{tool}"
     const val TODAY = "today"
@@ -60,7 +61,10 @@ object Routes {
     fun signalDetail(kind: String, key: String) = "signal/$kind/$key"
 
     /** The only screens a logged-out user sees. */
-    val authOnly = setOf(LOGIN, REGISTER, PASSWORD_RECOVERY, PRIVACY, TERMS)
+    val authOnly = setOf(INTRO, LOGIN, REGISTER, PASSWORD_RECOVERY, PRIVACY, TERMS)
+
+    /** Full-bleed redesigned entry screens (drawn behind the status bar). */
+    val authFullBleed = setOf(INTRO, LOGIN, REGISTER, PASSWORD_RECOVERY)
 
     /** Cycle-owner screens a male (partner) account should not land on. */
     val womanMain = setOf(TODAY, CALENDAR, LOG_HUB, REPORTS, BODY, TOOLS)
