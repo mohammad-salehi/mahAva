@@ -34,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mahava.app.R
 import com.mahava.app.content.PhaseScienceBank
 import com.mahava.app.cycle.PredictionKind
@@ -99,7 +100,8 @@ fun TodayScreen(
     Column(Modifier.fillMaxSize().background(MahavaBackground).verticalScroll(com.mahava.app.ui.kit.rememberKitScroll()).testTag("today_screen")) {
         // approved-home header: bell (start/right), centred greeting, smile button (end/left) for the account.
         com.mahava.app.ui.kit.KitHeader(
-            title = if (pregnant) "سلام، امروز تو:" else "سلام، امروز چطوری؟",
+            title = "ماه، پلتفرم شناخت بدن خانم‌ها",
+            titleStyle = com.mahava.app.ui.kit.Kit.title.copy(fontSize = 16.sp),
             start = { com.mahava.app.ui.kit.KitCircleButton(R.drawable.kit_bell, dot = unread > 0, tag = "open_notifications", onClick = onNotifications) },
             end = { com.mahava.app.ui.kit.KitCircleButton(R.drawable.kit_settings, tag = "open_settings", contentDescription = "تنظیمات", onClick = onSettings) }
         )
@@ -187,18 +189,16 @@ fun TodayScreen(
                 com.mahava.app.ui.kit.KitRowCard(a.titleFa, a.recommendedActionFa, MahavaPrimarySoft, onClick = onAssistant,
                     art = { com.mahava.app.ui.kit.KitIconTile(R.drawable.kit_warning, MahavaDanger) })
             }
-            // One «پیشنهاد امروز»: the subscriber's daily tip, else a simple care tip for this time of the cycle.
-            val rec = if (premium) tools.find { it.id == "recommendation_${today.toEpochDay()}" && it.deletedAt == null }?.let { record ->
-                runCatching { com.google.gson.Gson().fromJson(record.payloadJson, com.mahava.app.health.DailyRecommendation::class.java).body }.getOrNull()
-            } else null
-            val tip = rec ?: if (!pregnant) science.careTipsFa.firstOrNull() else null
+            // One «پیشنهاد امروز»: the same personal-first tip as its detail page and the 08:00 notification.
+            val todayTip = vm.todayTip(premium, tools)
+            val tip = todayTip?.body
             if (tip != null) {
                 com.mahava.app.ui.kit.KitRowCard(
                     "پیشنهاد امروز", tip, k.cardPink, tag = "today_recommendation",
                     art = { if (pregnant) com.mahava.app.ui.kit.KitIconTile(R.drawable.kit_food, MahavaPrimary, size = 64.dp, iconSize = 34.dp)
                         else androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.kit_art_bed), null,
                             Modifier.size(64.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)).background(androidx.compose.ui.graphics.Color.White).padding(8.dp)) },
-                    onClick = { onCareDetail(vm.careToday().item.id) }
+                    onClick = { onCareDetail(todayTip?.contentId ?: vm.careToday().item.id) }
                 )
             }
             com.mahava.app.ui.kit.KitRowCard(

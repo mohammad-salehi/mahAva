@@ -65,7 +65,11 @@ class ToolsRepository(private val app: MahavaApplication) {
     }
     suspend fun ensureRecommendation(): ToolRecord = generationMutex.withLock {
         val today=app.clock.today().toEpochDay(); val id="recommendation_$today"
-        db.toolRecordDao().get(id)?.takeIf { it.deletedAt==null }?.let { return@withLock it }
+        // Today's tip is fixed once it is personal. A generic one saved earlier (e.g. before a log or
+        // an older app version) is upgraded as soon as a personal/cycle tip exists.
+        val existing=db.toolRecordDao().get(id)?.takeIf { it.deletedAt==null }
+        val existingRec=existing?.let { runCatching { gson.fromJson(it.payloadJson,DailyRecommendation::class.java) }.getOrNull() }
+        if(existing!=null && (existingRec==null || RecPicker.tier(existingRec)<RecPicker.GENERAL_TIER)) return@withLock existing
         val logs=db.dailyLogDao().getAll().filter { it.epochDay<=today }
         val todayLog=logs.find { it.epochDay==today }
         val yesterdayLog=logs.find { it.epochDay==today-1 }
@@ -82,6 +86,20 @@ class ToolsRepository(private val app: MahavaApplication) {
         val personal=ToolsAnalytics.analyze(periods,logs,today,now)
         val cycle=if(preg==null && profile!=null && periods.isNotEmpty()) runCatching { app.repository.computeCycle(profile,periods) }.getOrNull() else null
         val ctx=cycle?.let { runCatching { com.mahava.app.cycle.CycleDayContextResolver.resolve(it) }.getOrNull() }
+        // The same care item the Today card opens (symptoms logged today win over cycle timing).
+        val care=if(preg==null) runCatching {
+            app.contentRepository.selectCareForToday(
+                ctx ?: com.mahava.app.cycle.CycleDayContext(CycleSubWindow.UNKNOWN,null,null,null,null,""),
+                cycle?.restriction ?: com.mahava.app.cycle.PredictionRestriction.INSUFFICIENT_DATA, todayLog)
+        }.getOrNull() else null
+        val cycleCareId=if(cycle!=null && ctx!=null) runCatching { app.contentRepository.selectCareForToday(ctx,cycle.restriction,null).item.id }.getOrNull() else null
+        // Symptoms / mood logged today: the matching care item's steps, addressed to the user.
+        if(care?.reasonFa!=null) RecText.careSteps(care.item).forEach { tip ->
+            pool+=DailyRecommendation(
+                body="${care.reasonFa}، $tip",category="symptom",reasonType="personal",contentId=care.item.id,
+                reasonText="${care.reasonFa}. این از ثبت امروز خودت آمده و تشخیص نیست.",
+                evidenceKeys="log/$today",medicalSourceIds=care.item.sourceIds.orEmpty().joinToString(","),generatedAt=now)
+        }
 
         // At 08:00 today is usually empty: sleep entered today is "last night"; otherwise use yesterday's log.
         val sleepToday=todayLog?.let { ToolsAnalytics.sleep(it) }
@@ -89,12 +107,12 @@ class ToolsRepository(private val app: MahavaApplication) {
         if(sleepToday!=null) {
             if(sleepToday<360) pool += DailyRecommendation(
                 body="دیشب فقط ${RecText.hours(sleepToday)} خوابیدی؛ امروز اگه می‌تونی بعضی کارها رو به بقیه بسپار، بین کارها کمی استراحت کن و امشب زودتر بخواب.",
-                category="sleep",reasonType="personal",
+                category="sleep",reasonType="personal",contentId="care_log_sleep_energy",
                 reasonText="چون تو ثبت امروزت نوشتی دیشب ${RecText.hours(sleepToday)} خوابیدی (کمتر از ۶ ساعت).",
                 evidenceKeys="log/$today",generatedAt=now)
         } else if(sleepYesterday!=null && sleepYesterday<360) pool += DailyRecommendation(
             body="تو ثبت دیروزت نوشتی فقط ${RecText.hours(sleepYesterday)} خوابیده بودی؛ امروز اگه می‌تونی برنامه‌ات رو سبک‌تر بچین، بعضی کارها رو به بقیه بسپار و امشب زودتر بخواب.",
-            category="sleep",reasonType="personal",
+            category="sleep",reasonType="personal",contentId="care_log_sleep_energy",
             reasonText="چون تو ثبت دیروزت خوابت ${RecText.hours(sleepYesterday)} بوده (کمتر از ۶ ساعت).",
             evidenceKeys="log/${today-1}",generatedAt=now)
         val energyLog=todayLog?.takeIf { it.energy!=null || ToolsAnalytics.energy(it)!=null } ?: yesterdayLog
@@ -105,7 +123,7 @@ class ToolsRepository(private val app: MahavaApplication) {
                 val level=score?.let { "${PersianDigits.toPersian(it)} از ۵" } ?: "کم"
                 pool += DailyRecommendation(
                     body="$whenFa انرژی‌ات رو کم ثبت کردی ($level)؛ امروز کارهای مهم رو بذار برای وقتی که سرحال‌تری، برنامه رو سبک‌تر بچین و اگه شد از یکی کمک بخواه.",
-                    category="energy",reasonType="personal",
+                    category="energy",reasonType="personal",contentId="care_log_sleep_energy",
                     reasonText="چون $whenFa تو ثبتت انرژی‌ات رو $level زدی.",
                     evidenceKeys="log/${energyLog.epochDay}",generatedAt=now)
             }
@@ -119,7 +137,7 @@ class ToolsRepository(private val app: MahavaApplication) {
                 val left=PersianDigits.toPersian(daysToPeriod)
                 pool += DailyRecommendation(
                     body="تو $cycles چرخهٔ قبلی‌ات، هفتهٔ قبل از پریود «$label» ثبت کردی و الان حدود $left روز تا پریود بعدی مونده؛ اگه امروز هم این حالت رو داری، برنامه‌ات رو سبک‌تر بچین و به خودت سخت نگیر.",
-                    category="pattern",reasonType="pattern",
+                    category="pattern",reasonType="pattern",contentId=cycleCareId,
                     reasonText="این الگو از ثبت‌های چرخه‌های قبلی خودت درآمده: در $cycles چرخه، هفتهٔ قبل از پریود «$label» ثبت کردی و الان حدود $left روز تا پریود تخمینی بعدی مونده. این فقط یک مشاهده‌ست، نه تشخیص.",
                     evidenceKeys=it.relatedMetrics,generatedAt=now)
             }
@@ -132,33 +150,62 @@ class ToolsRepository(private val app: MahavaApplication) {
                 reasonText="بر اساس تاریخ بارداری‌ای که ثبت کردی، الان هفتهٔ $weekFa هستی.",
                 medicalSourceIds=fetal.sourceIds.joinToString(","),generatedAt=now) }
         } else if(cycle!=null && ctx!=null) {
-            val care=app.contentRepository.selectCareForToday(ctx,cycle.restriction,null)
+            val cycleCare=app.contentRepository.selectCareForToday(ctx,cycle.restriction,null)
             val why=RecText.cycleWhy(ctx)
-            care.item.whatYouCanDoFa.orEmpty().lines().map { it.trim().removePrefix("•").trim() }.filter { it.isNotBlank() }.forEach { tip ->
+            // Care items keep their steps in bodyFa ("• …" lines); whatYouCanDoFa is optional.
+            RecText.careSteps(cycleCare.item).forEach { tip ->
                 pool+=DailyRecommendation(
-                    body=if(why!=null) "$why، $tip" else "یه نکتهٔ کلی دربارهٔ چرخه: $tip",
-                    category="cycle",reasonType="cycle",
+                    body=if(why!=null) "$why، $tip" else "یه نکته دربارهٔ چرخه‌ات: $tip",
+                    category="cycle",reasonType=if(why!=null) "cycle" else "cycle_general",contentId=cycleCare.item.id,
                     reasonText=if(why!=null) "بر اساس مرحلهٔ تخمینی چرخه‌ات: ${ctx.subWindow.titleFa}${RecText.daysNote(ctx)}. این از روی تاریخ پریودهای ثبت‌شده‌ات حساب شده و تشخیص نیست."
                         else "چون از روی ثبت‌هات هنوز نمی‌شه گفت الان کجای چرخه‌ای، یه نکتهٔ کلی دربارهٔ چرخه اومده.",
-                    medicalSourceIds=care.item.sourceIds.orEmpty().joinToString(","),generatedAt=now)
+                    medicalSourceIds=cycleCare.item.sourceIds.orEmpty().joinToString(","),generatedAt=now)
             }
         }
         // General self-care fallbacks for everyone: no symptom, phase or personal pattern is claimed.
         RecText.GENERAL.forEachIndexed { i,tip -> pool+=DailyRecommendation(
-            body="یه نکتهٔ کلی برای امروز (برای همه، نه مخصوص تو): $tip",
+            body="یه پیشنهاد ساده برای امروزت: $tip",
             category="general_${i%5}",reasonType="general",
             reasonText="این یه پیشنهاد کلی برای مراقبت از خودته و به ثبت‌ها یا چرخه‌ات ربطی نداره؛ توصیهٔ پزشکی نیست.",
             generatedAt=now) }
-        val unseen=pool.filter { candidate -> history.none { it.body==candidate.body } }
-        val chosen=unseen.firstOrNull { it.category!=history.firstOrNull()?.category } ?: unseen.firstOrNull() ?: pool.last()
-        save(id,"recommendation",chosen,today)
+        val chosen=RecPicker.choose(pool,history)
+        if(existing!=null && existingRec!=null && RecPicker.tier(chosen)>=RecPicker.GENERAL_TIER) return@withLock existing
+        save(id,"recommendation",if(existingRec?.shown==true) chosen.copy(shown=true) else chosen,today)
         db.toolRecordDao().get(id)!!
     }
     companion object { private val generationMutex=Mutex() }
 }
 
+/**
+ * The one place that decides today's tip (Today card, its detail and the 08:00 notification all read
+ * the saved result). Personal tips from the user's own logs and history come first, then tips for her
+ * estimated cycle day, and generic self-care only when nothing about her is known.
+ */
+internal object RecPicker {
+    const val GENERAL_TIER=3
+    fun tier(r: DailyRecommendation): Int = when(r.reasonType) {
+        "personal","pattern","pregnancy" -> 0
+        "cycle" -> 1
+        "cycle_general" -> 2
+        else -> GENERAL_TIER
+    }
+    /** [history] is newest first. Never repeats yesterday's exact text when another tip of the same rank exists. */
+    fun choose(pool: List<DailyRecommendation>, history: List<DailyRecommendation>): DailyRecommendation {
+        val best=pool.minOf { tier(it) }
+        val top=pool.filter { tier(it)==best }
+        val unseen=top.filter { c -> history.none { it.body==c.body } }
+        if(unseen.isNotEmpty()) return unseen.firstOrNull { it.category!=history.firstOrNull()?.category } ?: unseen.first()
+        // Everything at this rank was shown before: re-use the one shown longest ago rather than drop to a generic tip.
+        return top.maxBy { c -> history.indexOfFirst { it.body==c.body } }
+    }
+}
+
 /** Wording for the daily recommendation: every text says why it was given, with real numbers. */
 internal object RecText {
+    /** The "• …" steps of a care item, as plain sentences. */
+    fun careSteps(item: com.mahava.app.content.ContentItem): List<String> =
+        (item.whatYouCanDoFa?.takeIf { it.isNotBlank() } ?: item.bodyFa).lines()
+            .map { it.trim().removePrefix("•").trim() }.filter { it.isNotBlank() }
     private fun fa(n: Int) = PersianDigits.toPersian(n)
     fun hours(minutes: Int): String {
         val h=minutes/60; val m=minutes%60

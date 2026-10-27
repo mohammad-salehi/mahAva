@@ -135,14 +135,19 @@ private fun DailyLogForm(vm: AppViewModel, day: LocalDate, onBack: () -> Unit, o
             "fatigue" to R.drawable.kit_moon, "nausea" to R.drawable.kit_water, "acne" to R.drawable.kit_smile)
         val symOptions = listOf("pain" to "درد", "bloating" to "نفخ", "breast_tenderness" to "حساسیت سینه", "headache" to "سردرد", "acne" to "جوش", "fatigue" to "خستگی", "nausea" to "حالت تهوع") +
             if (pregnant) listOf("severe_headache" to "سردرد شدید", "vision_changes" to "تغییر دید", "reduced_movement" to "کاهش حرکت جنین", "fluid_leak" to "خروج مایع", "fainting" to "غش") else emptyList()
-        @OptIn(ExperimentalLayoutApi::class)
-        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = 3) {
-            (listOf("none_all" to "هیچ علامتی ندارم") + symOptions).forEach { (key, label) ->
-                val on = if (key == "none_all") noSymptoms else key in symptoms
-                com.mahava.app.ui.kit.KitSymptomChip(label, if (key == "none_all") R.drawable.kit_check else symIcons[key] ?: R.drawable.kit_warning, on,
-                    if (key == "none_all") "sym_none" else "sym_$key", Modifier.weight(1f)) {
-                    if (key == "none_all") { noSymptoms = !noSymptoms; if (noSymptoms) { symptoms = emptySet(); pain = -1 } }
-                    else { symptoms = if (key in symptoms) symptoms - key else symptoms + key; if (symptoms.isNotEmpty()) noSymptoms = false }
+        // Two equal columns per row (RTL: first item on the right).
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            (listOf("none_all" to "هیچ علامتی ندارم") + symOptions).chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pair.forEach { (key, label) ->
+                        val on = if (key == "none_all") noSymptoms else key in symptoms
+                        com.mahava.app.ui.kit.KitSymptomChip(label, if (key == "none_all") R.drawable.kit_check else symIcons[key] ?: R.drawable.kit_warning, on,
+                            if (key == "none_all") "sym_none" else "sym_$key", Modifier.weight(1f)) {
+                            if (key == "none_all") { noSymptoms = !noSymptoms; if (noSymptoms) { symptoms = emptySet(); pain = -1 } }
+                            else { symptoms = if (key in symptoms) symptoms - key else symptoms + key; if (symptoms.isNotEmpty()) noSymptoms = false }
+                        }
+                    }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }

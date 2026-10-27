@@ -69,5 +69,7 @@ data class DailyRecommendation(
     val title: String="توصیه امروز", val body: String, val category: String,
     val reasonType: String, val reasonText: String, val evidenceKeys: String="",
     val medicalSourceIds: String="", val generatedAt: Long,
-    val shown: Boolean=false, val opened: Boolean=false
+    val shown: Boolean=false, val opened: Boolean=false,
+    /** Care item the Today card opens for this tip (null for pregnancy/general). */
+    val contentId: String?=null
 )

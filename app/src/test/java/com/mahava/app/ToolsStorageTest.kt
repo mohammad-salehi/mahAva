@@ -84,7 +84,9 @@ class ToolsStorageTest {
         val manager=app.getSystemService(android.app.NotificationManager::class.java)
         val notes=org.robolectric.Shadows.shadowOf(manager).allNotifications
         assertEquals(1,notes.size)
-        assertEquals("پیشنهاد امروزت تو ماه آماده‌ست.",notes.single().extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString())
+        val shownRec=Gson().fromJson(record.payloadJson,DailyRecommendation::class.java)
+        assertEquals(shownRec.body,notes.single().extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString())
+        assertEquals(shownRec.body,notes.single().extras.getCharSequence(android.app.Notification.EXTRA_BIG_TEXT).toString())
         tick();assertEquals(1,app.database.toolRecordDao().getAll().count {it.type=="recommendation"})
         unsubscribe()
     }

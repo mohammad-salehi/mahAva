@@ -467,6 +467,27 @@ class AppViewModel(
         return contentRepo.selectPhaseForToday(ctx, restriction)
     }
 
+    /** Today's tip as the Today card, its detail page and the 08:00 notification show it. */
+    data class TodayTip(val body: String, val reasonFa: String?, val contentId: String)
+
+    /**
+     * Subscribers: the saved daily recommendation (chosen personal-first by ToolsRepository, the same
+     * record the notification posts). Others: the first step of today's care item, worded for her day.
+     */
+    fun todayTip(premium: Boolean, records: List<com.mahava.app.data.db.ToolRecord>): TodayTip? {
+        val pregnant = state.value.health?.appMode == com.mahava.app.health.models.AppHealthMode.PREGNANCY
+        val day = today().toEpochDay()
+        val rec = if (premium) records.find { it.id == "recommendation_$day" && it.deletedAt == null }?.let { r ->
+            runCatching { com.google.gson.Gson().fromJson(r.payloadJson, com.mahava.app.health.DailyRecommendation::class.java) }.getOrNull()
+        } else null
+        if (rec != null) return TodayTip(rec.body, rec.reasonText, rec.contentId ?: careToday().item.id)
+        if (pregnant) return null
+        val care = careToday()
+        val step = com.mahava.app.health.RecText.careSteps(care.item).firstOrNull() ?: return null
+        val why = care.reasonFa ?: com.mahava.app.health.RecText.cycleWhy(dayContext())
+        return TodayTip(if (why != null) "$why، $step" else step, care.reasonFa, care.item.id)
+    }
+
     fun careToday(): com.mahava.app.content.CareSelection {
         val c = state.value.cycle
         val ctx = dayContext()

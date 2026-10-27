@@ -82,12 +82,13 @@ fun KitHeader(
     title: String,
     subtitle: String? = null,
     start: (@Composable () -> Unit)? = null,
-    end: (@Composable () -> Unit)? = null
+    end: (@Composable () -> Unit)? = null,
+    titleStyle: TextStyle = Kit.title
 ) {
     Box(Modifier.fillMaxWidth().padding(horizontal = 10.dp).padding(top = 6.dp, bottom = 2.dp).heightIn(min = 48.dp)) {
         Box(Modifier.align(Alignment.CenterStart)) { start?.invoke() }
         Column(Modifier.align(Alignment.Center).padding(horizontal = 52.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(title, style = Kit.title, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = titleStyle, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (subtitle != null) Text(subtitle, style = Kit.small, textAlign = TextAlign.Center)
         }
         Box(Modifier.align(Alignment.CenterEnd)) { end?.invoke() }

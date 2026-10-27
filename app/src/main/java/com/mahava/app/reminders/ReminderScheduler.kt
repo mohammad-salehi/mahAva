@@ -155,7 +155,8 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
             val item = tools.ensureRecommendation()
             val recommendation = com.google.gson.Gson().fromJson(item.payloadJson,com.mahava.app.health.DailyRecommendation::class.java)
             if (!recommendation.shown) {
-                val message=if(private) "پیشنهاد امروزت تو ماه آماده‌ست." else recommendation.body
+                // The tip itself, never a "your tip is ready" teaser; privacy only softens the title.
+                val message=recommendation.body
                 val intent=Intent(Intent.ACTION_VIEW,android.net.Uri.parse("mahava://screen/recommendation"),applicationContext,MainActivity::class.java)
                 val pi=PendingIntent.getActivity(applicationContext,1005,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 val note=NotificationCompat.Builder(applicationContext,ReminderScheduler.CHANNEL_ID)

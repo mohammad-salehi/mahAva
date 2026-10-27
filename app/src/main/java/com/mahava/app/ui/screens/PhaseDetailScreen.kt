@@ -43,6 +43,7 @@ private val ColFsh = Color(0xFF5F9C86)
 @Composable
 fun PhaseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit, onAccount: () -> Unit = {}) {
     val premium by vm.isPremium.collectAsState()
+    val toolRecords by vm.toolRecords.collectAsState()
     val state by vm.state.collectAsState()
     val item = vm.contentItem(id)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("detail_screen")) {
@@ -70,6 +71,14 @@ fun PhaseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit, onAccoun
             val isTodayCare = care.item.id == item.id
             val ctx = vm.dayContext()
             val log = vm.logFor(vm.today())
+
+            // Opened from the Today card: the exact tip that card (and the morning notification) showed.
+            vm.todayTip(premium, toolRecords)?.takeIf { it.contentId == item.id }?.let { tip ->
+                DetailSection("پیشنهاد امروز") {
+                    Text(tip.body, style = MaterialTheme.typography.bodyLarge)
+                    tip.reasonFa?.let { QuietInfo(it) }
+                }
+            }
 
             // ---- امروز ----
             DetailSection("امروز") {
