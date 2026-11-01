@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -469,10 +471,18 @@ fun StoriesScreen(vm: AppViewModel, start: Int, onClose: () -> Unit) {
             Text("نکتهٔ آموزشی است، نه توصیهٔ پزشکی", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         }
         // RTL: right half = previous, left half = next (like reading direction).
-        Row(Modifier.fillMaxSize().padding(top = 80.dp)) {
-            Box(Modifier.weight(1f).fillMaxSize().clickable { prev() })
-            Box(Modifier.weight(1f).fillMaxSize().clickable { next() })
-        }
+        // One surface: tapping anywhere dims the whole story; the side picks prev/next.
+        var pressed by remember { mutableStateOf(false) }
+        Box(
+            Modifier.fillMaxSize().padding(top = 80.dp)
+                .background(Color.Black.copy(alpha = if (pressed) 0.12f else 0f))
+                .pointerInput(si, fi) {
+                    detectTapGestures(
+                        onPress = { pressed = true; paused = true; tryAwaitRelease(); pressed = false; paused = false },
+                        onTap = { o -> if (o.x < size.width / 2f) next() else prev() }
+                    )
+                }
+        )
     }
 }
 

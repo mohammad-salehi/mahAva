@@ -100,7 +100,7 @@ fun TodayScreen(
     Column(Modifier.fillMaxSize().background(MahavaBackground).verticalScroll(com.mahava.app.ui.kit.rememberKitScroll()).testTag("today_screen")) {
         // approved-home header: bell (start/right), centred greeting, smile button (end/left) for the account.
         com.mahava.app.ui.kit.KitHeader(
-            title = "ماه، پلتفرم شناخت بدن خانم‌ها",
+            title = "ماه",
             titleStyle = com.mahava.app.ui.kit.Kit.title.copy(fontSize = 16.sp),
             start = { com.mahava.app.ui.kit.KitCircleButton(R.drawable.kit_bell, dot = unread > 0, tag = "open_notifications", onClick = onNotifications) },
             end = { com.mahava.app.ui.kit.KitCircleButton(R.drawable.kit_settings, tag = "open_settings", contentDescription = "تنظیمات", onClick = onSettings) }
