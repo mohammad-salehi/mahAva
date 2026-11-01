@@ -209,7 +209,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
             Spacer(Modifier.height(8.dp))
             val registryOwner = LocalActivityResultRegistryOwner.current
             var buying by remember { mutableStateOf(false) }
-            val buyEnabled = !phone.isNullOrBlank() && !buying && registryOwner != null && pendingDisc?.freeGrant != true
+            val buyEnabled = !buying && registryOwner != null && pendingDisc?.freeGrant != true
             PrimaryButton(
                 if (buying) "صبر کن…" else if (active) "تمدید اشتراک سالانه" else "خرید سالانه از بازار",
                 enabled = buyEnabled,
@@ -218,6 +218,7 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
                 val registry = registryOwner?.activityResultRegistry ?: return@PrimaryButton
                 buying = true
                 scope.launch {
+                    if (vm.guestNeedsPhone()) { buying = false; vm.requestGuestClaim(); return@launch }
                     val err = vm.purchaseYearlyWithBazaar(registry)
                     buying = false
                     if (err == null) pendingDisc = null

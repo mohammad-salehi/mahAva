@@ -52,6 +52,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
         val ends by vm.serverEndsAt.collectAsState()
         val subActive by vm.serverHasActiveSubscription.collectAsState()
         var showRenew by remember { mutableStateOf(false) }
+        // Guest just verified a phone: open the payment dialog straight away.
+        val openPay by vm.openPaymentRequested.collectAsState()
+        LaunchedEffect(openPay) {
+            if (openPay) { vm.openPaymentRequested.value = false; showRenew = true }
+        }
         LaunchedEffect(loggedIn) {
             if (loggedIn) vm.refreshAccountFromServer()
         }
@@ -83,7 +88,11 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
         if (showRenew) {
             SubscriptionRenewDialog(
                 vm = vm,
-                onDismiss = { showRenew = false },
+                onDismiss = {
+                    showRenew = false
+                    // Closed without paying: back to the plain guest account (pending phone dropped).
+                    vm.cancelGuestPhone()
+                },
                 onNeedLogin = { showRenew = false; onAccount() }
             )
         }
@@ -257,6 +266,9 @@ fun SubscriptionRenewDialog(
         text = {
             Column {
                 Text("اشتراک سالانه ماه")
+                vm.pendingGuestPhone()?.let { p ->
+                    QuietInfo("شماره ${PersianDigits.toPersian(p)} تأیید شد. حسابت بعد از پرداخت موفق ساخته می‌شود و اطلاعات مهمان روی همین شماره می‌ماند. اگر پرداخت نکنی، با حساب مهمان ادامه می‌دهی.")
+                }
                 Text(if (pendingDisc == null && pay <= 0) "قیمت در حال دریافت از سرور…" else "${PersianDigits.toPersian(pay.toString())} تومان برای یک سال")
                 QuietInfo("پرداخت از کافه‌بازار انجام می‌شود.")
                 Spacer(Modifier.height(8.dp))
@@ -303,6 +315,7 @@ fun SubscriptionRenewDialog(
                             msg = "الان نمی‌شود خرید را باز کرد."
                             return@launch
                         }
+                        if (vm.guestNeedsPhone()) { busy = false; onDismiss(); vm.requestGuestClaim(); return@launch }
                         val err = vm.purchaseYearlyWithBazaar(registry)
                         busy = false
                         if (err == null) {

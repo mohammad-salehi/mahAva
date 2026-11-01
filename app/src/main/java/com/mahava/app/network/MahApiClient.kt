@@ -80,6 +80,33 @@ class MahApiClient(
         return gson.fromJson(raw, MahSimpleOkResponse::class.java)
     }
 
+    /** Guest entry: no phone/OTP; server grants the welcome trial (30 days). */
+    suspend fun createGuest(role: String?): MahAuthResponse =
+        post(
+            "/api/mah/auth/guest",
+            mapOf(
+                "role" to (role ?: ""),
+                "acceptedPrivacy" to true,
+                "acceptedTerms" to true,
+                "privacyVersion" to com.mahava.app.content.LegalDocuments.PRIVACY_VERSION,
+                "termsVersion" to com.mahava.app.content.LegalDocuments.TERMS_VERSION
+            )
+        )
+
+    /** Attach phone (+OTP, password) to the current guest account; same user id, data kept. */
+    suspend fun claimGuest(token: String, phone: String, otp: String, password: String): MahAuthResponse =
+        post("/api/mah/auth/guest/claim", mapOf("phone" to phone, "otp" to otp, "password" to password), token)
+
+    /** Guest -> paid: OTP-verify a phone now; the server attaches it only after payment succeeds. */
+    suspend fun verifyGuestPhone(token: String, phone: String, otp: String, password: String): JsonObject {
+        val raw = request("POST", "/api/mah/auth/guest/verify-phone", mapOf("phone" to phone, "otp" to otp, "password" to password), token)
+        return gson.fromJson(raw, JsonObject::class.java)
+    }
+
+    suspend fun cancelGuestPhone(token: String) {
+        request("POST", "/api/mah/auth/guest/verify-phone/cancel", emptyMap<String, Any?>(), token)
+    }
+
     suspend fun login(phone: String, password: String): MahAuthResponse =
         post("/api/mah/auth/login", mapOf("phone" to phone, "password" to password))
 

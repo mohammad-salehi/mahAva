@@ -48,7 +48,6 @@ class MahRedesignRenderTest {
     @Test fun intro1() = intro(0)
     @Test fun intro2() = intro(1)
     @Test fun intro3() = intro(2)
-    @Test fun intro4() = intro(3)
 
     private fun register(name: String, step: Int, focus: String?, otp: String = "", password: String = "", resend: Int = 0, cursor: Boolean = false) =
         render(name, focus) {

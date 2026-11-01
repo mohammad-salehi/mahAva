@@ -331,6 +331,45 @@ private fun RoutineCard(title: String, steps: List<String>) {
 
 // ---------------------------------------------------------------- daily tip stories
 
+private fun storyKey(s: JsonObject): String = s.s("id").ifBlank { s.s("title") }
+
+/**
+ * Which tip stories were viewed today (Instagram-style "seen" ring). Kept per day in a synced
+ * tool record (`story_seen_<epochDay>`), so it is saved on the server with the user's data.
+ */
+object StorySeen {
+    private const val TYPE = "story_seen"
+    val seenToday = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
+    private var loadedDay = Long.MIN_VALUE
+
+    private fun idFor(day: Long) = "story_seen_$day"
+
+    suspend fun load(app: MahavaApplication) {
+        val day = app.clock.today().toEpochDay()
+        val rec = app.database.toolRecordDao().get(idFor(day))
+        val ids = rec?.takeIf { it.deletedAt == null }?.let {
+            runCatching { JsonParser.parseString(it.payloadJson).asJsonObject.get("ids")?.asString.orEmpty() }.getOrDefault("")
+        }.orEmpty().split('\u001F').filter { it.isNotBlank() }.toSet()
+        loadedDay = day
+        seenToday.value = ids
+    }
+
+    suspend fun markSeen(app: MahavaApplication, key: String) {
+        if (key.isBlank()) return
+        val day = app.clock.today().toEpochDay()
+        if (loadedDay != day) load(app)
+        if (key in seenToday.value) return
+        val ids = seenToday.value + key
+        seenToday.value = ids
+        val dao = app.database.toolRecordDao()
+        val old = dao.get(idFor(day))
+        val now = maxOf(app.clock.nowMillis(), (old?.updatedAt ?: 0) + 1)
+        val payload = JsonObject().apply { addProperty("ids", ids.joinToString("\u001F")) }.toString()
+        dao.upsert(com.mahava.app.data.db.ToolRecord(idFor(day), TYPE, day, payload, old?.createdAt ?: now, now))
+        runCatching { com.mahava.app.sync.DataSync.syncNow(app) }
+    }
+}
+
 private fun orderedStories(data: JsonObject, phase: String) =
     data.arr("items").objs().sortedBy { val p = it.s("phase"); if (p == phase) 0 else if (p == "any" || p.isBlank()) 1 else 2 }
 
@@ -340,19 +379,37 @@ fun StoryRow(vm: AppViewModel, onOpen: (Int) -> Unit) {
     val state by vm.state.collectAsState()
     val phase = phaseKey(state.cycle?.phase)
     val (data, _) = rememberContent("stories")
+    val app = LocalContext.current.applicationContext as MahavaApplication
+    LaunchedEffect(Unit) { StorySeen.load(app) }
+    val seen by StorySeen.seenToday.collectAsState()
     val items = data?.let { orderedStories(it, phase) }.orEmpty()
+        // Unseen first, like Instagram.
+        .sortedBy { if (storyKey(it) in seen) 1 else 0 }
     if (items.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("نکته‌های امروز", fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items.forEachIndexed { i, s ->
-                Column(Modifier.clickable { onOpen(i) }, horizontalAlignment = Alignment.CenterHorizontally) {
+            items.forEach { s ->
+                val isSeen = storyKey(s) in seen
+                // Open by the story's position in the viewer's (unsorted) order.
+                val openIndex = data?.let { orderedStories(it, phase) }.orEmpty().indexOfFirst { storyKey(it) == storyKey(s) }.coerceAtLeast(0)
+                Column(Modifier.clickable { onOpen(openIndex) }, horizontalAlignment = Alignment.CenterHorizontally) {
                     val c = runCatching { Color(android.graphics.Color.parseColor(s.s("color"))) }.getOrDefault(MahavaPrimary)
                     Box(
-                        Modifier.size(64.dp).border(3.dp, Brush.linearGradient(listOf(MahavaPrimary, Color(0xFFFFB86B))), CircleShape).padding(5.dp).clip(CircleShape).background(c),
+                        Modifier.size(64.dp)
+                            .border(
+                                if (isSeen) 1.5.dp else 3.dp,
+                                if (isSeen) Brush.linearGradient(listOf(Color(0xFFCFCBDD), Color(0xFFCFCBDD)))
+                                else Brush.linearGradient(listOf(MahavaPrimary, Color(0xFFFFB86B))),
+                                CircleShape
+                            )
+                            .padding(5.dp).clip(CircleShape).background(if (isSeen) c.copy(alpha = 0.45f) else c),
                         contentAlignment = Alignment.Center
-                    ) { Text(s.s("title").take(6), color = Color.White, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center) }
-                    Text(s.s("title"), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    ) { Text(s.s("title").take(6), color = Color.White.copy(alpha = if (isSeen) 0.8f else 1f), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center) }
+                    Text(
+                        s.s("title"), style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                        color = if (isSeen) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
@@ -372,6 +429,8 @@ fun StoriesScreen(vm: AppViewModel, start: Int, onClose: () -> Unit) {
     var paused by remember { mutableStateOf(false) }
     val story = stories[si]
     val frames = story.arr("frames").objs()
+    val appCtx = LocalContext.current.applicationContext as MahavaApplication
+    LaunchedEffect(si) { StorySeen.markSeen(appCtx, storyKey(story)) }
     fun next() {
         if (fi < frames.size - 1) fi++ else if (si < stories.size - 1) { si++; fi = 0 } else onClose()
     }
@@ -419,10 +478,45 @@ fun StoriesScreen(vm: AppViewModel, start: Int, onClose: () -> Unit) {
 
 // ---------------------------------------------------------------- health quizzes
 
+/** Quiz results: synced tool records (`quiz_<id>`) on the server + a prefs cache for instant reads. */
 private object QuizResults {
     private const val PREFS = "mah_quiz_results"
+    private const val TYPE = "quiz_result"
+    private fun recId(id: String) = "quiz_" + id.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(58)
+
     fun save(context: Context, id: String, score: Int, level: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(id, "$score|$level|${System.currentTimeMillis()}").apply()
+        val now = System.currentTimeMillis()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(id, "$score|$level|$now").apply()
+        val app = context.applicationContext as MahavaApplication
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            runCatching {
+                val dao = app.database.toolRecordDao()
+                val old = dao.get(recId(id))
+                val ts = maxOf(app.clock.nowMillis(), (old?.updatedAt ?: 0) + 1)
+                val payload = JsonObject().apply {
+                    addProperty("quizId", id); addProperty("score", score); addProperty("level", level); addProperty("at", now)
+                }.toString()
+                dao.upsert(com.mahava.app.data.db.ToolRecord(recId(id), TYPE, null, payload, old?.createdAt ?: ts, ts))
+                com.mahava.app.sync.DataSync.syncNow(app)
+            }
+        }
+    }
+
+    /** Pull server-synced results (e.g. after reinstall/login) into the prefs cache. */
+    suspend fun hydrate(context: Context) {
+        val app = context.applicationContext as MahavaApplication
+        val sp = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val e = sp.edit()
+        app.database.toolRecordDao().getAll().filter { it.type == TYPE && it.deletedAt == null }.forEach { r ->
+            runCatching {
+                val o = JsonParser.parseString(r.payloadJson).asJsonObject
+                val qid = o.get("quizId").asString
+                val at = o.get("at")?.asLong ?: r.updatedAt
+                val cur = sp.getString(qid, null)?.split("|")?.getOrNull(2)?.toLongOrNull() ?: 0L
+                if (at >= cur) e.putString(qid, "${o.get("score").asInt}|${o.get("level")?.asString.orEmpty()}|$at")
+            }
+        }
+        e.apply()
     }
     fun last(context: Context, id: String): Triple<Int, String, Long>? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(id, null)?.split("|")?.takeIf { it.size == 3 }?.let {
@@ -437,7 +531,10 @@ private fun levelColor(l: String) = when (l) { "low" -> Color(0xFF16A34A); "mid"
 fun QuizListScreen(onBack: () -> Unit, onOpen: (String) -> Unit) {
     val context = LocalContext.current
     val (data, error) = rememberContent("quizzes")
+    var hydrated by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) { runCatching { QuizResults.hydrate(context) }; hydrated++ }
     Page("آزمون‌های سلامت", onBack) {
+        if (hydrated < 0) return@Page // re-read cached results after hydrate
         if (data == null) { Loading(error); return@Page }
         MahavaCard(containerColor = MahavaPrimarySoft) {
             Text(data.s("disclaimer"), style = MaterialTheme.typography.bodySmall, color = MahavaPrimaryDeep)

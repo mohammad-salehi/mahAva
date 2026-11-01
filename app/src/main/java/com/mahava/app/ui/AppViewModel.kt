@@ -760,6 +760,70 @@ class AppViewModel(
         if (!ok) onNeedLogin()
     }
 
+    /** Purchase asked a guest to attach a phone first; MahavaAppRoot shows the claim dialog. */
+    val guestClaimRequested = MutableStateFlow(false)
+    fun requestGuestClaim() { guestClaimRequested.value = true }
+    fun dismissGuestClaim() { guestClaimRequested.value = false }
+
+    suspend fun isGuestNow(): Boolean = authRepository.isGuest()
+
+    /** Guest whose phone is not OTP-verified yet: purchase must go to the phone page first. */
+    suspend fun guestNeedsPhone(): Boolean = authRepository.isGuest() && authRepository.pendingGuestPhone == null
+
+    fun pendingGuestPhone(): String? = authRepository.pendingGuestPhone
+
+    /** Set after the guest phone is verified; Settings opens the payment dialog and clears it. */
+    val openPaymentRequested = MutableStateFlow(false)
+
+    /** Null on success; the phone is pending until payment, then the account is created. */
+    suspend fun verifyGuestPhone(phone: String, otp: String, password: String): String? {
+        if (password.length < 6) return "رمز عبور باید حداقل ۶ کاراکتر باشد."
+        return try {
+            authRepository.verifyGuestPhone(phone.trim(), otp.trim(), password)
+            null
+        } catch (e: MahApiException) {
+            if (e.status == 409) "این شماره قبلاً ثبت شده" else com.mahava.app.util.FaText.orFallback(e.message, "تأیید شماره انجام نشد.")
+        } catch (t: Throwable) {
+            com.mahava.app.util.FaText.orFallback(t.message, "تأیید شماره انجام نشد.")
+        }
+    }
+
+    fun cancelGuestPhone() {
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            runCatching { authRepository.cancelGuestPhone() }
+        }
+    }
+
+    /** Guest entry from the intro: no phone needed. Callback gets null on success, else a Persian error. */
+    fun startGuest(done: (String?) -> Unit) {
+        viewModelScope.launch {
+            val err = try {
+                authRepository.loginAsGuest(prefs.intendedRole.first().takeIf { it.isNotBlank() })
+                refreshRoleAfterAuth()
+                null
+            } catch (e: MahApiException) {
+                com.mahava.app.util.FaText.orFallback(e.message, "ورود مهمان انجام نشد.")
+            } catch (t: Throwable) {
+                com.mahava.app.util.FaText.orFallback(t.message, "ورود مهمان انجام نشد.")
+            }
+            done(err)
+        }
+    }
+
+    /** Attach phone to the guest account (same account, data kept). Null on success. */
+    suspend fun claimGuest(phone: String, otp: String, password: String): String? {
+        if (password.length < 6) return "رمز عبور باید حداقل ۶ کاراکتر باشد."
+        return try {
+            authRepository.claimGuest(phone.trim(), otp.trim(), password)
+            authRepository.refreshSubscription()
+            null
+        } catch (e: MahApiException) {
+            if (e.status == 409) "این شماره قبلاً ثبت شده" else com.mahava.app.util.FaText.orFallback(e.message, "ثبت شماره انجام نشد.")
+        } catch (t: Throwable) {
+            com.mahava.app.util.FaText.orFallback(t.message, "ثبت شماره انجام نشد.")
+        }
+    }
+
     suspend fun login(phone: String, password: String): String? {
         return try {
             authRepository.login(phone.trim(), password)
@@ -1089,8 +1153,10 @@ class AppViewModel(
         return try {
             val attached = authRepository.withToken { token -> app.apiClient.attachDiscount(token, code.trim()) }
             if (attached.freeGrant) {
+                val wasGuest = authRepository.isGuest()
                 authRepository.withToken { token -> app.apiClient.redeemDiscount(token, code.trim()) }
                 authRepository.refreshSubscription()
+                if (wasGuest) { authRepository.clearPendingGuestPhone(); runCatching { authRepository.fetchMe() } }
                 null to attached.copy(attached = true)
             } else {
                 null to attached
@@ -1136,12 +1202,20 @@ class AppViewModel(
             val purchase = (if (owned != null) Result.success(owned) else billing.purchaseYearly(registry)).getOrElse {
                 return it.message ?: "خرید انجام نشد."
             }
-            authRepository.withToken { token ->
+            val wasGuest = authRepository.isGuest()
+            val claimRes = authRepository.withToken { token ->
                 app.apiClient.claimBazaarPurchase(token, purchase.toClaimMap())
             }
             // Allow repurchase next year (managed product consumed after server grant).
             billing.consume(purchase.purchaseToken)
             authRepository.refreshSubscription()
+            if (wasGuest) {
+                // Paid: the server attached the verified phone to this same account. Pull it in.
+                authRepository.clearPendingGuestPhone()
+                runCatching { authRepository.fetchMe() }
+                val err = claimRes.get("claimError")?.takeIf { !it.isJsonNull }?.asString
+                if (err != null) return if (err == "PHONE_ALREADY_REGISTERED") "این شماره قبلاً ثبت شده" else "پرداخت انجام شد ولی ثبت شماره ناموفق بود؛ با پشتیبانی تماس بگیر."
+            }
             null
         } catch (e: MahApiException) {
             com.mahava.app.util.FaText.orFallback(e.message, "فعال‌سازی اشتراک روی سرور ناموفق بود.")

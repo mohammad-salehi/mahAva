@@ -5,6 +5,8 @@ data class MahUserDto(
     val phone: String = "",
     val role: String = "",
     val isActive: Boolean = true,
+    /** Guest account: phone is null until claimed at purchase time. */
+    val isGuest: Boolean = false,
     val createdAt: String? = null,
     val lastLoginAt: String? = null
 )

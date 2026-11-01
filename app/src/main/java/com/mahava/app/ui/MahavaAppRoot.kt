@@ -287,6 +287,14 @@ fun MahavaAppRoot(
             }
         }
     ) { padding ->
+        // Guest pressed Buy: go to the phone page (phone -> OTP -> password), then payment.
+        val guestClaim by vm.guestClaimRequested.collectAsState()
+        LaunchedEffect(guestClaim) {
+            if (guestClaim) {
+                vm.dismissGuestClaim()
+                nav.navigate(Routes.GUEST_PHONE) { launchSingleTop = true }
+            }
+        }
         NavHost(
             navController = nav,
             startDestination = startDestination,
@@ -296,6 +304,13 @@ fun MahavaAppRoot(
             composable(Routes.INTRO) {
                 MahIntroScreen { exit ->
                     vm.markIntroSeen()
+                    if (exit == IntroExit.GUEST) {
+                        vm.startGuest { err ->
+                            if (err == null) goHomeAfterAuth(true)
+                            else android.widget.Toast.makeText(nav.context, err, android.widget.Toast.LENGTH_LONG).show()
+                        }
+                        return@MahIntroScreen
+                    }
                     nav.navigate(Routes.LOGIN) {
                         popUpTo(Routes.INTRO) { inclusive = true }
                         launchSingleTop = true
@@ -516,18 +531,52 @@ fun MahavaAppRoot(
                     onBack = if (loggedIn) ({ nav.popBackStack() }) else null,
                     onGoRegister = { nav.navigate(Routes.REGISTER) { launchSingleTop = true } },
                     onForgotPassword = { nav.navigate(Routes.PASSWORD_RECOVERY) { launchSingleTop = true } },
-                    onSuccess = { goHomeAfterAuth(false) }
+                    onSuccess = { goHomeAfterAuth(false) },
+                    onGuestSuccess = { goHomeAfterAuth(true) }
                 )
             }
-            composable(Routes.REGISTER) {
-                RegisterScreen(
+            composable(Routes.GUEST_PHONE) {
+                com.mahava.app.ui.auth.GuestPhoneScreen(
                     vm,
                     onBack = { nav.popBackStack() },
                     onGoLogin = { nav.navigate(Routes.LOGIN) { launchSingleTop = true } },
                     onOpenPrivacy = { nav.navigate(Routes.PRIVACY) },
                     onOpenTerms = { nav.navigate(Routes.TERMS) },
-                    onSuccess = { goHomeAfterAuth(true) }
+                    onVerified = {
+                        vm.openPaymentRequested.value = true
+                        nav.navigate(Routes.SETTINGS) {
+                            popUpTo(Routes.GUEST_PHONE) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 )
+            }
+            composable(Routes.REGISTER) {
+                // No free registered account anymore: sign-up = guest session + account/purchase page,
+                // where phone/OTP is attached to the same account before payment.
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    if (vm.isLoggedIn.value) {
+                        if (vm.isGuestNow()) {
+                            nav.navigate(Routes.GUEST_PHONE) { popUpTo(Routes.REGISTER) { inclusive = true } }
+                        } else {
+                            nav.navigate(Routes.SETTINGS) { popUpTo(Routes.REGISTER) { inclusive = true } }
+                        }
+                    } else {
+                        vm.startGuest { err ->
+                            if (err == null) {
+                                goHomeAfterAuth(true)
+                                nav.navigate(Routes.GUEST_PHONE) { launchSingleTop = true }
+                            } else {
+                                android.widget.Toast.makeText(nav.context, err, android.widget.Toast.LENGTH_LONG).show()
+                                nav.popBackStack()
+                            }
+                        }
+                    }
+                }
+                androidx.compose.foundation.layout.Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) { androidx.compose.material3.CircularProgressIndicator() }
             }
             composable(Routes.PASSWORD_RECOVERY) {
                 PasswordRecoveryScreen(

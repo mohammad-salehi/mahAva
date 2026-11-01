@@ -48,38 +48,34 @@ import com.mahava.app.R
 import kotlinx.coroutines.launch
 
 /** Where the last intro page sends the user. */
-enum class IntroExit { REGISTER, LOGIN }
+enum class IntroExit { REGISTER, LOGIN, GUEST }
 
 internal class IntroPage(val title: String, val body: String)
 
 internal val introPages = listOf(
     IntroPage(
-        "ماه؛ همراه هر روزِ بدنت",
-        "چرخه‌ات را ثبت کن؛ ماه روز پریود بعدی، روزهای باروری و مرحلهٔ امروزت را برایت تخمین می‌زند و هر روز یک توصیهٔ ساده می‌دهد."
+        "ماه، همراه هر روز بدنت",
+        "تاریخ پریودت رو ثبت کن، ماه هر روز وضعیت بدنتو بهت می‌گه و راهنماییت می‌کنه چطور حال بهتری داشته باشی"
     ),
     IntroPage(
-        "حالت را ثبت کن، الگویت را ببین",
-        "روزانه در چند ثانیه حال، علائم و هوس‌هایت را ثبت کن. ماه کم‌کم الگوی بدنت را پیدا می‌کند و برای ویزیت، گزارش PDF برای پزشک می‌سازد."
+        "همسرت کنارته",
+        "کد اتصال حسابتو به همسرت بده تا اونم از وضعیت تو با خبر باشه و بهتر هواتو داشته باشه"
     ),
     IntroPage(
-        "همسرت هم کنارت است",
-        "با یک کد اتصال، همسرت در برنامهٔ ماه وضعیت امروزت و راهنمای همراهی را می‌بیند؛ فقط با تأیید خودت، و هر وقت بخواهی اتصال را قطع می‌کنی."
-    ),
-    IntroPage(
-        "اطلاعاتت، فقط مال خودت",
-        "ثبت‌هایت روی حسابت در سرور ماه می‌ماند و با گوشی جدید هم برمی‌گردد. هر وقت بخواهی، حسابت و همهٔ اطلاعاتش را کامل پاک می‌کنی."
+        "جای اطلاعاتت امنه",
+        "اطلاعاتی که ذخیره کردی رو کسی جز همسرت نمی‌بینه"
     )
 )
 
-/** Four-page intro shown once before login/sign-up. */
+/** Three-page intro shown once before login/sign-up. */
 @Composable
 fun MahIntroScreen(onDone: (IntroExit) -> Unit) {
     val pager = rememberPagerState { introPages.size }
-    IntroContent(pager, onRegister = { onDone(IntroExit.REGISTER) }, onLogin = { onDone(IntroExit.LOGIN) })
+    IntroContent(pager, onRegister = { onDone(IntroExit.REGISTER) }, onLogin = { onDone(IntroExit.LOGIN) }, onGuest = { onDone(IntroExit.GUEST) })
 }
 
 @Composable
-internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: () -> Unit) {
+internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: () -> Unit, onGuest: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val page = pager.currentPage
     val last = page == introPages.lastIndex
@@ -105,9 +101,18 @@ internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: ()
                         }
                     } else {
                         Column(Modifier.fillMaxWidth()) {
-                            MahButton("ساخت حساب رایگان", modifier = Modifier.fillMaxWidth().testTag("intro_register"), onClick = onRegister)
-                            Spacer(Modifier.height(14.dp))
-                            MahFootLink("حساب داری؟", "ورود", testTag = "intro_login", onClick = onLogin)
+                            MahButton("ورود به عنوان مهمان", modifier = Modifier.fillMaxWidth().testTag("intro_guest"), onClick = onGuest)
+                            Spacer(Modifier.height(12.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                MText(
+                                    "ورود به حساب", 14f, FontWeight.SemiBold, MK.Muted,
+                                    modifier = Modifier.clickable(onClick = onLogin).padding(8.dp).testTag("intro_login")
+                                )
+                                MText(
+                                    "ثبت‌نام و خرید اشتراک", 14f, FontWeight.SemiBold, MK.Muted,
+                                    modifier = Modifier.clickable(onClick = onRegister).padding(8.dp).testTag("intro_register")
+                                )
+                            }
                         }
                     }
                 }
@@ -133,7 +138,7 @@ private fun IntroPageBody(p: Int, shift: Dp) {
                     MText("ماه", 17f, FontWeight.Bold)
                 }
                 MText(
-                    "${faDigits((p + 1).toString())} از ۴", 13f, color = MK.Muted,
+                    "${faDigits((p + 1).toString())} از ${faDigits(introPages.size.toString())}", 13f, color = MK.Muted,
                     modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.7f)).padding(horizontal = 12.dp, vertical = 5.dp)
                 )
             }
@@ -183,32 +188,6 @@ private fun BoxScope.IntroArt(p: Int) {
             }
         }
         1 -> {
-            Image(painterResource(R.drawable.ill_daily_woman), null, contentScale = ContentScale.FillWidth,
-                modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(25.dp, 80.dp).size(340.dp, (340f * 1024f / 1536f).dp))
-            MahFloatCard(Modifier.align(AbsoluteAlignment.TopRight).absoluteOffset(x = (-16).dp, y = 66.dp).width(200.dp)) {
-                Column {
-                    MText("حالت امروز چطوره؟", 12.5f, FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("خوبم" to Color(0xFFDBF7EF), "خستگی" to MK.LavSoft, "درد" to Color(0xFFFFE3EE)).forEach { (t, c) ->
-                            Box(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(c).padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
-                                MText(t, 11.5f, FontWeight.SemiBold)
-                            }
-                        }
-                    }
-                }
-            }
-            MahFloatCard(Modifier.align(AbsoluteAlignment.BottomLeft).absoluteOffset(x = 16.dp, y = (-24).dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    MahIconTile("file", MK.LavSoft, MK.Lav)
-                    Column {
-                        MText("گزارش برای پزشک", 12.5f, FontWeight.Bold)
-                        MText("۳ چرخهٔ اخیر · PDF", 12f, color = MK.Muted)
-                    }
-                }
-            }
-        }
-        2 -> {
             Image(painterResource(R.drawable.design_mother), null, contentScale = ContentScale.FillHeight,
                 modifier = Modifier.align(AbsoluteAlignment.TopRight).absoluteOffset(x = (-70).dp, y = 96.dp).size((230f * 459f / 644f).dp, 230.dp))
             Image(painterResource(R.drawable.design_father), null, contentScale = ContentScale.FillHeight,
@@ -252,7 +231,7 @@ private fun BoxScope.IntroArt(p: Int) {
                     MahIconTile("star", MK.Soft, MK.Pink)
                     Column {
                         MText("یک ماه رایگان", 12.5f, FontWeight.Bold)
-                        MText("برای ثبت‌نام جدید", 12f, color = MK.Muted)
+                        MText("با ورود مهمان", 12f, color = MK.Muted)
                     }
                 }
             }

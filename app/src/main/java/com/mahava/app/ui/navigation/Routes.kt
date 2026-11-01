@@ -20,6 +20,7 @@ object Routes {
     const val TICKETS = "tickets"
     const val LOGIN = "login"
     const val REGISTER = "register"
+    const val GUEST_PHONE = "guest_phone"
     const val PASSWORD_RECOVERY = "password_recovery"
     const val PRIVACY = "privacy"
     const val TERMS = "terms"
@@ -64,7 +65,7 @@ object Routes {
     val authOnly = setOf(INTRO, LOGIN, REGISTER, PASSWORD_RECOVERY, PRIVACY, TERMS)
 
     /** Full-bleed redesigned entry screens (drawn behind the status bar). */
-    val authFullBleed = setOf(INTRO, LOGIN, REGISTER, PASSWORD_RECOVERY)
+    val authFullBleed = setOf(INTRO, LOGIN, REGISTER, PASSWORD_RECOVERY, GUEST_PHONE)
 
     /** Cycle-owner screens a male (partner) account should not land on. */
     val womanMain = setOf(TODAY, CALENDAR, LOG_HUB, REPORTS, BODY, TOOLS)
