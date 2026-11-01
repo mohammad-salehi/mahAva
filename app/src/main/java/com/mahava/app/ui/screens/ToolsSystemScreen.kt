@@ -56,6 +56,11 @@ object ToolCatalog {
             ToolEntry("test", "زمان تست بارداری", "اگر پریود دیر کرده", R.drawable.design_pregnancy_test, MahavaMenstruation, route = "late"),
             ToolEntry("pregnancy", "بارداری هفته‌به‌هفته", "اگر باردار هستی", R.drawable.design_sprout, MahavaFertility, route = "pregnancy")
         ),
+        "مراقبت و آگاهی" to listOf(
+            ToolEntry("skin_routine", "روتین پوست و مو", "مراقبت متناسب با فاز چرخه", R.drawable.design_smile, MahavaAccentPeach, route = "skin_routine"),
+            ToolEntry("quizzes", "آزمون‌های سلامت", "خودارزیابی با منبع علمی", R.drawable.design_notes, MahavaPrimaryDeep, route = "health_quizzes"),
+            ToolEntry("stories", "نکته‌های روزانه", "استوری‌های کوتاه آموزشی", R.drawable.design_book, MahavaPrimary, route = "tip_stories?start=0")
+        ),
         "بیشتر" to listOf(
             ToolEntry("body", "شناخت بدن", "مطالب علمی ساده با منبع", R.drawable.design_book, MahavaPrimary, route = "body"),
             ToolEntry("reminders", "یادآورها", "پریود، تخمک‌گذاری، آب، دارو", R.drawable.design_notes, MahavaAccentPeach),

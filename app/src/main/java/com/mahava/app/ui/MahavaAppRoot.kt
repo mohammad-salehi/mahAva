@@ -469,15 +469,34 @@ fun MahavaAppRoot(
                 )
             }
             composable(Routes.PARTNER_HUB) {
-                PartnerHubScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
+                PartnerHubScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() }, onChat = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) })
             }
             composable(Routes.PARTNER_HOME) {
                 PartnerHomeScreen(
                     vm,
                     onSettings = { nav.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                     onAccount = { goAccountOrLogin() },
-                    onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } }
+                    onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
+                    onChat = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) }
                 )
+            }
+            composable(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) {
+                com.mahava.app.ui.extra.PartnerChatScreen(vm, onBack = { nav.popBackStack() })
+            }
+            composable(com.mahava.app.ui.extra.ExtraRoutes.SKIN) {
+                com.mahava.app.ui.extra.SkinRoutineScreen(vm, onBack = { nav.popBackStack() })
+            }
+            composable(
+                com.mahava.app.ui.extra.ExtraRoutes.STORIES,
+                arguments = listOf(navArgument("start") { type = androidx.navigation.NavType.IntType; defaultValue = 0 })
+            ) { entry ->
+                com.mahava.app.ui.extra.StoriesScreen(vm, entry.arguments?.getInt("start") ?: 0, onClose = { nav.popBackStack() })
+            }
+            composable(com.mahava.app.ui.extra.ExtraRoutes.QUIZZES) {
+                com.mahava.app.ui.extra.QuizListScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.quiz(it)) })
+            }
+            composable(com.mahava.app.ui.extra.ExtraRoutes.QUIZ) { entry ->
+                com.mahava.app.ui.extra.QuizScreen(entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
             }
             composable(Routes.NOTIFICATIONS) {
                 NotificationsScreen(vm, onBack = { nav.popBackStack() }, onOpenPartner = goPartner)

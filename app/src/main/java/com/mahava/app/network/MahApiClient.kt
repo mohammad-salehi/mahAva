@@ -27,6 +27,10 @@ class MahApiClient(
 
     fun currentBaseUrl(): String = baseUrl.trimEnd('/')
 
+    /** Generic JSON call for newer endpoints (partner chat, admin-served content). */
+    suspend fun extraCall(method: String, path: String, body: JsonObject?, token: String?): JsonObject =
+        gson.fromJson(requestRaw(method, path, body?.let { gson.toJson(it) }, token), JsonObject::class.java) ?: JsonObject()
+
     suspend fun requestOtp(phone: String, purpose: String): MahOtpResponse {
         val raw = request("POST", "/api/mah/auth/otp/request", mapOf("phone" to phone, "purpose" to purpose), null)
         return gson.fromJson(raw, MahOtpResponse::class.java)

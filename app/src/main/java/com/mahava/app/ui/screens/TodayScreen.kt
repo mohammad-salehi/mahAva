@@ -127,6 +127,7 @@ fun TodayScreen(
         Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Accounts restored at login skip onboarding: ask once here, never again after that.
             NotificationPermissionCard(NOTIFICATION_REASON_FA, onlyIfNeverAsked = true)
+            com.mahava.app.ui.extra.StoryRow(vm) { i -> onTool(com.mahava.app.ui.extra.ExtraRoutes.stories(i)) }
             if (state.profile?.qaSampleData == true) QuietInfo("این‌ها دادهٔ نمونه‌ان، نه اطلاعات واقعی.")
             val phaseGroup = com.mahava.app.content.TodaySignalContent.effectivePhaseGroup(
                 ctx.subWindow, cycle?.phase, state.profile?.hormonalContraception == true, state.profile?.regularCycles
