@@ -80,22 +80,28 @@ class MahApiClient(
         return gson.fromJson(raw, MahSimpleOkResponse::class.java)
     }
 
-    /** Guest entry: no phone/OTP; server grants the welcome trial (30 days). */
-    suspend fun createGuest(role: String?): MahAuthResponse =
+    /** Phone + OTP sign-in / sign-up: a new number creates the account (+ one-month trial). */
+    suspend fun otpLogin(
+        phone: String,
+        otp: String,
+        role: String?,
+        acceptedPrivacy: Boolean,
+        acceptedTerms: Boolean,
+        privacyVersion: String,
+        termsVersion: String
+    ): MahAuthResponse =
         post(
-            "/api/mah/auth/guest",
+            "/api/mah/auth/otp/login",
             mapOf(
+                "phone" to phone,
+                "otp" to otp,
                 "role" to (role ?: ""),
-                "acceptedPrivacy" to true,
-                "acceptedTerms" to true,
-                "privacyVersion" to com.mahava.app.content.LegalDocuments.PRIVACY_VERSION,
-                "termsVersion" to com.mahava.app.content.LegalDocuments.TERMS_VERSION
+                "acceptedPrivacy" to acceptedPrivacy,
+                "acceptedTerms" to acceptedTerms,
+                "privacyVersion" to privacyVersion,
+                "termsVersion" to termsVersion
             )
         )
-
-    /** Attach phone (+OTP, password) to the current guest account; same user id, data kept. */
-    suspend fun claimGuest(token: String, phone: String, otp: String, password: String): MahAuthResponse =
-        post("/api/mah/auth/guest/claim", mapOf("phone" to phone, "otp" to otp, "password" to password), token)
 
     /** Guest -> paid: OTP-verify a phone now; the server attaches it only after payment succeeds. */
     suspend fun verifyGuestPhone(token: String, phone: String, otp: String, password: String): JsonObject {
@@ -301,8 +307,12 @@ class MahApiClient(
         request("DELETE", "/api/mah/data", null, token)
     }
 
-    suspend fun deleteAccount(token: String, password: String) {
-        request("POST", "/api/mah/auth/delete-account", mapOf("password" to password), token)
+    suspend fun requestDeleteOtp(token: String) {
+        request("POST", "/api/mah/auth/delete-account/otp", emptyMap<String, Any?>(), token)
+    }
+
+    suspend fun deleteAccount(token: String, otp: String) {
+        request("POST", "/api/mah/auth/delete-account", mapOf("otp" to otp), token)
     }
 
     suspend fun listTickets(token: String): MahTicketsResponse =

@@ -304,18 +304,10 @@ fun MahavaAppRoot(
             composable(Routes.INTRO) {
                 MahIntroScreen { exit ->
                     vm.markIntroSeen()
-                    if (exit == IntroExit.GUEST) {
-                        vm.startGuest { err ->
-                            if (err == null) goHomeAfterAuth(true)
-                            else android.widget.Toast.makeText(nav.context, err, android.widget.Toast.LENGTH_LONG).show()
-                        }
-                        return@MahIntroScreen
-                    }
                     nav.navigate(Routes.LOGIN) {
                         popUpTo(Routes.INTRO) { inclusive = true }
                         launchSingleTop = true
                     }
-                    if (exit == IntroExit.REGISTER) nav.navigate(Routes.REGISTER) { launchSingleTop = true }
                 }
             }
             composable(Routes.ONBOARDING) {
@@ -529,10 +521,9 @@ fun MahavaAppRoot(
                     vm,
                     // No back when login is required; user must sign in or register.
                     onBack = if (loggedIn) ({ nav.popBackStack() }) else null,
-                    onGoRegister = { nav.navigate(Routes.REGISTER) { launchSingleTop = true } },
-                    onForgotPassword = { nav.navigate(Routes.PASSWORD_RECOVERY) { launchSingleTop = true } },
-                    onSuccess = { goHomeAfterAuth(false) },
-                    onGuestSuccess = { goHomeAfterAuth(true) }
+                    onOpenPrivacy = { nav.navigate(Routes.PRIVACY) },
+                    onOpenTerms = { nav.navigate(Routes.TERMS) },
+                    onSuccess = { isNew -> goHomeAfterAuth(isNew) }
                 )
             }
             composable(Routes.GUEST_PHONE) {
@@ -552,31 +543,14 @@ fun MahavaAppRoot(
                 )
             }
             composable(Routes.REGISTER) {
-                // No free registered account anymore: sign-up = guest session + account/purchase page,
-                // where phone/OTP is attached to the same account before payment.
+                // Sign-up and login are the same phone + OTP page now (no guest, no password).
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     if (vm.isLoggedIn.value) {
-                        if (vm.isGuestNow()) {
-                            nav.navigate(Routes.GUEST_PHONE) { popUpTo(Routes.REGISTER) { inclusive = true } }
-                        } else {
-                            nav.navigate(Routes.SETTINGS) { popUpTo(Routes.REGISTER) { inclusive = true } }
-                        }
+                        nav.navigate(Routes.SETTINGS) { popUpTo(Routes.REGISTER) { inclusive = true } }
                     } else {
-                        vm.startGuest { err ->
-                            if (err == null) {
-                                goHomeAfterAuth(true)
-                                nav.navigate(Routes.GUEST_PHONE) { launchSingleTop = true }
-                            } else {
-                                android.widget.Toast.makeText(nav.context, err, android.widget.Toast.LENGTH_LONG).show()
-                                nav.popBackStack()
-                            }
-                        }
+                        nav.navigate(Routes.LOGIN) { popUpTo(Routes.REGISTER) { inclusive = true }; launchSingleTop = true }
                     }
                 }
-                androidx.compose.foundation.layout.Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) { androidx.compose.material3.CircularProgressIndicator() }
             }
             composable(Routes.PASSWORD_RECOVERY) {
                 PasswordRecoveryScreen(

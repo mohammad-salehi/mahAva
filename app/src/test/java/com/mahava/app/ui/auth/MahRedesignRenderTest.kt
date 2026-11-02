@@ -64,8 +64,14 @@ class MahRedesignRenderTest {
     @Test fun signupOtp() = register("06_signup_otp", 1, null, otp = "3916", resend = 42, cursor = true)
     @Test fun signupPassword() = register("07_signup_password", 2, "password", password = "sara1234")
 
-    @Test fun login() = render("08_login", "password") {
-        LoginContent("09123456789", {}, "sara12345", {}, busy = false, error = null, onSubmit = {}, onForgotPassword = {}, onGoRegister = {})
+    @Test fun login() = render("08_login", "phone") {
+        RegisterContent(
+            step = 0, role = "female", onRole = {}, phone = "09123456789", onPhone = {},
+            otp = "", onOtp = {}, password = "", onPassword = {}, accepted = true, onAccepted = {},
+            busy = false, error = null, info = null, fixedOtp = false, resendLeft = 0,
+            onBack = {}, onSendOtp = {}, onVerify = {}, onResend = {}, onEditPhone = {}, onSubmit = {},
+            onGoLogin = {}, onOpenPrivacy = {}, onOpenTerms = {}, otpLogin = true, showBack = false
+        )
     }
 
     private fun recovery(name: String, step: Int, focus: String?, otp: String = "", password: String = "", resend: Int = 0) =

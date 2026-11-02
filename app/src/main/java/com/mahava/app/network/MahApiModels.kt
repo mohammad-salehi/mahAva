@@ -29,7 +29,9 @@ data class MahAuthResponse(
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val user: MahUserDto? = null,
-    val subscription: MahSubscriptionDto? = null
+    val subscription: MahSubscriptionDto? = null,
+    /** otp/login only: true when this call created the account (trial granted). */
+    val isNewUser: Boolean? = null
 )
 
 data class MahOtpResponse(

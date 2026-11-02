@@ -794,33 +794,29 @@ class AppViewModel(
         }
     }
 
-    /** Guest entry from the intro: no phone needed. Callback gets null on success, else a Persian error. */
-    fun startGuest(done: (String?) -> Unit) {
-        viewModelScope.launch {
-            val err = try {
-                authRepository.loginAsGuest(prefs.intendedRole.first().takeIf { it.isNotBlank() })
-                refreshRoleAfterAuth()
-                null
-            } catch (e: MahApiException) {
-                com.mahava.app.util.FaText.orFallback(e.message, "ورود مهمان انجام نشد.")
-            } catch (t: Throwable) {
-                com.mahava.app.util.FaText.orFallback(t.message, "ورود مهمان انجام نشد.")
-            }
-            done(err)
-        }
-    }
+    data class OtpLoginResult(val error: String? = null, val isNewUser: Boolean = false)
 
-    /** Attach phone to the guest account (same account, data kept). Null on success. */
-    suspend fun claimGuest(phone: String, otp: String, password: String): String? {
-        if (password.length < 6) return "رمز عبور باید حداقل ۶ کاراکتر باشد."
+    /**
+     * Phone + OTP is the only entry: an existing number signs in, a new number creates the
+     * account (role + legal acceptance) and the server grants a one-month trial.
+     */
+    suspend fun otpLogin(phone: String, otp: String, role: String, accepted: Boolean): OtpLoginResult {
         return try {
-            authRepository.claimGuest(phone.trim(), otp.trim(), password)
-            authRepository.refreshSubscription()
-            null
+            val res = authRepository.otpLogin(
+                phone = phone.trim(),
+                otp = otp.trim(),
+                role = role,
+                acceptedPrivacy = accepted,
+                acceptedTerms = accepted,
+                privacyVersion = com.mahava.app.content.LegalDocuments.PRIVACY_VERSION,
+                termsVersion = com.mahava.app.content.LegalDocuments.TERMS_VERSION
+            )
+            refreshRoleAfterAuth()
+            OtpLoginResult(restoreFromServer(userFacing = true), res.isNewUser == true)
         } catch (e: MahApiException) {
-            if (e.status == 409) "این شماره قبلاً ثبت شده" else com.mahava.app.util.FaText.orFallback(e.message, "ثبت شماره انجام نشد.")
+            OtpLoginResult(com.mahava.app.util.FaText.orFallback(e.message, "ورود ناموفق بود."))
         } catch (t: Throwable) {
-            com.mahava.app.util.FaText.orFallback(t.message, "ثبت شماره انجام نشد.")
+            OtpLoginResult(com.mahava.app.util.FaText.orFallback(t.message, "ورود ناموفق بود."))
         }
     }
 
@@ -1060,9 +1056,20 @@ class AppViewModel(
     }
 
     /** Delete the account on the server (with all synced data), then clear this phone. */
-    suspend fun deleteAccount(password: String): String? {
+    /** Sends the SMS code that confirms account deletion. Null on success, else a Persian error. */
+    suspend fun requestDeleteOtp(): String? = try {
+        authRepository.withToken { app.apiClient.requestDeleteOtp(it) }
+        null
+    } catch (e: MahApiException) {
+        com.mahava.app.util.FaText.orFallback(e.message, "ارسال کد انجام نشد.")
+    } catch (t: Throwable) {
+        com.mahava.app.util.FaText.orFallback(t.message, "ارسال کد انجام نشد.")
+    }
+
+    /** Delete the account with the SMS code (OTP accounts have no password the user knows). */
+    suspend fun deleteAccount(otp: String): String? {
         return try {
-            authRepository.withToken { app.apiClient.deleteAccount(it, password) }
+            authRepository.withToken { app.apiClient.deleteAccount(it, otp) }
             com.mahava.app.partner.PartnerSync.cancel(app)
             com.mahava.app.sync.DataSync.cancel(app)
             prefs.clearAuth()

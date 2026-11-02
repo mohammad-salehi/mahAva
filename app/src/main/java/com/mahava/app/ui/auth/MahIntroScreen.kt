@@ -48,7 +48,7 @@ import com.mahava.app.R
 import kotlinx.coroutines.launch
 
 /** Where the last intro page sends the user. */
-enum class IntroExit { REGISTER, LOGIN, GUEST }
+enum class IntroExit { REGISTER, LOGIN }
 
 internal class IntroPage(val title: String, val body: String)
 
@@ -71,11 +71,11 @@ internal val introPages = listOf(
 @Composable
 fun MahIntroScreen(onDone: (IntroExit) -> Unit) {
     val pager = rememberPagerState { introPages.size }
-    IntroContent(pager, onRegister = { onDone(IntroExit.REGISTER) }, onLogin = { onDone(IntroExit.LOGIN) }, onGuest = { onDone(IntroExit.GUEST) })
+    IntroContent(pager, onRegister = { onDone(IntroExit.LOGIN) }, onLogin = { onDone(IntroExit.LOGIN) })
 }
 
 @Composable
-internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: () -> Unit, onGuest: () -> Unit = {}) {
+internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: () -> Unit) {
     val scope = rememberCoroutineScope()
     val page = pager.currentPage
     val last = page == introPages.lastIndex
@@ -101,18 +101,12 @@ internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: ()
                         }
                     } else {
                         Column(Modifier.fillMaxWidth()) {
-                            MahButton("ورود به عنوان مهمان", modifier = Modifier.fillMaxWidth().testTag("intro_guest"), onClick = onGuest)
-                            Spacer(Modifier.height(12.dp))
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                MText(
-                                    "ورود به حساب", 14f, FontWeight.SemiBold, MK.Muted,
-                                    modifier = Modifier.clickable(onClick = onLogin).padding(8.dp).testTag("intro_login")
-                                )
-                                MText(
-                                    "ثبت‌نام و خرید اشتراک", 14f, FontWeight.SemiBold, MK.Muted,
-                                    modifier = Modifier.clickable(onClick = onRegister).padding(8.dp).testTag("intro_register")
-                                )
-                            }
+                            MahButton("ورود یا ثبت‌نام با موبایل", modifier = Modifier.fillMaxWidth().testTag("intro_login"), onClick = onLogin)
+                            MText(
+                                "شمارهٔ جدید = یک ماه اشتراک آزمایشی رایگان", 13f, color = MK.Muted,
+                                align = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                            )
                         }
                     }
                 }
@@ -231,7 +225,7 @@ private fun BoxScope.IntroArt(p: Int) {
                     MahIconTile("star", MK.Soft, MK.Pink)
                     Column {
                         MText("یک ماه رایگان", 12.5f, FontWeight.Bold)
-                        MText("با ورود مهمان", 12f, color = MK.Muted)
+                        MText("با ثبت‌نام موبایلی", 12f, color = MK.Muted)
                     }
                 }
             }

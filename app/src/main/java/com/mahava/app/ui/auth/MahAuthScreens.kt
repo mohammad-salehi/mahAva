@@ -49,132 +49,79 @@ import kotlinx.coroutines.launch
 // Login
 // =====================================================================================
 
+/**
+ * The only way into Mah: phone (+ role and legal for a new account) -> SMS code.
+ * An existing number signs in; a new number creates the account with a one-month trial.
+ */
 @Composable
 fun LoginScreen(
     vm: AppViewModel,
     onBack: (() -> Unit)? = null,
-    onGoRegister: () -> Unit,
-    onForgotPassword: () -> Unit = {},
-    onSuccess: () -> Unit = {},
-    onGuestSuccess: () -> Unit = onSuccess
+    onOpenPrivacy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
+    onSuccess: (isNewUser: Boolean) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
-    var guestBusy by remember { mutableStateOf(false) }
+    var step by remember { mutableIntStateOf(0) } // 0 phone, 1 otp
+    var role by remember { mutableStateOf("female") }
     var phone by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var otp by remember { mutableStateOf("") }
+    var acceptedLegal by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val submit: () -> Unit = {
-        if (!busy) {
-            busy = true; error = null
-            scope.launch {
-                val msg = vm.login(phone, password)
-                busy = false
-                if (msg == null) onSuccess() else error = msg
+    var info by remember { mutableStateOf<String?>(null) }
+    var fixedOtp by remember { mutableStateOf(false) }
+    val resend = rememberResendCountdown()
+
+    fun send(again: Boolean) {
+        if (busy) return
+        if (!acceptedLegal) { error = "برای ادامه، شرایط استفاده و حریم خصوصی را بپذیر."; return }
+        busy = true; error = null
+        scope.launch {
+            val r = vm.requestOtp(phone, "login")
+            busy = false
+            if (r.cooldownSec > 0) resend.intValue = r.cooldownSec
+            if (r.error == null) {
+                fixedOtp = r.fixedOtp
+                info = when {
+                    r.fixedOtp -> "کد آماده است. فعلاً از ۰۰۰۰۰۰ استفاده کن."
+                    again -> "کد دوباره به شمارهٔ ${maskedPhone(phone)} پیامک شد."
+                    else -> null
+                }
+                if (!again) { otp = ""; step = 1 }
+            } else {
+                info = null
+                error = r.error
             }
         }
     }
-    LoginContent(
-        phone, { phone = it }, password, { password = it }, busy, error,
-        onSubmit = submit, onForgotPassword = onForgotPassword, onGoRegister = onGoRegister, onBack = onBack,
-        onGuest = {
-            if (!busy && !guestBusy) {
-                guestBusy = true; error = null
-                vm.startGuest { err ->
-                    guestBusy = false
-                    if (err == null) onGuestSuccess() else error = err
-                }
+    val verify: () -> Unit = {
+        if (!busy && otp.length == 6) {
+            busy = true; error = null; info = null
+            scope.launch {
+                val r = vm.otpLogin(phone, otp, role, acceptedLegal)
+                busy = false
+                if (r.error == null) onSuccess(r.isNewUser) else error = r.error
             }
-        },
-        guestBusy = guestBusy,
+        }
+    }
+    androidx.activity.compose.BackHandler(enabled = step > 0) { step = 0; otp = ""; error = null }
+    RegisterContent(
+        step = step, role = role, onRole = { role = it },
+        phone = phone, onPhone = { phone = it },
+        otp = otp, onOtp = { otp = it },
+        password = "", onPassword = {},
+        accepted = acceptedLegal, onAccepted = { acceptedLegal = it },
+        busy = busy, error = error, info = info, fixedOtp = fixedOtp, resendLeft = resend.intValue,
+        onBack = { if (step == 0) onBack?.invoke() else { step = 0; otp = ""; error = null } },
+        onSendOtp = { send(false) }, onVerify = verify, onResend = { send(true) },
+        onEditPhone = { step = 0; otp = ""; error = null },
+        onSubmit = verify, onGoLogin = {}, onOpenPrivacy = onOpenPrivacy, onOpenTerms = onOpenTerms,
+        otpLogin = true,
+        showBack = onBack != null,
         demo = com.mahava.app.demo.DemoMode.enabled,
         onDemo = { scope.launch { vm.reenterDemo() } }
     )
-}
-
-@Composable
-internal fun LoginContent(
-    phone: String, onPhone: (String) -> Unit,
-    password: String, onPassword: (String) -> Unit,
-    busy: Boolean, error: String?,
-    onSubmit: () -> Unit, onForgotPassword: () -> Unit, onGoRegister: () -> Unit,
-    onBack: (() -> Unit)? = null,
-    demo: Boolean = false, onDemo: () -> Unit = {},
-    onGuest: () -> Unit = {}, guestBusy: Boolean = false
-) {
-    MockScreen(Color.White, layers = { shift ->
-        listOf(
-            Layer(top = 0.dp) {
-                MahTop(310.dp, shift) {
-                    MahBlob(200.dp, MK.Pink, 0.18f, top = (-30).dp, left = (-40).dp)
-                    Image(
-                        painterResource(R.drawable.ill_rest_woman), null, contentScale = ContentScale.FillWidth,
-                        modifier = Modifier.align(AbsoluteAlignment.BottomLeft).absoluteOffset(x = (-46).dp, y = 4.dp).size(210.dp, 140.dp)
-                    )
-                    Row(
-                        Modifier.padding(top = 40.dp + shift).fillMaxWidth().padding(horizontal = 22.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        MahLogo(44.dp, 14.dp)
-                        Column {
-                            MText("ماه", 20f, FontWeight.Bold, line = 32f)
-                            MText("همراه چرخهٔ تو", 12f, color = MK.Muted)
-                        }
-                        if (onBack != null) {
-                            Spacer(Modifier.weight(1f))
-                            MahBack(onBack)
-                        }
-                    }
-                    MahTitleBlock(
-                        "خوش برگشتی",
-                        AnnotatedString("با شماره موبایل وارد حسابت شو؛\nهمهٔ ثبت‌هایت منتظرت هستند."),
-                        Modifier.padding(top = 136.dp + shift, start = 24.dp, end = 160.dp)
-                    )
-                }
-            },
-            Layer(top = 336.dp + shift) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp).testTag("login_screen")) {
-                    MahLabel("شماره موبایل")
-                    MahField(phone, onPhone, MahFieldKind.Phone, "۰۹۱۲ ۳۴۵ ۶۷۸۹", enabled = !busy, previewKey = "phone", testTag = "login_phone")
-                    MahLabel("رمز عبور")
-                    MahField(
-                        password, onPassword, MahFieldKind.Password, "رمز عبورت را بنویس", enabled = !busy,
-                        previewKey = "password", imeAction = ImeAction.Done, onIme = onSubmit, testTag = "login_password"
-                    )
-                    MahError(error)
-                    Box(Modifier.fillMaxWidth().pullUp(4.dp).padding(start = 4.dp, end = 4.dp, bottom = 20.dp), contentAlignment = AbsoluteAlignment.CenterLeft) {
-                        MahLink("رمز را فراموش کردی؟", 13.5f, Modifier.testTag("go_password_recovery"), onForgotPassword)
-                    }
-                    MahButton("ورود", loading = busy, arrow = true, modifier = Modifier.fillMaxWidth().testTag("login_submit"), onClick = onSubmit)
-                    MText(
-                        "حساب نداری؟", 13.5f, color = MK.Muted, align = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 10.dp)
-                    )
-                    // Guest is the main path (big button); paid sign-up is the small link.
-                    MahButton(
-                        "ورود به عنوان مهمان", loading = guestBusy, arrow = false,
-                        modifier = Modifier.fillMaxWidth().testTag("login_guest"), onClick = onGuest
-                    )
-                    MahLink(
-                        "ثبت‌نام و خرید اشتراک", 13.5f,
-                        Modifier.padding(top = 14.dp).align(Alignment.CenterHorizontally).testTag("go_register"), onGoRegister
-                    )
-                    if (demo) {
-                        Spacer(Modifier.height(10.dp))
-                        // Demo is offline: login can't reach a server, so offer to re-enter the fake account.
-                        MahButton2("ورود دوباره به دمو", Modifier.testTag("demo_reenter"), onDemo)
-                    }
-                }
-            },
-            Layer(bottom = 26.dp) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-                    Feather("cloud", 14.dp, Color(0xFF9D9AB3))
-                    MText("ثبت‌هایت با گوشی جدید هم برمی‌گردد", 12f, color = Color(0xFF9D9AB3))
-                }
-            }
-        )
-    })
 }
 
 // =====================================================================================
@@ -287,12 +234,21 @@ internal fun RegisterContent(
     onEditPhone: () -> Unit, onSubmit: () -> Unit, onGoLogin: () -> Unit,
     onOpenPrivacy: () -> Unit, onOpenTerms: () -> Unit,
     previewCursor: Boolean = false,
-    guestMode: Boolean = false
+    guestMode: Boolean = false,
+    /** Phone + OTP entry (login or sign-up): role + legal on the phone step, no password step. */
+    otpLogin: Boolean = false,
+    showBack: Boolean = true,
+    demo: Boolean = false, onDemo: () -> Unit = {}
 ) {
-    val title = when (step) { 0 -> if (guestMode) "ثبت‌نام و خرید اشتراک" else "ساخت حساب ماه"; 1 -> "کد را وارد کن"; else -> "یک رمز امن بگذار" }
+    val title = when (step) {
+        0 -> if (otpLogin) "ورود یا ثبت‌نام" else if (guestMode) "ثبت‌نام و خرید اشتراک" else "ساخت حساب ماه"
+        1 -> "کد را وارد کن"
+        else -> "یک رمز امن بگذار"
+    }
     val sub = when (step) {
         0 -> AnnotatedString(
-            if (guestMode) "شماره موبایلت را بزن. اطلاعات حساب مهمان حفظ می‌شود و حساب بعد از پرداخت ساخته می‌شود."
+            if (otpLogin) "کد تأیید پیامک می‌شود. شمارهٔ جدید = ثبت‌نام + یک ماه اشتراک آزمایشی رایگان."
+            else if (guestMode) "شماره موبایلت را بزن. اطلاعات حساب مهمان حفظ می‌شود و حساب بعد از پرداخت ساخته می‌شود."
             else "شماره موبایلت را بزن تا کد تأیید برایت بیاید."
         )
         1 -> AnnotatedString(
@@ -303,13 +259,13 @@ internal fun RegisterContent(
     }
     MockScreen(Color.White, layers = { shift ->
         buildList {
-            add(Layer(top = 0.dp) { MahStepHeader(shift, step, onBack, title, sub, MahArt.WomanBotanical) })
+            add(Layer(top = 0.dp) { MahStepHeader(shift, step, onBack, title, sub, MahArt.WomanBotanical, showBack = showBack || step > 0, stepCount = if (otpLogin) 2 else 3) })
             when (step) {
                 0 -> {
                     add(Layer(top = 316.dp + shift) {
                         Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp).testTag("register_screen")) {
                             if (!guestMode) {
-                            MahLabel("این حساب برای کیست؟")
+                            MahLabel(if (otpLogin) "اگر تازه ثبت‌نام می‌کنی، حساب برای کیست؟" else "این حساب برای کیست؟")
                             Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 RoleCard("خانم هستم", R.drawable.design_mother, role == "female", "register_role_female") { onRole("female") }
                                 RoleCard("آقا هستم (همسر)", R.drawable.design_father, role == "male", "register_role_male") { onRole("male") }
@@ -321,11 +277,20 @@ internal fun RegisterContent(
                                 phone, onPhone, MahFieldKind.Phone, "۰۹۱۲ ۳۴۵ ۶۷۸۹", enabled = !busy, previewKey = "phone",
                                 imeAction = ImeAction.Done, onIme = onSendOtp, testTag = "register_phone"
                             )
+                            if (otpLogin) LegalCard(accepted, onAccepted, onOpenPrivacy, onOpenTerms)
                             MahError(error)
-                            MahButton("ارسال کد", loading = busy, arrow = true, modifier = Modifier.fillMaxWidth().testTag("register_send_otp"), onClick = onSendOtp)
+                            MahButton(
+                                if (otpLogin) "دریافت کد تأیید" else "ارسال کد", enabled = !otpLogin || accepted, loading = busy, arrow = true,
+                                modifier = Modifier.fillMaxWidth().testTag("register_send_otp"), onClick = onSendOtp
+                            )
+                            if (otpLogin && demo) {
+                                Spacer(Modifier.height(10.dp))
+                                // Demo is offline: offer to re-enter the fake account.
+                                MahButton2("ورود دوباره به دمو", Modifier.testTag("demo_reenter"), onDemo)
+                            }
                         }
                     })
-                    add(Layer(bottom = 56.dp) { MahFootLink("قبلاً ثبت‌نام کردی؟", "ورود", onClick = onGoLogin) })
+                    if (!otpLogin) add(Layer(bottom = 56.dp) { MahFootLink("قبلاً ثبت‌نام کردی؟", "ورود", onClick = onGoLogin) })
                 }
                 1 -> add(Layer(top = 330.dp + shift) {
                     Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp).testTag("register_screen")) {
@@ -334,7 +299,7 @@ internal fun RegisterContent(
                         MahError(error)
                         MahInfo(info)
                         MahButton(
-                            "تأیید کد", enabled = otp.length == 6, loading = busy,
+                            if (otpLogin) "تأیید و ورود به ماه" else "تأیید کد", enabled = otp.length == 6, loading = busy,
                             modifier = Modifier.fillMaxWidth().testTag("register_verify_otp"), onClick = onVerify
                         )
                         MahLink("ویرایش شماره", modifier = Modifier.padding(top = 18.dp).align(Alignment.CenterHorizontally), onClick = onEditPhone)

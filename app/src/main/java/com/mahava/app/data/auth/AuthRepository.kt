@@ -114,20 +114,23 @@ class AuthRepository(
     suspend fun resetPassword(phone: String, otp: String, newPassword: String) =
         api.resetPassword(phone, otp, newPassword)
 
-    suspend fun loginAsGuest(role: String?): MahAuthResponse {
-        val res = api.createGuest(role)
+    /** Phone + OTP sign-in / sign-up (new number -> account + one-month trial on the server). */
+    suspend fun otpLogin(
+        phone: String,
+        otp: String,
+        role: String?,
+        acceptedPrivacy: Boolean,
+        acceptedTerms: Boolean,
+        privacyVersion: String,
+        termsVersion: String
+    ): MahAuthResponse {
+        val res = api.otpLogin(phone, otp, role, acceptedPrivacy, acceptedTerms, privacyVersion, termsVersion)
         persistSession(res)
         return res
     }
 
     /** Guest = signed in but no phone on the account yet. */
     suspend fun isGuest(): Boolean = hasSessionTokens() && prefs.accountPhone.first().isNullOrBlank()
-
-    suspend fun claimGuest(phone: String, otp: String, password: String): MahAuthResponse {
-        val res = withToken { token -> api.claimGuest(token, phone, otp, password) }
-        persistSession(res)
-        return res
-    }
 
     /** Guest only: phone OTP-verified for checkout, not attached until payment succeeds (memory only). */
     @Volatile var pendingGuestPhone: String? = null

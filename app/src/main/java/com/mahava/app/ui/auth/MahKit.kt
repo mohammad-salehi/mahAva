@@ -364,7 +364,7 @@ internal enum class MahArt { WomanBotanical, Shield, RestWoman }
  * Step screens' 290px header: back button + steps, title block on the right, illustration on the left.
  */
 @Composable
-internal fun MahStepHeader(topShift: Dp, step: Int, onBack: () -> Unit, title: String, sub: AnnotatedString, art: MahArt) {
+internal fun MahStepHeader(topShift: Dp, step: Int, onBack: () -> Unit, title: String, sub: AnnotatedString, art: MahArt, showBack: Boolean = true, stepCount: Int = 3) {
     MahTop(290.dp, topShift) {
         MahBlob(200.dp, MK.Pink, 0.18f, top = (-30).dp, left = (-40).dp)
         when (art) {
@@ -385,8 +385,8 @@ internal fun MahStepHeader(topShift: Dp, step: Int, onBack: () -> Unit, title: S
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MahBack(onBack)
-            MahSteps(step)
+            if (showBack) MahBack(onBack) else Spacer(Modifier.width(42.dp))
+            MahSteps(step, stepCount)
             Spacer(Modifier.width(42.dp))
         }
         MahTitleBlock(title, sub, Modifier.padding(top = 124.dp + topShift, start = 24.dp, end = 180.dp))

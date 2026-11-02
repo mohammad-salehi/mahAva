@@ -111,20 +111,25 @@ fun AccountScreen(vm: AppViewModel, onBack: () -> Unit, onLogin: () -> Unit, onR
             }
         }
         if (askDelete) {
+            // Phone + OTP accounts: confirm deletion with an SMS code, not a password.
+            LaunchedEffect(Unit) {
+                deleteError = null
+                deletePassword = ""
+                vm.requestDeleteOtp()?.let { deleteError = it }
+            }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { if (!deleting) askDelete = false },
                 title = { Text("حذف حساب") },
                 text = {
                     Column {
-                        Text("برای تأیید، رمز عبورت را بنویس. همهٔ اطلاعاتت از سرور و این گوشی پاک می‌شود.")
+                        Text("برای تأیید، کد ۶ رقمی‌ای که به شماره‌ات پیامک شد را بنویس. همهٔ اطلاعاتت از سرور و این گوشی پاک می‌شود.")
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = deletePassword,
-                            onValueChange = { deletePassword = it },
-                            label = { Text("رمز عبور") },
+                            onValueChange = { deletePassword = it.filter { c -> c.isDigit() }.take(6) },
+                            label = { Text("کد تأیید") },
                             singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                             modifier = Modifier.fillMaxWidth().testTag("delete_account_password")
                         )
                         deleteError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
