@@ -1,4 +1,4 @@
-﻿import java.util.Properties
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -37,8 +37,8 @@ android {
         buildConfigField("String", "MAH_FCM_API_KEY", mahLiteral(((mahClient["api_key"] as? List<*>)?.firstOrNull() as? Map<*, *>)?.get("current_key")))
         minSdk = 24
         targetSdk = 35
-        versionCode = 146
-        versionName = "1.4.14"
+        versionCode = 147
+        versionName = "1.4.15"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
