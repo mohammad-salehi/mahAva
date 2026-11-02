@@ -7,12 +7,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.mahava.app.MahavaApplication
 import com.mahava.app.content.LegalDocuments
 import com.mahava.app.ui.components.QuietInfo
 import com.mahava.app.ui.components.ScreenHeader
@@ -21,26 +29,29 @@ import com.mahava.app.ui.theme.MahavaTextSecondary
 
 @Composable
 fun PrivacyPolicyScreen(onBack: () -> Unit) {
-    LegalDocScreen(
-        title = "سیاست حفظ حریم خصوصی",
-        body = LegalDocuments.privacyFa,
-        testTag = "privacy_screen",
-        onBack = onBack
-    )
+    LegalDocScreen(title = "حریم خصوصی و امنیت", privacy = true, testTag = "privacy_screen", onBack = onBack)
 }
 
 @Composable
 fun TermsOfUseScreen(onBack: () -> Unit) {
-    LegalDocScreen(
-        title = "شرایط استفاده",
-        body = LegalDocuments.termsFa,
-        testTag = "terms_screen",
-        onBack = onBack
-    )
+    LegalDocScreen(title = "شرایط استفاده", privacy = false, testTag = "terms_screen", onBack = onBack)
 }
 
+/** Shared text (same source as Dara) from the server, cached for offline use. */
 @Composable
-private fun LegalDocScreen(title: String, body: String, testTag: String, onBack: () -> Unit) {
+private fun LegalDocScreen(title: String, privacy: Boolean, testTag: String, onBack: () -> Unit) {
+    val context = LocalContext.current
+    LegalDocuments.load(context)
+    var body by remember { mutableStateOf(if (privacy) LegalDocuments.privacyFa else LegalDocuments.termsFa) }
+    var loading by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        val app = context.applicationContext as? MahavaApplication
+        if (app != null) {
+            LegalDocuments.refresh(context) { app.apiClient.extraCall("GET", "/api/mah/auth/legal", null, null) }
+        }
+        body = if (privacy) LegalDocuments.privacyFa else LegalDocuments.termsFa
+        loading = false
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -49,7 +60,8 @@ private fun LegalDocScreen(title: String, body: String, testTag: String, onBack:
             .testTag(testTag)
     ) {
         ScreenHeader(title, onBack = onBack)
-        QuietInfo("آخرین به‌روزرسانی: ${LegalDocuments.UPDATED_AT_FA}")
+        if (loading && body.isBlank()) LinearProgressIndicator(Modifier.padding(vertical = 8.dp))
+        if (!loading && body.isBlank()) QuietInfo(LegalDocuments.OFFLINE_FA)
         Spacer(Modifier.height(12.dp))
         body.lineSequence().forEach { line ->
             when {
@@ -72,7 +84,7 @@ private fun LegalDocScreen(title: String, body: String, testTag: String, onBack:
                     modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
                 )
                 line.startsWith("- ") -> Text(
-                    "• ${line.removePrefix("- ")}",
+                    "• ${line.removePrefix("- ").replace("**", "")}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MahavaTextSecondary,
                     modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)

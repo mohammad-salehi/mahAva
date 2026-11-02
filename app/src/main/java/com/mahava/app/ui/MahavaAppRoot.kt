@@ -308,6 +308,7 @@ fun MahavaAppRoot(
                         popUpTo(Routes.INTRO) { inclusive = true }
                         launchSingleTop = true
                     }
+                    if (exit == IntroExit.REGISTER) nav.navigate(Routes.REGISTER) { launchSingleTop = true }
                 }
             }
             composable(Routes.ONBOARDING) {
@@ -521,9 +522,9 @@ fun MahavaAppRoot(
                     vm,
                     // No back when login is required; user must sign in or register.
                     onBack = if (loggedIn) ({ nav.popBackStack() }) else null,
-                    onOpenPrivacy = { nav.navigate(Routes.PRIVACY) },
-                    onOpenTerms = { nav.navigate(Routes.TERMS) },
-                    onSuccess = { isNew -> goHomeAfterAuth(isNew) }
+                    onGoRegister = { nav.navigate(Routes.REGISTER) { launchSingleTop = true } },
+                    onForgotPassword = { nav.navigate(Routes.PASSWORD_RECOVERY) { launchSingleTop = true } },
+                    onSuccess = { goHomeAfterAuth(false) }
                 )
             }
             composable(Routes.GUEST_PHONE) {
@@ -543,14 +544,16 @@ fun MahavaAppRoot(
                 )
             }
             composable(Routes.REGISTER) {
-                // Sign-up and login are the same phone + OTP page now (no guest, no password).
-                androidx.compose.runtime.LaunchedEffect(Unit) {
-                    if (vm.isLoggedIn.value) {
-                        nav.navigate(Routes.SETTINGS) { popUpTo(Routes.REGISTER) { inclusive = true } }
-                    } else {
-                        nav.navigate(Routes.LOGIN) { popUpTo(Routes.REGISTER) { inclusive = true }; launchSingleTop = true }
-                    }
-                }
+                // Sign-up only: phone + role -> SMS code -> password + privacy/terms acceptance
+                // (stored on the server). New accounts get the one-month trial server-side.
+                RegisterScreen(
+                    vm,
+                    onBack = { nav.popBackStack() },
+                    onGoLogin = { nav.navigate(Routes.LOGIN) { popUpTo(Routes.REGISTER) { inclusive = true }; launchSingleTop = true } },
+                    onOpenPrivacy = { nav.navigate(Routes.PRIVACY) },
+                    onOpenTerms = { nav.navigate(Routes.TERMS) },
+                    onSuccess = { goHomeAfterAuth(true) }
+                )
             }
             composable(Routes.PASSWORD_RECOVERY) {
                 PasswordRecoveryScreen(

@@ -71,7 +71,7 @@ internal val introPages = listOf(
 @Composable
 fun MahIntroScreen(onDone: (IntroExit) -> Unit) {
     val pager = rememberPagerState { introPages.size }
-    IntroContent(pager, onRegister = { onDone(IntroExit.LOGIN) }, onLogin = { onDone(IntroExit.LOGIN) })
+    IntroContent(pager, onRegister = { onDone(IntroExit.REGISTER) }, onLogin = { onDone(IntroExit.LOGIN) })
 }
 
 @Composable
@@ -101,11 +101,11 @@ internal fun IntroContent(pager: PagerState, onRegister: () -> Unit, onLogin: ()
                         }
                     } else {
                         Column(Modifier.fillMaxWidth()) {
-                            MahButton("ورود یا ثبت‌نام با موبایل", modifier = Modifier.fillMaxWidth().testTag("intro_login"), onClick = onLogin)
+                            MahButton("ثبت‌نام (یک ماه رایگان)", modifier = Modifier.fillMaxWidth().testTag("intro_register"), onClick = onRegister)
                             MText(
-                                "شمارهٔ جدید = یک ماه اشتراک آزمایشی رایگان", 13f, color = MK.Muted,
+                                "حساب داری؟ ورود با شماره و رمز عبور", 14f, FontWeight.SemiBold, MK.Muted,
                                 align = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable(onClick = onLogin).padding(8.dp).testTag("intro_login")
                             )
                         }
                     }
@@ -225,7 +225,7 @@ private fun BoxScope.IntroArt(p: Int) {
                     MahIconTile("star", MK.Soft, MK.Pink)
                     Column {
                         MText("یک ماه رایگان", 12.5f, FontWeight.Bold)
-                        MText("با ثبت‌نام موبایلی", 12f, color = MK.Muted)
+                        MText("برای حساب جدید", 12f, color = MK.Muted)
                     }
                 }
             }
