@@ -77,10 +77,21 @@ fun SettingsScreen(vm: AppViewModel, activity: FragmentActivity, onBack: () -> U
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(Modifier.height(8.dp))
+                // A yearly subscription can be renewed only in its last 30 days (server enforces it too).
+                val yearlyActive = subActive && plan == "yearly"
+                val canRenew = !yearlyActive || com.mahava.app.billing.SubscriptionRenewal.canRenew(ends, System.currentTimeMillis())
                 PrimaryButton(
-                    if (subActive) "تمدید اشتراک" else "خرید اشتراک",
-                    modifier = Modifier.testTag("settings_renew")
+                    if (yearlyActive) "تمدید اشتراک" else "خرید اشتراک",
+                    modifier = Modifier.testTag("settings_renew"),
+                    enabled = canRenew
                 ) { showRenew = true }
+                if (yearlyActive && !canRenew) {
+                    Spacer(Modifier.height(4.dp))
+                    QuietInfo("تمدید از ۳۰ روز مانده به پایان اشتراک فعال می‌شود.")
+                } else if (yearlyActive) {
+                    Spacer(Modifier.height(4.dp))
+                    QuietInfo("با تمدید، یک سال به تاریخ پایان فعلی اضافه می‌شود.")
+                }
                 Spacer(Modifier.height(8.dp))
                 LogoutButton(vm, primary = false) { status = it }
             }
