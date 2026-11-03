@@ -29,27 +29,27 @@ import com.mahava.app.ui.theme.MahavaTextSecondary
 
 @Composable
 fun PrivacyPolicyScreen(onBack: () -> Unit) {
-    LegalDocScreen(title = "حریم خصوصی و امنیت", privacy = true, testTag = "privacy_screen", onBack = onBack)
+    LegalDocScreen(title = "حریم خصوصی و شرایط استفاده", privacy = true, testTag = "privacy_screen", onBack = onBack)
 }
 
 @Composable
 fun TermsOfUseScreen(onBack: () -> Unit) {
-    LegalDocScreen(title = "شرایط استفاده", privacy = false, testTag = "terms_screen", onBack = onBack)
+    LegalDocScreen(title = "حریم خصوصی و شرایط استفاده", privacy = false, testTag = "terms_screen", onBack = onBack)
 }
 
-/** Shared text (same source as Dara) from the server, cached for offline use. */
+/** The single combined Mah document (backend legal-mah-fa.md), cached for offline use. */
 @Composable
 private fun LegalDocScreen(title: String, privacy: Boolean, testTag: String, onBack: () -> Unit) {
     val context = LocalContext.current
     LegalDocuments.load(context)
-    var body by remember { mutableStateOf(if (privacy) LegalDocuments.privacyFa else LegalDocuments.termsFa) }
+    var body by remember { mutableStateOf(LegalDocuments.privacyFa) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         val app = context.applicationContext as? MahavaApplication
         if (app != null) {
             LegalDocuments.refresh(context) { app.apiClient.extraCall("GET", "/api/mah/auth/legal", null, null) }
         }
-        body = if (privacy) LegalDocuments.privacyFa else LegalDocuments.termsFa
+        body = LegalDocuments.privacyFa
         loading = false
     }
     Column(

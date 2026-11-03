@@ -4,14 +4,14 @@ import android.content.Context
 import com.google.gson.JsonObject
 
 /**
- * Privacy policy + terms of use. The text has ONE source shared with Dara: the backend file
- * src/content/legal-fa.md, served at GET /api/mah/auth/legal. The app keeps the last copy it
+ * Privacy policy + terms of use. The text is ONE combined Mah document: backend
+ * src/content/legal-mah-fa.md, served at GET /api/mah/auth/legal. The app keeps the last copy it
  * fetched (SharedPreferences) so the screens also work offline; the accepted version is sent
  * with registration and stored on the server.
  */
 object LegalDocuments {
     /** Used only until the first successful fetch (must match backend LEGAL_VERSION). */
-    private const val FALLBACK_VERSION = "2026-11-02"
+    private const val FALLBACK_VERSION = "2026-11-03"
     private const val PREFS = "mah_legal_cache"
 
     @Volatile var privacyVersion: String = FALLBACK_VERSION; private set

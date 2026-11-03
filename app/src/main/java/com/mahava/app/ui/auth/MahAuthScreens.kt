@@ -407,12 +407,10 @@ private fun LegalCard(accepted: Boolean, onAccepted: (Boolean) -> Unit, onOpenPr
     ) {
         MahCheck(accepted, modifier = Modifier.testTag("register_legal_check"))
         Column(Modifier.weight(1f)) {
-            MText("سیاست حریم خصوصی و شرایط استفاده را خواندم و می‌پذیرم.", 13f, FontWeight.SemiBold, line = 24.7f)
+            MText("حریم خصوصی و شرایط استفادهٔ ماه را خواندم و می‌پذیرم.", 13f, FontWeight.SemiBold, line = 24.7f)
             Row(Modifier.padding(top = 3.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                MText("حریم خصوصی", 12.5f, FontWeight.SemiBold, MK.Pink, line = 23.75f,
+                MText("خواندن حریم خصوصی و شرایط استفاده", 12.5f, FontWeight.SemiBold, MK.Pink, line = 23.75f,
                     modifier = Modifier.clickable(onClick = onOpenPrivacy).testTag("open_privacy"))
-                MText("شرایط استفاده", 12.5f, FontWeight.SemiBold, MK.Pink, line = 23.75f,
-                    modifier = Modifier.clickable(onClick = onOpenTerms).testTag("open_terms"))
             }
         }
     }
