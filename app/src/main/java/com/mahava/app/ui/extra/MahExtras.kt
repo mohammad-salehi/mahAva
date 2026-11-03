@@ -168,6 +168,7 @@ fun PartnerChatScreen(vm: AppViewModel, onBack: () -> Unit) {
     var loaded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    LaunchedEffect(Unit) { androidx.core.app.NotificationManagerCompat.from(context).cancel(com.mahava.app.partner.PartnerSync.CHAT_NOTIF_ID) }
 
     fun parse(r: JsonObject) = r.arr("messages").objs().map {
         ChatMsg(it.s("id"), it.s("text"), it.get("mine")?.asBoolean == true, it.get("createdAt")?.asLong ?: 0L, (it.get("readAt")?.asLong ?: 0L) > 0)
@@ -262,6 +263,16 @@ private fun Bubble(m: ChatMsg) {
 /** Card shown on the partner screens when the pair is active. */
 @Composable
 fun PartnerChatEntry(onOpen: () -> Unit) {
+    val chatApp = LocalContext.current.applicationContext as MahavaApplication
+    var unread by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            unread = try {
+                chatApp.authRepository.withToken { t -> chatApp.apiClient.extraCall("GET", "/api/mah/partner/chat/unread", null, t) }.get("unread")?.asInt ?: 0
+            } catch (_: Exception) { unread }
+            delay(10000)
+        }
+    }
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Brush.horizontalGradient(listOf(MahavaPrimary, MahavaPrimaryDeep)))
             .clickable(onClick = onOpen).padding(18.dp),
@@ -272,6 +283,12 @@ fun PartnerChatEntry(onOpen: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text("گفت‌وگو با همسر", color = Color.White, fontWeight = FontWeight.Bold)
             Text("پیام خصوصی، فقط بین شما دو نفر", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
+        }
+        if (unread > 0) {
+            Box(Modifier.clip(CircleShape).background(Color(0xFFFF3B5C)).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                Text(PersianDigits.toPersian(unread) + " \u067e\u06cc\u0627\u0645 \u062c\u062f\u06cc\u062f", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            }
+            Spacer(Modifier.size(8.dp))
         }
         Text("‹", color = Color.White, style = MaterialTheme.typography.headlineSmall)
     }

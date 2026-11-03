@@ -350,6 +350,7 @@ fun MahavaAppRoot(
                     onScience = { nav.navigate(Routes.PHASE_SCIENCE) },
                     onSignal = { kind, key -> nav.navigate(Routes.signalDetail(kind, key)) },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
+                    onChat = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) },
                     onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                     onMore = { nav.navigate(Routes.TOOLS) },
                     onTool = { nav.navigate(it) },
