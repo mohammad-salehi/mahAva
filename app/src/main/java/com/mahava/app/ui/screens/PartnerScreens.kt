@@ -521,36 +521,44 @@ private fun PartnerDashboard(
             onOpenAccount = onAccount
         )
     } else {
+        var guideOpen by remember { mutableStateOf(false) }
+        MahavaCard(Modifier.testTag("partner_guide_teaser")) {
+            CardTitle("امروز چه کار کنی؟")
+            advice.doFa.take(2).forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp)) }
+            TextButton(onClick = { guideOpen = !guideOpen }) { Text(if (guideOpen) "بستن راهنما" else "راهنمای کامل و منابع علمی") }
+        }
+        if (guideOpen) {
         advice.sections.forEach { s -> AdviceCard(s.icon, s.titleFa, s.bodyFa, soft) }
-        val sourceIds = advice.sourceIds.toMutableList()
-        if (todayLines.isEmpty()) {
-            // Nothing logged today: the same sourced content her Today screen shows for this phase.
-            MahavaCard(Modifier.testTag("partner_phase_science")) {
-                CardTitle("این روزها در بدنش")
-                Text(TodaySignalContent.bodyTodayFa(group), style = MaterialTheme.typography.bodyLarge)
-            }
-            PartnerAdvice.phaseScience(group).forEach { item ->
-                val e = item.explanation
-                sourceIds += e.sourceIds
-                MahavaCard(Modifier.testTag("partner_science_${item.kind}_${item.key}")) {
-                    Text("${TodaySignalContent.kindTitleFa(item.kind)} · ${TodaySignalContent.label(item.kind, item.key)}",
-                        style = MaterialTheme.typography.labelLarge, color = accent)
-                    Spacer(Modifier.height(2.dp))
-                    Text(e.teaserFa, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
-                    e.sections.take(2).forEach { sec ->
-                        Spacer(Modifier.height(6.dp))
-                        Text(sec.titleFa, fontWeight = FontWeight.Bold, color = MahavaPrimary, style = MaterialTheme.typography.bodyMedium)
-                        Text(sec.bodyFa, style = MaterialTheme.typography.bodyMedium)
+            val sourceIds = advice.sourceIds.toMutableList()
+            if (todayLines.isEmpty()) {
+                // Nothing logged today: the same sourced content her Today screen shows for this phase.
+                MahavaCard(Modifier.testTag("partner_phase_science")) {
+                    CardTitle("این روزها در بدنش")
+                    Text(TodaySignalContent.bodyTodayFa(group), style = MaterialTheme.typography.bodyLarge)
+                }
+                PartnerAdvice.phaseScience(group).forEach { item ->
+                    val e = item.explanation
+                    sourceIds += e.sourceIds
+                    MahavaCard(Modifier.testTag("partner_science_${item.kind}_${item.key}")) {
+                        Text("${TodaySignalContent.kindTitleFa(item.kind)} · ${TodaySignalContent.label(item.kind, item.key)}",
+                            style = MaterialTheme.typography.labelLarge, color = accent)
+                        Spacer(Modifier.height(2.dp))
+                        Text(e.teaserFa, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MahavaTextPrimary)
+                        e.sections.take(2).forEach { sec ->
+                            Spacer(Modifier.height(6.dp))
+                            Text(sec.titleFa, fontWeight = FontWeight.Bold, color = MahavaPrimary, style = MaterialTheme.typography.bodyMedium)
+                            Text(sec.bodyFa, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
+            MahavaCard(Modifier.testTag("partner_do_card")) {
+                CardTitle("امروز چه کار کنی؟")
+                advice.doFa.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 2.dp)) }
+            }
+            EvidenceCard(advice.evidence)
+            SourcesCard(sourceIds.distinct())
         }
-        MahavaCard(Modifier.testTag("partner_do_card")) {
-            CardTitle("امروز چه کار کنی؟")
-            advice.doFa.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 2.dp)) }
-        }
-        EvidenceCard(advice.evidence)
-        SourcesCard(sourceIds.distinct())
     }
 
     // Everything she logged recently
@@ -571,8 +579,16 @@ private fun PartnerDashboard(
             }
         }
     }
+    var toolsOpen by remember { mutableStateOf(false) }
     val tools = (vm.partnerShare.collectAsState().value?.tools).orEmpty()
-    com.mahava.app.content.PartnerToolFormat.sections(tools, todayEpoch).forEachIndexed { i, sec ->
+    val toolSecs = com.mahava.app.content.PartnerToolFormat.sections(tools, todayEpoch)
+    if (toolSecs.isNotEmpty()) MahavaCard(Modifier.testTag("partner_tools_toggle")) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("ابزارهای او (${PersianDigits.toPersian(toolSecs.size)})", fontWeight = FontWeight.Bold, color = MahavaPrimary, modifier = Modifier.weight(1f))
+            TextButton(onClick = { toolsOpen = !toolsOpen }) { Text(if (toolsOpen) "بستن" else "بیشتر") }
+        }
+    }
+    if (toolsOpen) toolSecs.forEachIndexed { i, sec ->
         MahavaCard(Modifier.testTag(if (i == 0) "partner_tools_card" else "partner_tools_card_$i")) {
             CardTitle(sec.title)
             sec.lines.forEach { line ->
