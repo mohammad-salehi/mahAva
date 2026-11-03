@@ -2,6 +2,7 @@ package com.mahava.app.ui.screens
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -502,7 +503,13 @@ private fun PartnerDashboard(
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            LogLines(todayLines)
+            if (pills.isEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                ChipRow(PartnerLogFormat.chips(todayLog))
+            }
+            var todayMore by remember { mutableStateOf(false) }
+            TextButton(onClick = { todayMore = !todayMore }) { Text(if (todayMore) "بستن جزئیات" else "جزئیات بیشتر") }
+            if (todayMore) LogLines(todayLines)
         }
     }
 
@@ -548,24 +555,10 @@ private fun PartnerDashboard(
 
     // Everything she logged recently
     val older = logs.filter { PartnerLogFormat.epochDay(it) != todayEpoch && PartnerLogFormat.lines(it).isNotEmpty() }
-    if (older.isNotEmpty()) {
-        var showAll by remember { mutableStateOf(false) }
-        MahavaCard(Modifier.testTag("partner_history_card")) {
-            CardTitle("ثبت‌های روزهای قبل")
-            (if (showAll) older else older.take(5)).forEach { log ->
-                val day = PartnerLogFormat.epochDay(log) ?: return@forEach
-                Spacer(Modifier.height(8.dp))
-                Text(dayFa(day), fontWeight = FontWeight.Bold, color = MahavaTextPrimary, style = MaterialTheme.typography.bodyMedium)
-                LogLines(PartnerLogFormat.lines(log))
-            }
-            if (older.size > 5) {
-                TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "کمتر" else "همه (${PersianDigits.toPersian(older.size)} روز)") }
-            }
-        }
-    }
+    if (older.isNotEmpty()) PartnerHistoryCalendar(older, todayEpoch)
     if (periods.isNotEmpty()) {
         MahavaCard(Modifier.testTag("partner_periods_card")) {
-            CardTitle("پریودهایش")
+            CardTitle("پریودهای اخیر")
             periods.take(6).forEach { p ->
                 val start = try { p.get("startEpochDay")?.asLong } catch (_: Throwable) { null } ?: return@forEach
                 val end = try { p.get("endEpochDay")?.takeIf { !it.isJsonNull }?.asLong } catch (_: Throwable) { null }
@@ -586,5 +579,90 @@ private fun PartnerDashboard(
                 Text(if (line.startsWith("✓") || line.startsWith("○")) line else "• $line", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
             }
         }
+    }
+}
+
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChipRow(chips: List<String>) {
+    if (chips.isEmpty()) return
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        chips.forEach { Pill(it, MahavaPrimary) }
+    }
+}
+
+/** Past days as a compact Jalali month calendar with dots; tap a day for a short summary, then full details. */
+@Composable
+private fun PartnerHistoryCalendar(older: List<JsonObject>, todayEpoch: Long) {
+    val byDay = remember(older) { older.mapNotNull { l -> PartnerLogFormat.epochDay(l)?.let { it to l } }.toMap() }
+    if (byDay.isEmpty()) return
+    val latest = byDay.keys.max()
+    var selected by remember(latest) { mutableStateOf(latest) }
+    var monthStart by remember(latest) {
+        val j = JalaliDate.from(LocalDate.ofEpochDay(latest)); mutableStateOf(JalaliDate(j.year, j.month, 1))
+    }
+    var expanded by remember { mutableStateOf(false) }
+    val minDay = byDay.keys.min()
+    MahavaCard(Modifier.testTag("partner_history_card")) {
+        CardTitle("روزهای قبل")
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            val prev = monthStart.toLocalDate().minusDays(1)
+            val canPrev = prev.toEpochDay() >= minDay
+            TextButton(onClick = { val p = JalaliDate.from(prev); monthStart = JalaliDate(p.year, p.month, 1) }, enabled = canPrev) { Text("‹ قبلی") }
+            Text("${JalaliDate.monthNameFa(monthStart.month)} ${PersianDigits.toPersian(monthStart.year)}",
+                fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+            val dim = JalaliDate.daysInMonth(monthStart.year, monthStart.month)
+            val next = monthStart.toLocalDate().plusDays(dim.toLong())
+            TextButton(onClick = { val n = JalaliDate.from(next); monthStart = JalaliDate(n.year, n.month, 1) },
+                enabled = next.toEpochDay() <= todayEpoch) { Text("بعدی ›") }
+        }
+        val dim = JalaliDate.daysInMonth(monthStart.year, monthStart.month)
+        val firstDate = monthStart.toLocalDate()
+        // Persian week starts Saturday: Sat=0 ... Fri=6
+        val offset = (firstDate.dayOfWeek.value + 1) % 7
+        Row(Modifier.fillMaxWidth()) {
+            listOf("ش", "ی", "د", "س", "چ", "پ", "ج").forEach {
+                Text(it, color = MahavaTextSecondary, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+            }
+        }
+        val cells = offset + dim
+        val rows = (cells + 6) / 7
+        for (r in 0 until rows) {
+            Row(Modifier.fillMaxWidth()) {
+                for (c in 0 until 7) {
+                    val idx = r * 7 + c
+                    val dnum = idx - offset + 1
+                    Box(Modifier.weight(1f).height(40.dp), contentAlignment = Alignment.Center) {
+                        if (dnum in 1..dim) {
+                            val ep = firstDate.toEpochDay() + dnum - 1
+                            val has = byDay.containsKey(ep)
+                            val sel = ep == selected
+                            val bg = if (sel) MahavaPrimary else Color.Transparent
+                            Column(
+                                Modifier.size(36.dp).clip(CircleShape).background(bg)
+                                    .then(if (has) Modifier.clickable { selected = ep; expanded = false } else Modifier),
+                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(PersianDigits.toPersian(dnum), style = MaterialTheme.typography.bodySmall,
+                                    color = when { sel -> Color.White; has -> MahavaTextPrimary; else -> MahavaTextSecondary.copy(alpha = 0.5f) },
+                                    fontWeight = if (has) FontWeight.Bold else FontWeight.Normal)
+                                if (has) Box(Modifier.size(5.dp).clip(CircleShape).background(if (sel) Color.White else MahavaMenstruation))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        val log = byDay[selected]
+        if (log != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(dayFa(selected), fontWeight = FontWeight.Bold, color = MahavaTextPrimary, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(6.dp))
+            ChipRow(PartnerLogFormat.chips(log))
+            TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "بستن جزئیات" else "جزئیات کامل این روز") }
+            if (expanded) LogLines(PartnerLogFormat.lines(log))
+        }
+        QuietInfo("${PersianDigits.toPersian(byDay.size)} روز ثبت‌شده · روی روزهای نقطه‌دار بزن")
     }
 }

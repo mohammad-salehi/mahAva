@@ -124,5 +124,15 @@ object PartnerLogFormat {
         return ordered.mapNotNull { k -> try { lineFor(k, log.get(k)) } catch (_: Throwable) { null } }
     }
 
+    private val CHIP_LABELS = listOf("حال کلی", "حال", "انرژی", "خواب دیشب", "ساعت خواب", "شدت درد", "خون‌ریزی", "علائم جسمی", "هوس")
+
+    /** A few short key chips for the compact summary (mood, energy, sleep, pain, bleeding, symptoms). */
+    fun chips(log: JsonObject?, max: Int = 6): List<String> {
+        val all = lines(log)
+        val picked = CHIP_LABELS.mapNotNull { lbl -> all.firstOrNull { it.label == lbl } }
+            .map { l -> if (l.value.length > 28) "${l.label}: ${l.value.take(26)}…" else "${l.label}: ${l.value}" }
+        return (if (picked.isEmpty()) all.take(3).map { "${it.label}: ${it.value.take(26)}" } else picked).take(max)
+    }
+
     fun epochDay(log: JsonObject?): Long? = try { log?.get("epochDay")?.asLong } catch (_: Throwable) { null }
 }
