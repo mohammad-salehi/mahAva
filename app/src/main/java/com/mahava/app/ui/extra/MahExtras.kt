@@ -154,7 +154,12 @@ private fun Tag(text: String, color: Color = MahavaPrimary) {
 
 // ---------------------------------------------------------------- partner chat
 
-private data class ChatMsg(val id: String, val text: String, val mine: Boolean, val at: Long, val read: Boolean)
+private data class ChatMsg(val id: String, val text: String, val mine: Boolean, val at: Long, val read: Boolean, val kind: String = "text", val mediaId: String = "", val durationMs: Long = 0)
+
+private fun chatMsg(o: JsonObject, mineDefault: Boolean? = null) = ChatMsg(
+    o.s("id"), o.s("text"), mineDefault ?: (o.get("mine")?.asBoolean == true), o.get("createdAt")?.asLong ?: System.currentTimeMillis(),
+    (o.get("readAt")?.asLong ?: 0L) > 0, o.s("kind").ifBlank { "text" }, o.s("mediaId"), o.get("durationMs")?.asLong ?: 0L
+)
 
 @Composable
 fun PartnerChatScreen(vm: AppViewModel, onBack: () -> Unit) {
@@ -170,8 +175,46 @@ fun PartnerChatScreen(vm: AppViewModel, onBack: () -> Unit) {
     val listState = rememberLazyListState()
     LaunchedEffect(Unit) { androidx.core.app.NotificationManagerCompat.from(context).cancel(com.mahava.app.partner.PartnerSync.CHAT_NOTIF_ID) }
 
-    fun parse(r: JsonObject) = r.arr("messages").objs().map {
-        ChatMsg(it.s("id"), it.s("text"), it.get("mine")?.asBoolean == true, it.get("createdAt")?.asLong ?: 0L, (it.get("readAt")?.asLong ?: 0L) > 0)
+    fun parse(r: JsonObject) = r.arr("messages").objs().map { chatMsg(it) }
+
+    fun sendMedia(kind: String, bytes: ByteArray, durationMs: Long = 0) {
+        sending = true
+        scope.launch {
+            try {
+                val body = JsonObject().apply { addProperty("kind", kind); addProperty("data", ChatMedia.b64(bytes)); if (durationMs > 0) addProperty("durationMs", durationMs) }
+                val r = app.authRepository.withToken { t -> app.apiClient.extraCall("POST", "/api/mah/partner/chat", body, t) }
+                r.get("message")?.asJsonObject?.let { o ->
+                    val m = chatMsg(o, true)
+                    if (kind == "voice" && m.mediaId.isNotBlank()) ChatMedia.seed(context, m.mediaId, bytes)
+                    if (messages.none { it.id == m.id }) messages.add(m)
+                }
+                error = null
+            } catch (e: MahApiException) { error = e.message } catch (_: Exception) { error = "ارسال نشد" }
+            sending = false
+        }
+    }
+    val pickPhoto = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) scope.launch {
+            val bytes = runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { ChatMedia.compressPhoto(context, uri) } }.getOrNull()
+            if (bytes == null) error = "این عکس باز نشد" else sendMedia("image", bytes)
+        }
+    }
+    val recorder = remember { VoiceRecorder(context) }
+    var recording by remember { mutableStateOf(false) }
+    var recMs by remember { mutableStateOf(0L) }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { recorder.cancel() } }
+    LaunchedEffect(recording) {
+        while (recording) {
+            recMs = recorder.elapsed()
+            if (recMs >= ChatMedia.MAX_VOICE_MS) { recording = false; recorder.stop()?.let { (b, d) -> sendMedia("voice", b, d) } }
+            delay(200)
+        }
+    }
+    fun startRec() {
+        runCatching { recorder.start(); recording = true; recMs = 0 }.onFailure { error = "ضبط صدا شروع نشد" }
+    }
+    val micPerm = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) startRec() else error = "برای پیام صوتی، اجازهٔ میکروفون لازم است"
     }
 
     LaunchedEffect(Unit) {
@@ -195,7 +238,7 @@ fun PartnerChatScreen(vm: AppViewModel, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(MahavaBackground).imePadding()) {
         val phone = PersianDigits.toPersian(status?.pair?.partner?.phoneMasked.orEmpty())
-        com.mahava.app.ui.kit.KitHeader("گفت‌وگو با همسر", subtitle = phone.ifBlank { null }, start = { com.mahava.app.ui.kit.KitBack(onBack) })
+        com.mahava.app.ui.kit.KitHeader("گفت‌وگو با همسر", subtitle = phone.ifBlank { null }?.let { com.mahava.app.util.FaText.ltr(it) }, start = { com.mahava.app.ui.kit.KitBack(onBack) })
         Text(
             "🔒 فقط شما دو نفر این پیام‌ها را می‌بینید · پیام‌ها پس از ۶ ماه پاک می‌شوند",
             Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -213,7 +256,26 @@ fun PartnerChatScreen(vm: AppViewModel, onBack: () -> Unit) {
             items(messages, key = { it.id }) { m -> Bubble(m) }
         }
         error?.let { Text(it, Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        if (recording) {
+            Row(Modifier.fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(24.dp)).background(MahavaPrimarySoft).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("● " + voiceTimer(recMs), color = Color(0xFFE11D48), fontWeight = FontWeight.Bold)
+                Text("در حال ضبط…", Modifier.weight(1f), color = MahavaTextSecondary)
+                TextButton(onClick = { recorder.cancel(); recording = false }) { Text("لغو") }
+                Box(Modifier.size(44.dp).clip(CircleShape).background(MahavaPrimary).clickable {
+                    recording = false
+                    val r = recorder.stop()
+                    if (r == null) error = "پیام صوتی خیلی کوتاه بود" else sendMedia("voice", r.first, r.second)
+                }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, style = MaterialTheme.typography.titleMedium) }
+            }
+        } else
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(40.dp).clip(CircleShape).background(MahavaPrimarySoft).clickable(enabled = !sending) {
+                pickPhoto.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }, contentAlignment = Alignment.Center) { Text("📷") }
+            if (input.isBlank()) Box(Modifier.size(40.dp).clip(CircleShape).background(MahavaPrimarySoft).clickable(enabled = !sending) {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) startRec()
+                else micPerm.launch(android.Manifest.permission.RECORD_AUDIO)
+            }, contentAlignment = Alignment.Center) { Text("🎤") }
             OutlinedTextField(
                 input, { input = it.take(1000) }, Modifier.weight(1f),
                 placeholder = { Text("پیام بنویس…") }, maxLines = 4, shape = RoundedCornerShape(24.dp)
@@ -251,11 +313,15 @@ private fun Bubble(m: ChatMsg) {
         Column(
             Modifier.widthIn(max = 280.dp)
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = if (m.mine) 4.dp else 20.dp, bottomEnd = if (m.mine) 20.dp else 4.dp))
-                .background(if (m.mine) MahavaPrimary else MahavaPrimarySoft)
+                .background(if (m.mine) Color(0xFFF8BBD3) else MahavaPrimarySoft)
                 .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            Text(m.text, color = if (m.mine) Color.White else MahavaTextPrimary)
-            Text(t + if (m.mine && m.read) " ✓✓" else if (m.mine) " ✓" else "", style = MaterialTheme.typography.labelSmall, color = if (m.mine) Color.White.copy(alpha = 0.8f) else MahavaTextSecondary)
+            when {
+                m.kind == "image" && m.mediaId.isNotBlank() -> ChatPhoto(m.mediaId)
+                m.kind == "voice" && m.mediaId.isNotBlank() -> ChatVoice(m.mediaId, m.durationMs, if (m.mine) MahavaPrimaryDeep else MahavaPrimary)
+                else -> Text(m.text, color = MahavaTextPrimary)
+            }
+            Text(t + if (m.mine && m.read) " ✓✓" else if (m.mine) " ✓" else "", style = MaterialTheme.typography.labelSmall, color = MahavaTextSecondary)
         }
     }
 }
