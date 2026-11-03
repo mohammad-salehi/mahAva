@@ -27,7 +27,7 @@ class MahApiClient(
 
     fun currentBaseUrl(): String = baseUrl.trimEnd('/')
 
-    /** Generic JSON call for newer endpoints (partner chat, admin-served content). */
+    /** Generic JSON call for newer endpoints (admin-served content). */
     suspend fun extraCall(method: String, path: String, body: JsonObject?, token: String?): JsonObject =
         gson.fromJson(requestRaw(method, path, body?.let { gson.toJson(it) }, token), JsonObject::class.java) ?: JsonObject()
 

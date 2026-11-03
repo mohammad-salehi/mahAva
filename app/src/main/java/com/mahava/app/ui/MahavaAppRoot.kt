@@ -350,7 +350,6 @@ fun MahavaAppRoot(
                     onScience = { nav.navigate(Routes.PHASE_SCIENCE) },
                     onSignal = { kind, key -> nav.navigate(Routes.signalDetail(kind, key)) },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
-                    onChat = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) },
                     onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                     onMore = { nav.navigate(Routes.TOOLS) },
                     onTool = { nav.navigate(it) },
@@ -478,7 +477,7 @@ fun MahavaAppRoot(
                 )
             }
             composable(Routes.PARTNER_HUB) {
-                PartnerHubScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() }, onChat = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) })
+                PartnerHubScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
             }
             composable(Routes.PARTNER_HOME) {
                 PartnerHomeScreen(
@@ -486,11 +485,7 @@ fun MahavaAppRoot(
                     onSettings = { nav.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                     onAccount = { goAccountOrLogin() },
                     onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                    onChat = { nav.navigate(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) }
                 )
-            }
-            composable(com.mahava.app.ui.extra.ExtraRoutes.PARTNER_CHAT) {
-                com.mahava.app.ui.extra.PartnerChatScreen(vm, onBack = { nav.popBackStack() })
             }
             composable(com.mahava.app.ui.extra.ExtraRoutes.SKIN) {
                 com.mahava.app.ui.extra.SkinRoutineScreen(vm, onBack = { nav.popBackStack() })

@@ -50,13 +50,6 @@ class MahFirebaseMessagingService:FirebaseMessagingService() {
         MahPush.schedule(this)
     }
     override fun onMessageReceived(message:RemoteMessage) {
-        if(message.data["mahChat"]=="1") {
-            // Chat push carries no text; the worker checks the account and unread count on the server.
-            WorkManager.getInstance(this).enqueueUniqueWork("mah_chat_push",ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<MahChatPushWorker>().setInputData(workDataOf("recipientId" to message.data["recipientId"]))
-                    .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build())
-            return
-        }
         val id=message.data["mahEventId"] ?: return
         if(!id.matches(Regex("[a-fA-F0-9]{24}"))) return
         MahPush.schedule(this,id,message.data["recipientId"])
@@ -77,24 +70,6 @@ class MahPushWorker(context:Context,params:WorkerParameters):CoroutineWorker(con
             if(allowed.isNotEmpty()) {
                 val status=app.partnerRepository.refreshStatus()
                 PartnerSync.process(app,PartnerRepository.Poll(allowed,false,status))
-            }
-            Result.success()
-        } catch(e:Exception) {Result.retry()}
-    }
-}
-
-class MahChatPushWorker(context:Context,params:WorkerParameters):CoroutineWorker(context,params) {
-    override suspend fun doWork():Result {
-        val app=applicationContext as MahavaApplication
-        if(!app.authRepository.hasSessionTokens()) return Result.success()
-        if(app.prefs.accountUserId.first()!=inputData.getString("recipientId")) return Result.success()
-        return try {
-            val n=app.authRepository.withToken {app.apiClient.extraCall("GET","/api/mah/partner/chat/unread",null,it)}.get("unread")?.asInt ?: 0
-            if(n>0) {
-                PartnerSync.createChannel(app)
-                val text=if(n==1) "\u06cc\u06a9 \u067e\u06cc\u0627\u0645 \u062a\u0627\u0632\u0647 \u062f\u0627\u0631\u06cc\u061b \u0628\u0631\u0627\u06cc \u062f\u06cc\u062f\u0646 \u0628\u0632\u0646"
-                    else com.mahava.app.util.PersianDigits.toPersian(n)+" \u067e\u06cc\u0627\u0645 \u062c\u062f\u06cc\u062f \u062f\u0627\u0631\u06cc"
-                PartnerSync.notify(app,PartnerSync.CHAT_NOTIF_ID,"\u067e\u06cc\u0627\u0645 \u062c\u062f\u06cc\u062f \u0627\u0632 \u0647\u0645\u0633\u0631\u062a",text)
             }
             Result.success()
         } catch(e:Exception) {Result.retry()}

@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit
  */
 object PartnerSync {
     const val CHANNEL_ID = "mahava_partner"
-    const val CHAT_NOTIF_ID = 4
     private const val PERIODIC = "mahava_partner_sync"
     private const val NOW = "mahava_partner_sync_now"
     private const val SP = "mahava_partner_sync"

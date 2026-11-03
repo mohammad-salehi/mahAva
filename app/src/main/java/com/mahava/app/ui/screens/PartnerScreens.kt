@@ -89,7 +89,7 @@ const val PARTNER_APPROVE_FA =
 
 /** Woman's side: make a code, approve, remove. */
 @Composable
-fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit, onChat: () -> Unit = {}) {
+fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit) {
     val status by vm.partnerStatus.collectAsState()
     val shared by vm.sharedFromPartner.collectAsState()
     val scope = rememberCoroutineScope()
@@ -108,7 +108,6 @@ fun PartnerHubScreen(vm: AppViewModel, onBack: () -> Unit, onAccount: () -> Unit
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("partner_hub_screen")) {
         ScreenHeader("اتصال به همسر", onBack = onBack)
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (pair?.status == "active") com.mahava.app.ui.extra.PartnerChatEntry(onChat)
             when {
                 pair == null -> {
                     PartnerHero("💞", "به همسرت وصل شو", "کد را بساز و برای همسرت بفرست. او کد را در برنامهٔ ماه می‌زند و تو تأیید می‌کنی؛ تمام.")
@@ -198,8 +197,7 @@ fun PartnerHomeScreen(
     vm: AppViewModel,
     onSettings: () -> Unit,
     onAccount: () -> Unit = onSettings,
-    onNotifications: () -> Unit = {},
-    onChat: () -> Unit = {}
+    onNotifications: () -> Unit = {}
 ) {
     val status by vm.partnerStatus.collectAsState()
     val share by vm.partnerShare.collectAsState()
@@ -228,7 +226,6 @@ fun PartnerHomeScreen(
         }
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (pair != null) NotificationPermissionCard()
-            if (pair?.status == "active") com.mahava.app.ui.extra.PartnerChatEntry(onChat)
             when {
                 pair == null -> MahavaCard(Modifier.testTag("partner_redeem_card")) {
                     CardTitle("کد همسرت را بزن")

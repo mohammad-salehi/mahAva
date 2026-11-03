@@ -70,7 +70,6 @@ fun TodayScreen(
     onScience: () -> Unit = {},
     onSignal: (String, String) -> Unit = { _, _ -> },
     onPartner: () -> Unit = {},
-    onChat: () -> Unit = {},
     onNotifications: () -> Unit = {},
     onMore: () -> Unit = onDailyLog,
     onTool: (String) -> Unit = {},
@@ -131,7 +130,6 @@ fun TodayScreen(
             com.mahava.app.ui.extra.StoryRow(vm) { i -> onTool(com.mahava.app.ui.extra.ExtraRoutes.stories(i)) }
             val partnerSt by vm.partnerStatus.collectAsState()
             LaunchedEffect(Unit) { runCatching { vm.partnerRefresh() } }
-            if (partnerSt?.pair?.status == "active") com.mahava.app.ui.extra.PartnerChatEntry(onChat)
             if (state.profile?.qaSampleData == true) QuietInfo("این‌ها دادهٔ نمونه‌ان، نه اطلاعات واقعی.")
             val phaseGroup = com.mahava.app.content.TodaySignalContent.effectivePhaseGroup(
                 ctx.subWindow, cycle?.phase, state.profile?.hormonalContraception == true, state.profile?.regularCycles
