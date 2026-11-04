@@ -28,17 +28,22 @@ import com.mahava.app.ui.components.ScreenHeader
 import com.mahava.app.ui.kit.Kit
 import com.mahava.app.ui.theme.*
 import com.mahava.app.util.PersianDigits
+import kotlinx.coroutines.launch
 
 @Composable
 fun BeautyRoutineScreen(vm: AppViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { BeautyProfileStore.load(context) }
+    val records by vm.toolRecords.collectAsState()
+    LaunchedEffect(records) { BeautyProfileStore.mergeRemote(context, records) }
+    val scope = rememberCoroutineScope()
     val profile by BeautyProfileStore.flow.collectAsState()
     var editing by rememberSaveable { mutableStateOf(false) }
     val p = profile ?: return
     if (!p.complete || editing) {
         BeautyIntake(p, onBack = { if (editing && p.complete) editing = false else onBack() }) {
-            BeautyProfileStore.save(context, it); editing = false
+            val saved = BeautyProfileStore.save(context, it); editing = false
+            scope.launch { runCatching { vm.tools.save(BeautyProfileStore.RECORD_ID, BeautyProfileStore.RECORD_TYPE, BeautyProfileStore.payload(saved)) } }
         }
     } else BeautyAdviceView(vm, p, onBack) { editing = true }
 }
@@ -258,4 +263,51 @@ private fun relative(ts: Long): String {
     if (ts <= 0) return "—"
     val days = ((System.currentTimeMillis() - ts) / 86_400_000L).toInt()
     return when (days) { 0 -> "امروز"; 1 -> "دیروز"; else -> "${PersianDigits.toPersian(days)} روز پیش" }
+}
+
+/** Home summary box: phase chip, status reflection, top skin + hair action. Not a text wall. */
+@Composable
+fun BeautyHomeCard(vm: AppViewModel, phaseGroup: String, pregnant: Boolean, onClick: () -> Unit) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { BeautyProfileStore.load(context) }
+    val records by vm.toolRecords.collectAsState()
+    LaunchedEffect(records) { BeautyProfileStore.mergeRemote(context, records) }
+    val p = BeautyProfileStore.flow.collectAsState().value ?: return
+    val phaseFa = BeautyRoutineContent.forState(phaseGroup, pregnant).phaseTitleFa
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Kit.cardRadius)).background(Kit.cardBlue)
+        .clickable(onClick = onClick).testTag("home_beauty_card").padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            com.mahava.app.ui.kit.KitIconTile(com.mahava.app.R.drawable.kit_leaf, MahavaPrimary, size = 44.dp, iconSize = 24.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(if (p.complete) "روتین پوست و موی شما" else "وضعیت پوست و مو را ثبت کن", style = Kit.cardTitle)
+                Spacer(Modifier.height(4.dp))
+                Pill(phaseFa, Color.White, MahavaPrimary)
+            }
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(com.mahava.app.R.drawable.kit_chevron_left), null,
+                tint = Kit.muted, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.height(10.dp))
+        if (!p.complete) {
+            Text("چند سؤال دربارهٔ وضعیت فعلی پوست و مویت جواب بده؛ توصیه‌ها بر اساس جواب‌هایت ساخته و با $phaseFa تنظیم می‌شوند.", style = Kit.body)
+        } else {
+            val s = BeautyAdviceEngine.homeSummary(p, phaseGroup, pregnant)
+            Text(s.statusFa, style = Kit.small.copy(color = MahavaTextSecondary))
+            Spacer(Modifier.height(8.dp))
+            HomeLine("پوست", s.skinFa)
+            Spacer(Modifier.height(6.dp))
+            HomeLine("مو", s.hairFa)
+        }
+    }
+}
+
+@Composable
+private fun HomeLine(label: String, text: String) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).padding(10.dp), verticalAlignment = Alignment.Top) {
+        Text(label, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold,
+            modifier = Modifier.clip(RoundedCornerShape(50)).background(MahavaPrimary).padding(horizontal = 8.dp, vertical = 2.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = Kit.small.copy(color = MahavaTextPrimary), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f))
+    }
 }

@@ -205,22 +205,7 @@ fun TodayScreen(
                     onClick = { onCareDetail(todayTip?.contentId ?: vm.careToday().item.id) }
                 )
             }
-            val beautyCtx = androidx.compose.ui.platform.LocalContext.current
-            LaunchedEffect(Unit) { com.mahava.app.content.BeautyProfileStore.load(beautyCtx) }
-            val beautyP by com.mahava.app.content.BeautyProfileStore.flow.collectAsState()
-            val bp = beautyP
-            if (bp != null) {
-                val done = bp.complete
-                com.mahava.app.ui.kit.KitRowCard(
-                    if (done) "روتین پوست و موی شما" else "وضعیت پوست و مو را ثبت کن",
-                    if (done) "${com.mahava.app.content.BeautyRoutineContent.forState(phaseGroup, pregnant).phaseTitleFa} · " +
-                        com.mahava.app.content.BeautyAdviceEngine.homePreview(bp, phaseGroup, pregnant)
-                    else "چند سؤال کوتاه دربارهٔ پوست و موی فعلی‌تان؛ بعد توصیهٔ مخصوص خودتان را می‌گیرید.",
-                    k.cardBlue, tag = "home_beauty_card",
-                    art = { com.mahava.app.ui.kit.KitIconTile(R.drawable.kit_leaf, MahavaPrimary, size = 64.dp, iconSize = 34.dp) },
-                    onClick = onBeauty
-                )
-            }
+            BeautyHomeCard(vm, phaseGroup, pregnant, onClick = onBeauty)
             com.mahava.app.ui.kit.KitRowCard(
                 "اتصال به همسر", "اگه بخوای، همسرت هم می‌تونه چیزهایی رو که اینجا ثبت می‌کنی ببینه.", k.cardLavender,
                 tag = "home_partner_card", art = { com.mahava.app.ui.kit.KitHearts() }, onClick = onPartner

@@ -71,11 +71,26 @@ object BeautyProfileStore {
             ?.let { BeautyProfile.fromJson(it) } ?: BeautyProfile()
         _flow.value = p; return p
     }
-    fun save(ctx: Context, p: BeautyProfile) {
+    /** Server sync rides the existing tool-record sync (kind=tool). Key ends in _settings so the server never shares it with the partner. */
+    const val RECORD_ID = "beauty_settings"
+    const val RECORD_TYPE = "beauty_profile"
+
+    fun save(ctx: Context, p: BeautyProfile): BeautyProfile {
         val s = p.copy(updatedAt = System.currentTimeMillis())
+        writeLocal(ctx, s); return s
+    }
+    private fun writeLocal(ctx: Context, s: BeautyProfile) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("profile", s.toJson()).apply()
         _flow.value = s
     }
+    /** Apply the synced copy (e.g. after reinstall or from another device) when it is newer than ours. */
+    fun mergeRemote(ctx: Context, records: List<com.mahava.app.data.db.ToolRecord>) {
+        val r = records.firstOrNull { it.id == RECORD_ID && it.deletedAt == null } ?: return
+        val remote = BeautyProfile.fromJson(r.payloadJson)
+        val local = load(ctx)
+        if (remote.updatedAt > local.updatedAt) writeLocal(ctx, remote)
+    }
+    fun payload(p: BeautyProfile): com.google.gson.JsonElement = com.google.gson.JsonParser.parseString(p.toJson())
 }
 
 /** Persian labels for intake options (key to label). */
@@ -110,7 +125,7 @@ object BeautyLabels {
 }
 
 /** One personalized action: what to do, which of THEIR answers triggered it, and the plain-Persian science why. */
-data class BeautyAction(val becauseFa: String, val doFa: String, val whyFa: String)
+data class BeautyAction(val cat: String, val becauseFa: String, val doFa: String, val whyFa: String)
 
 data class BeautyAdvice(
     val summaryFa: String,
@@ -148,15 +163,15 @@ object BeautyAdviceEngine {
         val pri = mutableListOf<BeautyAction>(); val am = mutableListOf<String>(); val pm = mutableListOf<String>()
         val avoid = linkedSetOf<String>(); val flags = mutableListOf<String>(); val learn = mutableListOf<Pair<String, String>>()
 
-        if (onIso) pri += BeautyAction(
+        if (onIso) pri += BeautyAction("iso", 
             "چون گفتی ایزوترتینوئین مصرف می‌کنی",
             "روتین را فقط شوینده خیلی ملایم، مرطوب‌کنندهٔ غنی، ضدآفتاب و بالم لب نگه دار؛ هیچ اسید، اسکراب یا رتینوئید موضعی اضافه نکن.",
             "این دارو ترشح چربی را به‌شدت کم می‌کند و پوست و لب اغلب خیلی خشک و آسیب‌پذیر می‌شوند؛ هر اکتیو اضافه ممکن است سوزش و ترک ایجاد کند. تنظیم روتین را با پزشک معالج هماهنگ کن.")
-        if (pregnant && "retinoid" in p.actives) pri += BeautyAction(
+        if (pregnant && "retinoid" in p.actives) pri += BeautyAction("preg_retinoid", 
             "چون باردار هستی و گفتی رتینوئید می‌زنی",
             "رتینوئید را کنار بگذار تا با پزشک مشورت کنی.",
             "رتینوئیدهای خوراکی در بارداری ممنوع‌اند و برای نوع موضعی هم احتیاط توصیه می‌شود؛ تصمیم نهایی با پزشک است.")
-        if (irritated && !onIso) pri += BeautyAction(
+        if (irritated && !onIso) pri += BeautyAction("irritate", 
             buildString {
                 append("چون گفتی ")
                 append(listOfNotNull(
@@ -169,49 +184,49 @@ object BeautyAdviceEngine {
             if (strongActive) "رتینوئید و اسیدها را ۱–۲ هفته متوقف کن و روتین را به شوینده ملایم، مرطوب‌کننده و ضدآفتاب کم کن."
             else "روتین را به سه قدم کم کن: شوینده ملایم، مرطوب‌کننده بدون عطر، ضدآفتاب.",
             "سوزش و قرمزی اغلب نشانهٔ آسیب «سد پوست» است — لایهٔ بیرونی که آب را نگه می‌دارد و محرک را بیرون. وقتی این لایه آسیب دیده، هر اکتیوی بیشتر نفوذ و تحریک می‌کند؛ اول ترمیم، بعد درمان.")
-        if (p.spf != "yes") pri += BeautyAction(
+        if (p.spf != "yes") pri += BeautyAction("spf", 
             if (p.spf == "no") "چون گفتی ضدآفتاب نمی‌زنی" + (if ("spots" in p.skinIssues) " و لک داری" else if (acne) " و جوش داری" else "")
             else "چون گفتی فقط گاهی ضدآفتاب می‌زنی",
             "هر صبح ضدآفتاب طیف وسیع (حداقل SPF 30) به اندازهٔ کافی بزن، حتی روزهای ابری یا کنار پنجره؛ اگر بیرون می‌مانی هر ۲–۳ ساعت تجدید کن.",
             "اشعهٔ UV حتی از ابر و شیشه رد می‌شود؛ رنگدانه‌سازی را تحریک می‌کند و لک و جای قرمز/قهوه‌ای جوش را ماندگارتر می‌کند. بیشترین شواهد علمی در مراقبت پوست مربوط به همین قدم است" +
                 (if (strongActive) "؛ با رتینوئید یا اسید، پوست به آفتاب حساس‌تر هم می‌شود." else "."))
         if (acne && !onIso) pri += when {
-            p.acneSeverity == "severe" -> BeautyAction("چون گفتی جوش‌هایت زیاد است",
+            p.acneSeverity == "severe" -> BeautyAction("acne_severe", "چون گفتی جوش‌هایت زیاد است",
                 "به‌جای امتحان چند محصول، برای ویزیت پزشک پوست وقت بگیر؛ تا آن موقع فقط روتین ملایم.",
                 "جوش زیاد یا عمیق ممکن است جای ماندگار بگذارد و معمولاً به درمان تجویزی بهتر جواب می‌دهد؛ ترکیب خودسرانهٔ اکتیوها اغلب فقط التهاب را بیشتر می‌کند.")
-            hormonalPattern -> BeautyAction(
+            hormonalPattern -> BeautyAction("acne_hormonal", 
                 "چون گفتی جوش در ${zones(p).ifEmpty { "صورت" }}" + (if (p.cyclical == "yes") " داری و قبل از پریود بدتر می‌شود" else " داری"),
                 "شب‌ها درمان نقطه‌ای ملایم (مثلاً اسید سالیسیلیک یا بنزوئیل پراکساید کم‌غلظت اگر تحمل داری) فقط روی خود جوش؛ از ۳–۵ روز قبل از پریود منظم‌ترش کن. دست نزن و فشار نده.",
                 "جوش ناحیهٔ فک و چانه و جوشی که با چرخه تکرار می‌شود اغلب به نوسان هورمون‌ها (پروژسترون و آندروژن‌ها) و افزایش چربی ربط دارد. درمان نقطه‌ای التهاب را کم می‌کند بدون اینکه کل صورت خشک شود. فشار دادن، التهاب را عمیق‌تر و احتمال جای جوش را بیشتر می‌کند" +
                     (if ("pcos" in p.conditions) ". چون سابقهٔ تخمدان پلی‌کیستیک گفتی، کنترل جوش را با پزشکت هم هماهنگ کن." else "."))
-            else -> BeautyAction("چون گفتی جوش ${L(BeautyLabels.acneSeverity, p.acneSeverity)} در ${zones(p)} داری",
+            else -> BeautyAction("acne", "چون گفتی جوش ${L(BeautyLabels.acneSeverity, p.acneSeverity)} در ${zones(p)} داری",
                 "درمان نقطه‌ای شبانه فقط روی جوش‌ها و مرطوب‌کنندهٔ سبک غیرکومدوژن؛ اسکراب نکن.",
                 "جوش التهاب منفذ است؛ اسکراب زبر روی پوست ملتهب پارگی‌های ریز ایجاد می‌کند و التهاب را پخش می‌کند. ثبات چند هفته‌ای مهم‌تر از قدرت محصول است — اثر اغلب اکتیوهای جوش بعد از ۶–۸ هفته دیده می‌شود.")
         }
-        if (dry && !onIso) pri += BeautyAction(
+        if (dry && !onIso) pri += BeautyAction("dry", 
             "چون گفتی پوستت " + listOfNotNull(if (p.skinType == "dry" || "dryness" in p.skinIssues) "خشک" else null,
                 if ("flaky" in p.skinIssues) "پوسته‌پوسته" else null).joinToString(" و ") + " است",
             "بعد از شستشو، روی پوست کمی نمناک مرطوب‌کنندهٔ دارای سرامید یا گلیسرین بزن؛ آب ولرم نه داغ.",
             "گلیسرین آب را جذب می‌کند و سرامیدها بخشی از ساختار طبیعی سد پوست‌اند. زدن روی پوست نمناک آب را «قفل» می‌کند؛ آب داغ چربی‌های محافظ را می‌شوید.")
-        if (oily && !acne) pri += BeautyAction("چون گفتی پوستت چرب است",
+        if (oily && !acne) pri += BeautyAction("oily", "چون گفتی پوستت چرب است",
             "صورت را حداکثر دو بار در روز با شوینده ملایم بشوی و مرطوب‌کنندهٔ ژلی سبک را حذف نکن.",
             "چربی پوست (سبوم) را عمدتاً هورمون‌ها و ژنتیک تعیین می‌کنند، نه کمبود شستشو. شستن زیاد و حذف مرطوب‌کننده ممکن است سد پوست را خشک و تحریک کند و پوست براق‌تر به نظر برسد.")
-        if ("spots" in p.skinIssues) pri += BeautyAction("چون گفتی لک داری",
+        if ("spots" in p.skinIssues) pri += BeautyAction("spots", "چون گفتی لک داری",
             if (pregnant) "فعلاً فقط ضدآفتاب منظم؛ هر روشن‌کننده را با پزشک چک کن."
             else "ضدآفتاب منظم را پایه کن و فقط یک روشن‌کننده (ویتامین C یا نیاسینامید) را تدریجی اضافه کن.",
             "لک از رنگدانه‌سازی اضافه است که آفتاب و التهاب آن را تحریک می‌کنند؛ بدون ضدآفتاب، روشن‌کننده‌ها اثر کمی دارند. در بارداری لک (ملاسما) شایع است و اغلب بعد از زایمان کمتر می‌شود.")
-        if ("dull" in p.skinIssues && !irritated && !onIso && !pregnant) pri += BeautyAction("چون گفتی پوستت کدر است",
+        if ("dull" in p.skinIssues && !irritated && !onIso && !pregnant) pri += BeautyAction("dull", "چون گفتی پوستت کدر است",
             "هفته‌ای ۱–۲ بار لایه‌بردار شیمیایی ملایم، نه اسکراب دانه‌دار.",
             "کدری اغلب از تجمع سلول‌های مرده و کم‌آبی است؛ لایه‌برداری ملایم آن را بهتر می‌کند ولی زیاده‌روی سد پوست را آسیب می‌زند و کدری را بدتر.")
-        if (p.routine == "irregular" || p.routine == "cleanser") pri += BeautyAction(
+        if (p.routine == "irregular" || p.routine == "cleanser") pri += BeautyAction("routine", 
             "چون گفتی روتینت " + L(BeautyLabels.routine, p.routine) + " است",
             "اول همین سه قدم را هر روز ثابت کن، بعد هر محصول اضافه را جداگانه و با فاصلهٔ ۲ هفته معرفی کن.",
             "پوست به تغییر مداوم محصول واکنش نشان می‌دهد؛ ثبات و معرفی یکی‌یکی کمک می‌کند بفهمی کدام محصول کمک کرده یا تحریک.")
-        if (p.sleepStress != "good" && (acne || irritated)) pri += BeautyAction(
+        if (p.sleepStress != "good" && (acne || irritated)) pri += BeautyAction("stress", 
             "چون گفتی " + L(BeautyLabels.sleepStress, p.sleepStress) + " داری",
             "اگر ممکن است ساعت خواب را منظم کن؛ در روزهای پراسترس روتین را ساده نگه دار و محصول جدید امتحان نکن.",
             "استرس و کم‌خوابی ممکن است با افزایش کورتیزول، التهاب و جوش را بدتر و ترمیم سد پوست را کندتر کنند؛ شواهد متوسط است ولی ارتباط بارها گزارش شده.")
-        if (pri.isEmpty()) pri += BeautyAction("چون گفتی پوستت مشکل خاصی ندارد",
+        if (pri.isEmpty()) pri += BeautyAction("none", "چون گفتی پوستت مشکل خاصی ندارد",
             "همین روتین را ثابت نگه دار؛ ضدآفتاب روزانه را حفظ کن.", "وقتی پوست متعادل است، تغییر غیرضروری بیشتر از فایده، ریسک تحریک دارد.")
 
         am += if (oily || acne) "شوینده ملایم ژلی" else if (dry || irritated || onIso) "آب ولرم یا شوینده کرمی خیلی ملایم" else "شوینده ملایم"
@@ -223,9 +238,15 @@ object BeautyAdviceEngine {
         when {
             pregnant || onIso -> {}
             irritated -> pm += "اکتیوها فعلاً متوقف؛ فقط ترمیم"
-            acne -> pm += "درمان نقطه‌ای فقط روی جوش‌ها"
+            acne -> pm += if (key == "luteal") "درمان نقطه‌ای فقط روی جوش‌ها — قبل از پریود هر شب روی جوش‌های تازه" else "درمان نقطه‌ای فقط روی جوش‌ها"
             strongActive && key == "menstrual" -> pm += "اکتیو را این چند روز کم کن (یکی دو شب در هفته یا هیچ)"
             strongActive -> pm += "اکتیو آشنا ۲–۳ شب در هفته، نه با اکتیو دیگر در همان شب"
+        }
+        when (key) {
+            "menstrual" -> am.add(am.size - 1, "این چند روز: مرطوب‌کننده را کمی بیشتر یا غنی‌تر بزن")
+            "luteal" -> if (oily || acne) am.add(1, "قبل از پریود: اگر نیاسینامید را تحمل می‌کنی، برای کنترل چربی مفید است") else Unit
+            "ovulatory" -> am[am.size - 1] = am.last() + " (بافت سبک‌تر در این روزها)"
+            else -> Unit
         }
         pm += if (dry || irritated || onIso) "مرطوب‌کنندهٔ ترمیمی غنی‌تر" else "مرطوب‌کنندهٔ سبک — پوست چرب هم رطوبت می‌خواهد"
         if (onIso) pm += "بالم لب"
@@ -265,7 +286,52 @@ object BeautyAdviceEngine {
             if (c.isNotEmpty()) append("؛ سابقه‌ای که گفتی: ${c.joinToString("، ")}")
             append(".")
         }
-        return BeautyAdvice(summary, pri.take(3), am, pm, avoid.toList(), skinPhaseNote(key, p), learn, flags)
+        // ---- phase modulation: phase-only actions + re-ranking (current complaints still dominate) ----
+        when (key) {
+            "menstrual" -> {
+                pri += BeautyAction("phase", "چون الان در روزهای پریود هستی",
+                    if (strongActive && !onIso && !pregnant) "این چند روز اکتیوها را کم کن (یکی دو شب یا هیچ) و محصول جدید شروع نکن؛ تمرکز روی مرطوب‌کننده."
+                    else "این چند روز روتین را ساده نگه دار و محصول جدید شروع نکن؛ تمرکز روی مرطوب‌کننده.",
+                    "با پایین بودن استروژن و پروژسترون در این روزها، پوست برخی زنان خشک‌تر و کم‌تحمل‌تر است؛ امتحان محصول تازه در این بازه احتمال واکنش را بیشتر می‌کند.")
+                avoid += "لایه‌برداری در روزهای پریود"
+            }
+            "follicular" -> {
+                if (strongActive && !irritated && !onIso && !pregnant) pri += BeautyAction("phase", "چون پریودت تمام شده و گفتی اکتیو می‌زنی",
+                    "اگر اکتیو آشنایت را در پریود کم کرده بودی، حالا به برنامهٔ عادی برگردان؛ اگر می‌خواهی محصول جدیدی امتحان کنی، فقط یکی و در همین بازه.",
+                    "با افزایش تدریجی استروژن بعد از پریود، پوست اغلب مقاوم‌تر و آب‌دارتر است، پس تحمل اکتیو معمولاً بهتر است.")
+                else pri += BeautyAction("phase", "چون پریودت تمام شده",
+                    "اگر قرار است محصول تازه‌ای امتحان کنی، این بازه مناسب‌تر است — فقط یکی و با تست روی ناحیهٔ کوچک.",
+                    "بعد از پریود، با افزایش استروژن، پوست اغلب مقاوم‌تر است؛ واکنش به محصول تازه در این بازه معمولاً کمتر است.")
+                avoid += "شروع هم‌زمان چند اکتیو جدید"
+            }
+            "ovulatory" -> {
+                pri += BeautyAction("phase", "چون حوالی تخمک‌گذاری هستی",
+                    "مرطوب‌کننده و ضدآفتاب با بافت سبک‌تر انتخاب کن؛ اگر چربی آمد فقط شستشوی ملایم کافی است.",
+                    "اوج کوتاه هورمون‌ها در این روزها ممکن است چربی را کمی بالا ببرد، ولی پوست اغلب در وضعیت خوبی است و تغییر بزرگی لازم نیست.")
+                avoid += "بافت‌های سنگین روی صورت"
+            }
+            "luteal" -> {
+                if (acne || oily || p.cyclical == "yes") pri += BeautyAction("phase",
+                    "چون در فاز قبل از پریود هستی" + (if (p.cyclical == "yes") " و گفتی جوشت این موقع بدتر می‌شود" else ""),
+                    "از همین حالا کنترل چربی را منظم کن: شوینده ملایم دو بار در روز، مرطوب‌کنندهٔ سبک، و درمان نقطه‌ای آماده برای اولین جوش.",
+                    "در فاز لوتئال، پروژسترون و نوسان آندروژن‌ها در بسیاری از زنان ترشح چربی را بیشتر می‌کنند؛ شروع زودتر از اوج جوش، بهتر از واکنش بعد از آن است.")
+                else pri += BeautyAction("phase", "چون در فاز قبل از پریود هستی",
+                    "روتینت را ثابت نگه دار؛ اگر جوش آمد فقط روی خودش درمان نقطه‌ای بزن.",
+                    "در این فاز چربی و جوش در بسیاری از زنان بیشتر می‌شود، ولی چون تو جوش چرخه‌ای گزارش نکردی تغییر بزرگی لازم نیست.")
+                avoid += "کرم سنگین روی فک و چانه"
+            }
+        }
+        val base = mapOf("iso" to 100, "preg_retinoid" to 95, "acne_severe" to 90, "irritate" to 70, "spf" to 60, "acne_hormonal" to 55,
+            "acne" to 50, "dry" to 45, "oily" to 40, "phase" to 38, "spots" to 35, "routine" to 30, "dull" to 25, "stress" to 20, "none" to 0)
+        val boost: Map<String, Int> = when (key) {
+            "menstrual" -> mapOf("irritate" to 30, "dry" to 25, "phase" to 20, "dull" to -20, "oily" to -10, "acne_hormonal" to -10, "spots" to -5)
+            "follicular" -> mapOf("phase" to 15, "spots" to 20, "dull" to 20, "routine" to 10, "dry" to -5)
+            "ovulatory" -> mapOf("oily" to 15, "spf" to 5, "phase" to 5)
+            "luteal" -> mapOf("acne_hormonal" to (if (p.cyclical == "yes") 45 else 35), "acne" to 20, "oily" to 25, "phase" to 15, "dry" to -10, "dull" to -10)
+            else -> emptyMap()
+        }
+        val ranked = pri.sortedByDescending { (base[it.cat] ?: 10) + (boost[it.cat] ?: 0) }
+        return BeautyAdvice(summary, ranked.take(3), am, pm, avoid.toList(), skinPhaseNote(key, p), learn, flags)
     }
 
     fun hair(p: BeautyProfile, phaseGroup: String, pregnant: Boolean): BeautyAdvice {
@@ -280,34 +346,34 @@ object BeautyAdviceEngine {
         val w = PersianNum(p.washesPerWeek)
 
         if (shedding) pri += when (p.sheddingTiming) {
-            "after_event" -> BeautyAction("چون گفتی ریزش بعد از بیماری، زایمان، رژیم یا استرس شدید شروع شده",
+            "after_event" -> BeautyAction("shed", "چون گفتی ریزش بعد از بیماری، زایمان، رژیم یا استرس شدید شروع شده",
                 "شستشو را کم نکن، مو را محکم نبند و پروتئین و آهن کافی در غذا داشته باش؛ اگر بعد از ۶ ماه بهتر نشد یا شدید است به پزشک مراجعه کن.",
                 "بعد از یک شوک به بدن، بخش بزرگی از فولیکول‌ها هم‌زمان وارد مرحلهٔ استراحت می‌شوند و حدود ۲–۳ ماه بعد می‌ریزند (تلوژن افلوویوم). این نوع ریزش اغلب موقت است و خودبه‌خود برمی‌گردد.")
-            "long" -> BeautyAction("چون گفتی کم‌پشتی/ریزش تدریجی و طولانی داری",
+            "long" -> BeautyAction("shed", "چون گفتی کم‌پشتی/ریزش تدریجی و طولانی داری",
                 "برای ارزیابی (آزمایش آهن/فریتین، تیروئید و بررسی الگوی ریزش) به پزشک مراجعه کن؛ محصولات تبلیغاتی جایگزین درمان نیستند.",
                 "کم‌پشتی تدریجی ممکن است ژنتیکی-هورمونی باشد و درمان‌های مؤثر آن تجویزی‌اند؛ هرچه زودتر شروع شود نتیجه بهتر است.")
-            else -> BeautyAction("چون گفتی ریزشت از چند ماه اخیر بیشتر شده",
+            else -> BeautyAction("shed", "چون گفتی ریزشت از چند ماه اخیر بیشتر شده",
                 "اگر ریزش بیش از ۲–۳ ماه ادامه دارد یا ناگهانی است، با پزشک بررسی کن (آهن، تیروئید)" + (if ("anemia" in p.conditions || "thyroid" in p.conditions) "؛ مخصوصاً چون سابقهٔ ${p.conditions.filter { it == "anemia" || it == "thyroid" }.joinToString(" و ") { L(BeautyLabels.conditions, it) }} گفتی." else "."),
                 "روزی حدود ۵۰ تا ۱۰۰ تار مو ریختن طبیعی است. موهایی که در روزهای بدون شستشو جمع می‌شوند هنگام شستشو یک‌جا می‌ریزند؛ پس کم شستن ریزش را کم نمی‌کند، فقط آن را جابه‌جا می‌کند.")
         }
-        if (oilyScalp && dryLengths) pri += BeautyAction("چون گفتی کف سرت چرب است ولی ساقه‌ات " + L(BeautyLabels.lengths, p.lengths),
+        if (oilyScalp && dryLengths) pri += BeautyAction("oily_dry", "چون گفتی کف سرت چرب است ولی ساقه‌ات " + L(BeautyLabels.lengths, p.lengths),
             "شامپو فقط روی کف سر و ریشه؛ نرم‌کننده فقط از نیمهٔ مو تا انتها.",
             "کف سر غدد چربی دارد ولی ساقهٔ مو ندارد؛ چربی به انتهای موهای بلند نمی‌رسد. پس هر بخش مراقبت جدا می‌خواهد.")
-        else if (oilyScalp) pri += BeautyAction("چون گفتی کف سرت زود چرب می‌شود و حدود $w بار در هفته می‌شویی",
+        else if (oilyScalp) pri += BeautyAction("oily_scalp", "چون گفتی کف سرت زود چرب می‌شود و حدود $w بار در هفته می‌شویی",
             if (p.washesPerWeek <= 2) "هر وقت کف سر چرب شد با شامپوی ملایم بشوی؛ احتمالاً بیشتر از $w بار در هفته لازم داری."
             else "با شامپوی ملایم هر وقت لازم بود بشوی و نرم‌کننده را به ریشه نزن.",
             "اینکه «شستشوی زیاد کف سر را چرب‌تر می‌کند» شواهد قوی ندارد. چربی ماندهٔ کف سر ممکن است خارش و شوره را بدتر کند.")
-        else if (dryLengths) pri += BeautyAction("چون گفتی ساقهٔ مویت " + L(BeautyLabels.lengths, p.lengths) + " است",
+        else if (dryLengths) pri += BeautyAction("dry_len", "چون گفتی ساقهٔ مویت " + L(BeautyLabels.lengths, p.lengths) + " است",
             "بعد از هر شستشو نرم‌کننده روی ساقه و هفته‌ای یک بار ماسک مغذی؛ قبل از سشوار محافظ حرارت.",
             "لایهٔ بیرونی مو (کوتیکول) با حرارت و مواد شیمیایی باز و آسیب‌دیده می‌شود؛ نرم‌کننده آن را صاف می‌کند و اصطکاک و شکستن را کم.")
-        if (itchy) pri += BeautyAction("چون گفتی " + (if ("dandruff" in p.hairConcerns) "شوره/خارش" else "کف سر حساس و خارش‌دار") + " داری",
+        if (itchy) pri += BeautyAction("itchy", "چون گفتی " + (if ("dandruff" in p.hairConcerns) "شوره/خارش" else "کف سر حساس و خارش‌دار") + " داری",
             "شامپوی ملایم و ماساژ آرام با نوک انگشت؛ اگر پوسته‌های چرب و زرد یا قرمزی بیش از چند هفته ادامه داشت با پزشک بررسی شود.",
             "شوره اغلب با نوعی مخمر طبیعی پوست و چربی کف سر مرتبط است و شستشوی منظم کمک می‌کند. خاراندن با ناخن پوست سر را زخمی می‌کند.")
-        if (p.scalp == "dry" && p.washesPerWeek >= 5) pri += BeautyAction("چون گفتی کف سرت خشک است و $w بار در هفته می‌شویی",
+        if (p.scalp == "dry" && p.washesPerWeek >= 5) pri += BeautyAction("dry_scalp_wash", "چون گفتی کف سرت خشک است و $w بار در هفته می‌شویی",
             "دفعات شستشو را کمی کم کن و آب را ولرم نگه دار.", "شستشوی مکرر با آب داغ ممکن است چربی محافظ پوست سر را بشوید و خشکی و خارش را بیشتر کند.")
-        if (recentChem) pri += BeautyAction("چون گفتی اخیراً رنگ/دکلره/کراتین کرده‌ای",
+        if (recentChem) pri += BeautyAction("chem", "چون گفتی اخیراً رنگ/دکلره/کراتین کرده‌ای",
             "تا چند هفته حرارت را کم کن و کار شیمیایی دوباره انجام نده.", "مواد شیمیایی ساختار پروتئینی مو را ضعیف می‌کنند و مو تا مدتی آسیب‌پذیرتر است؛ حرارت روی موی ضعیف شکستن را بیشتر می‌کند.")
-        if (pri.isEmpty()) pri += BeautyAction("چون گفتی نگرانی خاصی دربارهٔ مو نداری", "همین روتین را ادامه بده و حرارت را محدود کن.", "تغییر بی‌دلیل محصول اغلب فایده‌ای ندارد.")
+        if (pri.isEmpty()) pri += BeautyAction("none", "چون گفتی نگرانی خاصی دربارهٔ مو نداری", "همین روتین را ادامه بده و حرارت را محدود کن.", "تغییر بی‌دلیل محصول اغلب فایده‌ای ندارد.")
 
         wash += "دفعات شستشو: " + when {
             oilyScalp -> "هر وقت کف سر چرب شد (برای شما احتمالاً ${PersianNum(maxOf(p.washesPerWeek, 3))}+ بار در هفته)"
@@ -342,7 +408,25 @@ object BeautyAdviceEngine {
             if (recentChem) append("؛ کار شیمیایی اخیر")
             append(".")
         }
-        return BeautyAdvice(summary, pri.take(3), wash, care, avoid.toList(), hairPhaseNote(key, oilyScalp), learn, flags)
+        if (key == "luteal" && oilyScalp) pri += BeautyAction("phase", "چون قبل از پریود هستی و کف سرت چرب می‌شود",
+            "این روزها احتمالاً شستشوی بیشتری لازم داری؛ هر وقت کف سر چرب شد بشوی و شامپوی خشک را فقط برای یک روز در میان نگه دار.",
+            "افزایش چربی پوست در فاز لوتئال ممکن است کف سر را هم چرب‌تر کند؛ این تغییر موقت است.")
+        if (key == "menstrual" && (recentChem || dryLengths || itchy)) pri += BeautyAction("phase", "چون در روزهای پریود هستی",
+            "رنگ، دکلره و حرارت بالا را به بعد از پریود موکول کن و شستشو را با آب ولرم و ملایم انجام بده.",
+            "برخی زنان در روزهای پریود حساسیت بیشتری در پوست و کف سر گزارش می‌کنند؛ شواهد محدود است ولی تعویق کار شیمیایی ضرری ندارد.")
+        if (key == "follicular" && recentChem.not() && (dryLengths || p.chemical == "old")) pri += BeautyAction("phase", "چون پریودت تمام شده",
+            "اگر رنگ یا کوتاهی برنامه داری، این بازه از روزهای پریود مناسب‌تر است؛ قبل و بعدش ماسک مغذی بزن.",
+            "شواهد مستقیم کم است، ولی حساسیت کف سر معمولاً بیرون از روزهای پریود کمتر گزارش می‌شود.")
+        val base = mapOf("shed" to 90, "chem" to 60, "itchy" to 55, "oily_dry" to 50, "oily_scalp" to 50, "dry_len" to 45,
+            "dry_scalp_wash" to 40, "phase" to 35, "none" to 0)
+        val boost: Map<String, Int> = when (key) {
+            "luteal" -> mapOf("oily_scalp" to 20, "oily_dry" to 15, "phase" to 25)
+            "menstrual" -> mapOf("itchy" to 15, "chem" to 15, "phase" to 20)
+            "follicular" -> mapOf("dry_len" to 10, "phase" to 5)
+            else -> emptyMap()
+        }
+        val ranked = pri.sortedByDescending { (base[it.cat] ?: 10) + (boost[it.cat] ?: 0) }
+        return BeautyAdvice(summary, ranked.take(3), wash, care, avoid.toList(), hairPhaseNote(key, oilyScalp), learn, flags)
     }
 
     private fun PersianNum(n: Int) = n.toString().map { if (it.isDigit()) '۰' + (it - '0') else it }.joinToString("")
@@ -368,4 +452,15 @@ object BeautyAdviceEngine {
 
     fun homePreview(p: BeautyProfile, phaseGroup: String, pregnant: Boolean): String =
         skin(p, phaseGroup, pregnant).priorities.first().doFa
+
+    data class HomeSummary(val phaseFa: String, val statusFa: String, val skinFa: String, val hairFa: String)
+
+    fun homeSummary(p: BeautyProfile, phaseGroup: String, pregnant: Boolean): HomeSummary {
+        val s = skin(p, phaseGroup, pregnant); val h = hair(p, phaseGroup, pregnant)
+        val issues = p.skinIssues.filter { it != "none" }.take(2).map { L(BeautyLabels.skinIssues, it) }
+        val status = "پوست ${L(BeautyLabels.skinType, p.skinType)}" + (if (issues.isNotEmpty()) " با ${issues.joinToString(" و ")}" else "") +
+            " · کف سر ${L(BeautyLabels.scalp, p.scalp)}"
+        return HomeSummary(BeautyRoutineContent.forState(phaseGroup, pregnant).phaseTitleFa, status,
+            s.priorities.first().doFa, h.priorities.first().doFa)
+    }
 }

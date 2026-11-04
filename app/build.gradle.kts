@@ -37,8 +37,8 @@ android {
         buildConfigField("String", "MAH_FCM_API_KEY", mahLiteral(((mahClient["api_key"] as? List<*>)?.firstOrNull() as? Map<*, *>)?.get("current_key")))
         minSdk = 24
         targetSdk = 35
-        versionCode = 155
-        versionName = "1.4.23"
+        versionCode = 156
+        versionName = "1.4.24"
         testInstrumentationRunner = "com.mahava.app.MahavaTestRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAH_API_BASE_URL", "\"https://darapfm.ir\"")
