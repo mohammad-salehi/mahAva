@@ -34,6 +34,7 @@ object Routes {
     const val CYCLE_TRENDS = "cycle_trends"
     const val SYMPTOM_CHECKER = "symptom_checker"
     const val PHASE_SCIENCE = "phase_science"
+    const val BEAUTY_ROUTINE = "beauty_routine"
     const val QUICK_LOG = "quick_log"
     const val FOOD_TIPS = "food_tips"
     const val FERTILITY_WINDOW = "fertility_window"

@@ -68,6 +68,7 @@ fun TodayScreen(
     onFertility: () -> Unit = {},
     onDoctor: () -> Unit = {},
     onScience: () -> Unit = {},
+    onBeauty: () -> Unit = {},
     onSignal: (String, String) -> Unit = { _, _ -> },
     onPartner: () -> Unit = {},
     onNotifications: () -> Unit = {},
@@ -204,6 +205,14 @@ fun TodayScreen(
                     onClick = { onCareDetail(todayTip?.contentId ?: vm.careToday().item.id) }
                 )
             }
+            val beauty = com.mahava.app.content.BeautyRoutineContent.forState(phaseGroup, pregnant)
+            com.mahava.app.ui.kit.KitRowCard(
+                "روتین پوست و مو",
+                "${beauty.phaseTitleFa} · ${beauty.homeWhyFa}\n• ${beauty.homeSkinActionFa}\n• ${beauty.homeHairActionFa}",
+                k.cardBlue, tag = "home_beauty_card",
+                art = { com.mahava.app.ui.kit.KitIconTile(R.drawable.kit_leaf, MahavaPrimary, size = 64.dp, iconSize = 34.dp) },
+                onClick = onBeauty
+            )
             com.mahava.app.ui.kit.KitRowCard(
                 "اتصال به همسر", "اگه بخوای، همسرت هم می‌تونه چیزهایی رو که اینجا ثبت می‌کنی ببینه.", k.cardLavender,
                 tag = "home_partner_card", art = { com.mahava.app.ui.kit.KitHearts() }, onClick = onPartner

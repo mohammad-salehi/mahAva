@@ -348,6 +348,7 @@ fun MahavaAppRoot(
                     onFertility = { nav.navigate(Routes.FERTILITY_WINDOW) },
                     onDoctor = { nav.navigate(Routes.DOCTOR_PDF) },
                     onScience = { nav.navigate(Routes.PHASE_SCIENCE) },
+                    onBeauty = { nav.navigate(Routes.BEAUTY_ROUTINE) },
                     onSignal = { kind, key -> nav.navigate(Routes.signalDetail(kind, key)) },
                     onPartner = { nav.navigate(Routes.PARTNER_HUB) { launchSingleTop = true } },
                     onNotifications = { nav.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
@@ -591,6 +592,9 @@ fun MahavaAppRoot(
                     key = entry.arguments?.getString("key") ?: "",
                     onBack = { nav.popBackStack() }
                 )
+            }
+            composable(Routes.BEAUTY_ROUTINE) {
+                BeautyRoutineScreen(vm, onBack = { nav.popBackStack() })
             }
             composable(Routes.PHASE_SCIENCE) {
                 PhaseScienceScreen(vm, onBack = { nav.popBackStack() }, onAccount = { goAccountOrLogin() })
