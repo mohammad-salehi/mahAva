@@ -91,6 +91,24 @@ object BeautyProfileStore {
         if (remote.updatedAt > local.updatedAt) writeLocal(ctx, remote)
     }
     fun payload(p: BeautyProfile): com.google.gson.JsonElement = com.google.gson.JsonParser.parseString(p.toJson())
+
+    /** Sign-out / account switch / deletion: the intake belongs to one account only. */
+    fun clear(ctx: Context) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().commit()
+        _flow.value = null
+    }
+}
+
+/**
+ * Per-account personal data kept outside Room (SharedPreferences caches). Cleared together with
+ * the Room tables so the next account on this phone never sees or re-uploads it.
+ */
+object AccountLocalCaches {
+    private val PERSONAL_PREFS = listOf("mah_quiz_results")
+    fun clear(ctx: Context) {
+        BeautyProfileStore.clear(ctx)
+        PERSONAL_PREFS.forEach { ctx.getSharedPreferences(it, Context.MODE_PRIVATE).edit().clear().commit() }
+    }
 }
 
 /** Persian labels for intake options (key to label). */

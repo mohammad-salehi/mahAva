@@ -567,9 +567,12 @@ private fun PartnerDashboard(
             periods.take(6).forEach { p ->
                 val start = try { p.get("startEpochDay")?.asLong } catch (_: Throwable) { null } ?: return@forEach
                 val end = try { p.get("endEpochDay")?.takeIf { !it.isJsonNull }?.asLong } catch (_: Throwable) { null }
-                val ongoing = end == null || (try { p.get("stillOngoing")?.asBoolean } catch (_: Throwable) { null } == true)
-                val text = if (ongoing && (end == null || end >= todayEpoch)) "از ${shortFa(start)} (ادامه دارد)"
-                else "${shortFa(start)} تا ${shortFa(end ?: start)} · ${PersianDigits.toPersian(((end ?: start) - start + 1).toInt())} روز"
+                val flag = try { p.get("stillOngoing")?.takeIf { !it.isJsonNull }?.asBoolean } catch (_: Throwable) { null }
+                val text = when {
+                    partnerPeriodOngoing(start, end, flag, todayEpoch) -> "از ${shortFa(start)} (ادامه دارد)"
+                    end == null -> "از ${shortFa(start)} (پایان ثبت نشده)"
+                    else -> "${shortFa(start)} تا ${shortFa(end)} · ${PersianDigits.toPersian((end - start + 1).toInt())} روز"
+                }
                 Text("• $text", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 2.dp))
                 val note = try { p.get("note")?.takeIf { !it.isJsonNull }?.asString } catch (_: Throwable) { null }
                 if (!note.isNullOrBlank()) Text("   یادداشت: $note", style = MaterialTheme.typography.bodySmall, color = MahavaTextSecondary)
@@ -678,4 +681,15 @@ private fun PartnerHistoryCalendar(older: List<JsonObject>, todayEpoch: Long) {
         }
         QuietInfo("${PersianDigits.toPersian(byDay.size)} روز ثبت‌شده · روی روزهای نقطه‌دار بزن")
     }
+}
+
+/**
+ * Is this shared period still going on? A start-only entry (no end, not flagged ongoing) was
+ * shown to the partner as "ادامه دارد" forever. Older clients send no flag: only a recent start counts.
+ */
+internal fun partnerPeriodOngoing(start: Long, end: Long?, stillOngoing: Boolean?, today: Long): Boolean = when {
+    start > today -> false
+    end != null -> end >= today && stillOngoing == true
+    stillOngoing != null -> stillOngoing
+    else -> today - start <= 10
 }

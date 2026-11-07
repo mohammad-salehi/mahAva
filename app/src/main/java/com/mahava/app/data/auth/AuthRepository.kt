@@ -177,9 +177,21 @@ class AuthRepository(
             if (prefs.getRefreshToken() != refresh) return false
             persistSession(res)
             true
-        } catch (_: Throwable) {
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            throw c
+        } catch (e: MahApiException) {
+            // The server definitively rejected the refresh token: the session is dead. Before, it was
+            // kept (only network errors should keep it), so premium gates trusted a cached subscription.
+            if (isRefreshRejected(e.status) && prefs.getRefreshToken() == refresh) prefs.clearAuth()
             false
+        } catch (_: Throwable) {
+            false // offline / timeout: keep the session
         }
+    }
+
+    companion object {
+        /** 401 on refresh = token revoked/expired; 5xx/429/network (and other codes) are transient. */
+        fun isRefreshRejected(status: Int): Boolean = status == 401
     }
 
     suspend fun fetchMe(): MahAuthResponse? {

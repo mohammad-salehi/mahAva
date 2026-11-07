@@ -74,8 +74,7 @@ object PartnerCycleEnrich {
         val bleedLength = 5
         val periodOngoing = (last.ongoing && cycleDay <= 15) ||
             (last.end != null && last.end >= todayEpoch) ||
-            (last.end == null && !last.ongoing && cycleDay <= bleedLength) ||
-            (last.end == null && last.ongoing)
+            (last.end == null && !last.ongoing && cycleDay <= bleedLength)
         val next = last.start + cycleLength
         val isLate = !periodOngoing && todayEpoch > next
         val ov = next - 14

@@ -28,6 +28,11 @@ object LegalDocuments {
 
     private var loaded = false
 
+    /** True only when the full text of the version we would accept is on this phone. */
+    val hasDocument: Boolean get() = privacyFa.isNotBlank() && termsFa.isNotBlank()
+
+    const val NOT_DOWNLOADED_FA = "متن حریم خصوصی و قوانین هنوز دریافت نشده؛ به اینترنت وصل شو و دوباره تلاش کن."
+
     /** Loads the cached copy (cheap; safe to call often). */
     @Synchronized
     fun load(context: Context) {

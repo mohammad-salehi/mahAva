@@ -55,6 +55,21 @@ class CycleEngineTest {
         assertEquals(CyclePhase.MENSTRUATION, r.phase)
     }
 
+    @Test fun forgottenOngoingFlag_isNotMenstruationDay40() {
+        val start = LocalDate.of(2026, 9, 1)
+        val r = engine.compute(CycleEngine.Input(LocalDate.of(2026, 10, 10), listOf(PeriodInterval(start, null, ongoingFlag = true)), 28, 5, true))
+        assertTrue("raw flag kept so she can still log the end", r.periodOngoing)
+        assertNotEquals(CyclePhase.MENSTRUATION, r.phase)
+        assertNull(r.bleedingDay)
+    }
+
+    @Test fun ongoingWithinCap_staysMenstruation() {
+        val start = LocalDate.of(2026, 10, 1)
+        val r = engine.compute(CycleEngine.Input(start.plusDays(CycleEngine.MAX_ONGOING_BLEED_DAYS - 1L), listOf(PeriodInterval(start, null, ongoingFlag = true)), 28, 5, true))
+        assertEquals(CyclePhase.MENSTRUATION, r.phase)
+        assertEquals(CycleEngine.MAX_ONGOING_BLEED_DAYS, r.bleedingDay)
+    }
+
     @Test fun lateShowsLateNotNegativeCountdown() {
         val start = LocalDate.of(2026, 8, 1)
         val r = engine.compute(CycleEngine.Input(LocalDate.of(2026, 9, 10), listOf(PeriodInterval(start, start.plusDays(4))), 28, 5, true))

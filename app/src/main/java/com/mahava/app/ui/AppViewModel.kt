@@ -800,7 +800,19 @@ class AppViewModel(
      * Phone + OTP is the only entry: an existing number signs in, a new number creates the
      * account (role + legal acceptance) and the server grants a one-month trial.
      */
+    /**
+     * Acceptance is recorded on the server with a version: never send one whose text was not
+     * downloaded (offline fallback version). Null = ok, else a Persian error.
+     */
+    private suspend fun legalReadyForAcceptance(): String? {
+        val legal = com.mahava.app.content.LegalDocuments
+        legal.load(app)
+        if (!legal.hasDocument) runCatching { legal.refresh(app) { app.apiClient.extraCall("GET", "/api/mah/auth/legal", null, null) } }
+        return if (legal.hasDocument) null else legal.NOT_DOWNLOADED_FA
+    }
+
     suspend fun otpLogin(phone: String, otp: String, role: String, accepted: Boolean): OtpLoginResult {
+        if (accepted) legalReadyForAcceptance()?.let { return OtpLoginResult(it) }
         return try {
             val res = authRepository.otpLogin(
                 phone = phone.trim(),
@@ -877,6 +889,7 @@ class AppViewModel(
         acceptedPrivacy: Boolean,
         acceptedTerms: Boolean
     ): String? {
+        if (acceptedPrivacy || acceptedTerms) legalReadyForAcceptance()?.let { return it }
         return try {
             authRepository.register(
                 phone = phone.trim(),
@@ -1424,6 +1437,8 @@ class AppViewModel(
 
     /** After login/register: learn this account's role and pairing from the server. */
     private suspend fun refreshRoleAfterAuth() {
+        // Before anything reads the local cache: never show or keep another account's held data.
+        runCatching { app.dataSync.releaseHeldDataForSignedIn(prefs.accountUserId.first()) }
         try { partnerRepo.refreshStatus() } catch (_: Throwable) { }
     }
 

@@ -103,6 +103,7 @@ class DataSyncRepository(
     private val clock: AppClock,
     private val remote: DataSyncRemote = MahDataSyncRemote(api, auth)
 ) {
+    private val appContext: Context = context.applicationContext ?: context
     private val sp = context.getSharedPreferences("mahava_data_sync", Context.MODE_PRIVATE)
     /** Owner of data kept on this phone after a logout with items not yet uploaded. */
     private val holdSp = context.getSharedPreferences("mahava_data_hold", Context.MODE_PRIVATE)
@@ -542,6 +543,23 @@ class DataSyncRepository(
 
     fun heldForAccount(): String? = holdSp.getString("user", null)
 
+    /**
+     * Right after a sign-in, for every role: data kept for another account is dropped at once,
+     * not only when a sync round runs (a partner/male account or an offline login never syncs,
+     * so the previous account's cycle data stayed visible on this phone). Returns true if cleared.
+     */
+    suspend fun releaseHeldDataForSignedIn(userId: String?): Boolean = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val held = holdSp.getString("user", null) ?: return@withContext false
+            if (userId.isNullOrBlank() || held == userId) return@withContext false
+            SyncLog.w("other account signed in: clearing data kept from the previous one")
+            clearTables()
+            holdSp.edit().remove("user").commit()
+            resetAll()
+            true
+        }
+    }
+
     /** Ids still not on the server (diagnostics and tests). */
     suspend fun pendingIds(): List<String> = withContext(Dispatchers.IO) {
         DataSyncEngine.localChanges(collectLocal(), readMap(K_SYNCED), clock.nowMillis()).map { it.id }
@@ -803,5 +821,6 @@ class DataSyncRepository(
             db.healthAlertDao().clear()
             db.toolRecordDao().clear()
         }
+        runCatching { com.mahava.app.content.AccountLocalCaches.clear(appContext) }
     }
 }

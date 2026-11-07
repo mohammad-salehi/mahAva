@@ -61,7 +61,11 @@ class CycleEngine {
 
         val lastP = confirmed.lastOrNull()
         val inLoggedBleed = lastP?.endInclusive?.let { e -> !input.today.isBefore(lastP.start) && !input.today.isAfter(e) } == true
-        val bleedingDay = if ((ongoing || inLoggedBleed) && lastStart != null) {
+        // An "ongoing" flag left on for weeks (she forgot to log the end) is not bleeding day 40:
+        // beyond MAX_ONGOING_BLEED_DAYS the phase and bleeding day are unknown, not menstruation.
+        // [periodOngoing] keeps the raw flag so the "log end of period" action stays available.
+        val ongoingPlausible = ongoing && (cycleDay ?: 0) <= MAX_ONGOING_BLEED_DAYS
+        val bleedingDay = if ((ongoingPlausible || inLoggedBleed) && lastStart != null) {
             (input.today.toEpochDay() - lastStart.toEpochDay() + 1).toInt().takeIf { it >= 1 }
         } else null
 
@@ -190,7 +194,8 @@ class CycleEngine {
         val phase = inferPhase(
             cycleDay = cycleDay,
             today = input.today,
-            ongoingPeriod = ongoing,
+            ongoingPeriod = ongoingPlausible,
+            staleOngoing = ongoing && !ongoingPlausible,
             typicalBleed = input.typicalBleedLength,
             lastPeriod = confirmed.lastOrNull(),
             prediction = pred
@@ -239,12 +244,14 @@ class CycleEngine {
         cycleDay: Int?,
         today: LocalDate,
         ongoingPeriod: Boolean,
+        staleOngoing: Boolean,
         typicalBleed: Int?,
         lastPeriod: PeriodInterval?,
         prediction: PredictionKind
     ): CyclePhase {
         if (cycleDay == null) return CyclePhase.UNKNOWN
         if (ongoingPeriod) return CyclePhase.MENSTRUATION
+        if (staleOngoing) return CyclePhase.UNKNOWN
         if (lastPeriod?.endInclusive != null) {
             val end = lastPeriod.endInclusive
             if (!today.isAfter(end) && !today.isBefore(lastPeriod.start)) return CyclePhase.MENSTRUATION
@@ -267,6 +274,11 @@ class CycleEngine {
             else -> Unit
         }
         return CyclePhase.UNKNOWN
+    }
+
+    companion object {
+        /** Longer "ongoing" bleeding is treated as an end that was not logged (matches the partner view). */
+        const val MAX_ONGOING_BLEED_DAYS = 15
     }
 
     private fun fa(n: Int) = com.mahava.app.util.PersianDigits.toPersian(n)

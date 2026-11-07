@@ -93,4 +93,36 @@ class SyncLogoutTest {
         assertNull("user-1's logs never reach user-2", db.dailyLogDao().getByDay(today))
         assertTrue(other.rows.keys.none { it.startsWith("log/") })
     }
+
+    @Test fun keptData_isClearedAtSignIn_evenForPartnerAccountThatNeverSyncs() = runBlocking {
+        assertEquals(SyncOutcome.Ok, sync.sync())
+        sync.holdLocalForAccount("user-1")
+        app.prefs.clearAuth()
+        app.prefs.setAccessToken("m"); app.prefs.setRefreshToken("rm")
+        app.prefs.setAccount("09140000000", "user-3"); app.prefs.setAccountRole("male")
+        assertEquals("male accounts skip sync", SyncOutcome.Skipped, sync.sync())
+        assertTrue(sync.releaseHeldDataForSignedIn("user-3"))
+        assertNull("user-1's logs are gone for the partner account", db.dailyLogDao().getByDay(today))
+        assertNull(db.profileDao().get())
+        assertNull(sync.heldForAccount())
+    }
+
+    @Test fun beautyIntake_isClearedOnSignOutAndAccountSwitch() = runBlocking {
+        val store = com.mahava.app.content.BeautyProfileStore
+        store.save(app, com.mahava.app.content.BeautyProfile(skinType = "oily", skinIssues = setOf("acne")))
+        sync.clearLocalCache()
+        assertEquals("", store.load(app).skinType)
+        store.save(app, com.mahava.app.content.BeautyProfile(skinType = "dry"))
+        sync.holdLocalForAccount("user-1")
+        assertTrue(sync.releaseHeldDataForSignedIn("user-9"))
+        assertEquals("previous account's intake never shown to the next one", "", store.load(app).skinType)
+    }
+
+    @Test fun keptData_survivesSignInOfSameAccount() = runBlocking {
+        assertEquals(SyncOutcome.Ok, sync.sync())
+        sync.holdLocalForAccount("user-1")
+        assertEquals(false, sync.releaseHeldDataForSignedIn("user-1"))
+        assertNotNull(db.dailyLogDao().getByDay(today))
+        assertEquals("user-1", sync.heldForAccount())
+    }
 }
